@@ -60,5 +60,5 @@ image:
 ai:
   nvidia:
     base-url: https://integrate.api.nvidia.com/v1
-    api-key: ${AI_NVIDIA_API_KEY:-your-nvidia-api-key}
+    api-key: ${AI_NVIDIA_API_KEY:your-nvidia-api-key}
     model: meta/llama-3.1-8b-instruct
