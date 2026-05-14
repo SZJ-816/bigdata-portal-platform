@@ -1,0 +1,142 @@
+version: '3.8'
+
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: bigdata-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: root123
+      MYSQL_DATABASE: bigdata_portal
+      MYSQL_CHARACTER_SET_SERVER: utf8mb4
+      MYSQL_COLLATION_SERVER: utf8mb4_unicode_ci
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+      - ./sql/init_mysql.sql:/docker-entrypoint-initdb.d/init.sql
+    command: --default-authentication-plugin=mysql_native_password
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-proot123"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks:
+      - bigdata-net
+
+  zookeeper:
+    image: wurstmeister/zookeeper:latest
+    container_name: bigdata-zookeeper
+    ports:
+      - "127.0.0.1:2181:2181"
+    networks:
+      - bigdata-net
+
+  kafka:
+    image: wurstmeister/kafka:latest
+    container_name: bigdata-kafka
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+      KAFKA_CREATE_TOPICS: "user-behavior:1:1,analytics-result:1:1"
+    ports:
+      - "127.0.0.1:9092:9092"
+    depends_on:
+      - zookeeper
+    networks:
+      - bigdata-net
+
+  clickhouse:
+    image: clickhouse/clickhouse-server:latest
+    container_name: bigdata-clickhouse
+    ports:
+      - "127.0.0.1:8123:8123"
+      - "127.0.0.1:9000:9000"
+    volumes:
+      - clickhouse-data:/var/lib/clickhouse
+      - ./sql/init_clickhouse.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - bigdata-net
+
+  flink-jobmanager:
+    image: flink:1.17.1-java8
+    container_name: bigdata-flink-jobmanager
+    environment:
+      FLINK_PROPERTIES: "jobmanager.rpc.address: flink-jobmanager"
+    ports:
+      - "127.0.0.1:8081:8081"
+    command: jobmanager
+    networks:
+      - bigdata-net
+
+  flink-taskmanager:
+    image: flink:1.17.1-java8
+    container_name: bigdata-flink-taskmanager
+    environment:
+      FLINK_PROPERTIES: "jobmanager.rpc.address: flink-jobmanager"
+      taskmanager.numberOfTaskSlots: "4"
+    depends_on:
+      - flink-jobmanager
+    command: taskmanager
+    networks:
+      - bigdata-net
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: bigdata-backend
+    ports:
+      - "127.0.0.1:8090:8090"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/bigdata_portal?useSSL=false&characterEncoding=utf8&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: root123
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      MAIL_HOST: ${MAIL_HOST:-smtp.qq.com}
+      MAIL_PORT: ${MAIL_PORT:-587}
+      MAIL_USERNAME: ${MAIL_USERNAME:-}
+      MAIL_PASSWORD: ${MAIL_PASSWORD:-}
+    depends_on:
+      mysql:
+        condition: service_healthy
+      kafka:
+        condition: service_started
+    networks:
+      - bigdata-net
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: bigdata-frontend
+    ports:
+      - "80:80"
+    volumes:
+      - ./frontend/images:/usr/share/nginx/html/images
+    depends_on:
+      - backend
+    networks:
+      - bigdata-net
+
+  dashboard:
+    build:
+      context: ./dashboard
+      dockerfile: Dockerfile
+    container_name: bigdata-dashboard
+    ports:
+      - "127.0.0.1:3000:80"
+    depends_on:
+      - backend
+    networks:
+      - bigdata-net
+
+volumes:
+  mysql-data:
+  clickhouse-data:
+
+networks:
+  bigdata-net:
+    driver: bridge

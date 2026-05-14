@@ -1,0 +1,58 @@
+# Dependencies
+node_modules/
+frontend/node_modules/
+
+# Maven
+backend/target/
+*/target/
+
+# IDE
+.idea/
+.vscode/
+*.iml
+*.iws
+*.ipr
+.DS_Store
+
+# Logs
+*.log
+logs/
+
+# Environment files with secrets
+.env
+.env.*
+*.env
+
+# Docker
+docker/mysql-data/
+docker/clickhouse-data/
+*.pid
+
+# Build outputs
+dist/
+build/
+
+# Custom images (SVG channel images)
+frontend/images/
+images/
+
+# Temporary files
+*.tmp
+*.bak
+*.swp
+
+# Database backups
+*.sql.bak
+*.dump
+
+# Secrets and credentials
+**/application-local.yml
+**/application-local.properties
+**/secrets.yml
+**/credentials.json
+
+# cpolar logs
+*.log
+
+# OS files
+Thumbs.db
