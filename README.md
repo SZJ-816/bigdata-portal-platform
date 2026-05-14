@@ -241,7 +241,7 @@ ai:
 
 | 首页 | 频道分类 | 新闻详情 |
 |:---:|:---:|:---:|
-| ![首页](public/screenshot-home.png) | ![频道](public/screenshot-channel.png) | ![详情](public/screenshot-detail.png) |
+| ![首页](https://picsum.photos/seed/home/200/150) | ![频道](https://picsum.photos/seed/channel/200/150) | ![详情](https://picsum.photos/seed/detail/200/150) |
 
 ## License
 
