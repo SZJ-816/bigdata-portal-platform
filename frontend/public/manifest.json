@@ -1,0 +1,16 @@
+{
+  "name": "大数据科技资讯门户",
+  "short_name": "TechNews",
+  "description": "大数据科技资讯智能平台",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#1a2a4a",
+  "theme_color": "#1a2a4a",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}

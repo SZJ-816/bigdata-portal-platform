@@ -19,10 +19,16 @@ public class AiController {
     @Autowired
     private AiService aiService;
 
-    private final ExecutorService executor = Executors.newCachedThreadPool();
+    private final ExecutorService executor = Executors.newFixedThreadPool(10);
 
     @GetMapping("/search")
     public Map<String, Object> search(@RequestParam String keyword) {
+        if (keyword == null || keyword.trim().isEmpty() || keyword.length() > 200) {
+            Map<String, Object> result = new HashMap<>();
+            result.put("success", false);
+            result.put("error", "关键词需1-200个字符");
+            return result;
+        }
         Map<String, Object> result = new HashMap<>();
         try {
             String answer = aiService.searchNews(keyword);
@@ -37,6 +43,19 @@ public class AiController {
 
     @GetMapping(value = "/search/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     public SseEmitter searchStream(@RequestParam String keyword, HttpServletResponse response) {
+        if (keyword == null || keyword.trim().isEmpty() || keyword.length() > 200) {
+            Map<String, Object> result = new HashMap<>();
+            result.put("success", false);
+            result.put("error", "关键词需1-200个字符");
+            SseEmitter emitter = new SseEmitter();
+            executor.execute(() -> {
+                try {
+                    emitter.send(SseEmitter.event().data(result));
+                    emitter.complete();
+                } catch (Exception ignored) {}
+            });
+            return emitter;
+        }
         response.setHeader("X-Accel-Buffering", "no");
         response.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
         SseEmitter emitter = new SseEmitter(90000L);

@@ -14,6 +14,9 @@
           </nav>
         </div>
         <div class="header-right">
+          <button class="theme-toggle" @click="toggleTheme" :title="isDark ? '切换浅色' : '切换深色'">
+            {{ isDark ? '☀' : '☾' }}
+          </button>
           <div v-if="isLoggedIn" class="user-info">
             <span class="username">{{ username }}</span>
             <router-link to="/profile" class="btn btn-outline btn-sm">个人中心</router-link>
@@ -74,6 +77,7 @@ const navChannels = channels.slice(0, 4)
 const token = ref(localStorage.getItem('token'))
 const username = ref(localStorage.getItem('username'))
 const menuOpen = ref(false)
+const isDark = ref(localStorage.getItem('theme') === 'dark')
 
 const isLoggedIn = computed(() => !!token.value)
 const currentPath = computed(() => route.path)
@@ -85,6 +89,12 @@ function updateAuth() {
 
 function goLogin() {
   router.push('/login')
+}
+
+function toggleTheme() {
+  isDark.value = !isDark.value
+  document.documentElement.setAttribute('data-theme', isDark.value ? 'dark' : 'light')
+  localStorage.setItem('theme', isDark.value ? 'dark' : 'light')
 }
 
 function handleLogout() {
@@ -108,6 +118,9 @@ function handleStorageUpdate(e) {
 
 onMounted(() => {
   updateAuth()
+  if (isDark.value) {
+    document.documentElement.setAttribute('data-theme', 'dark')
+  }
   window.addEventListener('storage', handleStorageUpdate)
   window.addEventListener('auth-updated', handleAuthUpdate)
 })
@@ -181,6 +194,23 @@ onUnmounted(() => {
   color: #ffffff;
   border-bottom-color: #c41230;
   text-decoration: none;
+}
+.theme-toggle {
+  background: none;
+  border: 1px solid var(--color-border);
+  border-radius: 50%;
+  width: 36px;
+  height: 36px;
+  font-size: 18px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-text);
+  transition: all 0.2s;
+}
+.theme-toggle:hover {
+  background: var(--color-bg-hover);
 }
 .header-right {
   display: flex;

@@ -11,19 +11,21 @@ public class WebMvcConfig implements WebMvcConfigurer {
     @Autowired
     private AuthInterceptor authInterceptor;
 
+    @Autowired
+    private RateLimitInterceptor rateLimitInterceptor;
+
+    @Autowired
+    private RequestLogInterceptor requestLogInterceptor;
+
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
+        registry.addInterceptor(requestLogInterceptor)
+                .addPathPatterns("/api/**");
+
+        registry.addInterceptor(rateLimitInterceptor)
+                .addPathPatterns("/api/ai/**", "/api/users/send-code");
+
         registry.addInterceptor(authInterceptor)
-                .addPathPatterns("/api/admin/**", "/api/tools/**")
-                .excludePathPatterns(
-                        "/api/users/login",
-                        "/api/users/register",
-                        "/api/users/send-code",
-                        "/api/news/**",
-                        "/api/ai/**",
-                        "/api/image/**",
-                        "/api/behaviors",
-                        "/api/analytics/**"
-                );
+                .addPathPatterns("/api/admin/**", "/api/tools/**");
     }
 }

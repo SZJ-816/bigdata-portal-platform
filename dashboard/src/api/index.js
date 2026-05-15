@@ -5,10 +5,22 @@ const request = axios.create({
   timeout: 10000
 })
 
+request.interceptors.request.use(config => {
+  const token = localStorage.getItem('dashboard_token')
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`
+  }
+  return config
+})
+
 request.interceptors.response.use(
   response => response.data,
   error => {
-    console.error('API Error:', error)
+    if (error.response && error.response.status === 401) {
+      localStorage.removeItem('dashboard_token')
+      localStorage.removeItem('dashboard_user')
+      window.location.reload()
+    }
     return Promise.reject(error)
   }
 )

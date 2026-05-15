@@ -32,7 +32,8 @@ public class UserService {
         if (!passwordValid) {
             return null;
         }
-        String token = jwtConfig.generateToken(user.getId(), user.getUsername());
+        String role = "admin".equals(user.getUsername()) ? "admin" : "user";
+        String token = jwtConfig.generateToken(user.getId(), user.getUsername(), role);
         Map<String, Object> result = new HashMap<>();
         result.put("token", token);
         result.put("username", user.getUsername());
@@ -52,7 +53,7 @@ public class UserService {
         user.setEmail(email);
         userMapper.insert(user);
 
-        String token = jwtConfig.generateToken(user.getId(), user.getUsername());
+        String token = jwtConfig.generateToken(user.getId(), user.getUsername(), "user");
         Map<String, Object> result = new HashMap<>();
         result.put("token", token);
         result.put("username", user.getUsername());

@@ -27,7 +27,7 @@ public class JwtConfig {
         this.secretKey = Keys.hmacShaKeyFor(keyBytes);
     }
 
-    public String generateToken(Long userId, String username) {
+    public String generateToken(Long userId, String username, String role) {
         Date now = new Date();
         Date expiration = new Date(now.getTime() + EXPIRATION);
 
@@ -35,10 +35,15 @@ public class JwtConfig {
                 .setSubject(username)
                 .claim("userId", userId)
                 .claim("username", username)
+                .claim("role", role != null ? role : "user")
                 .setIssuedAt(now)
                 .setExpiration(expiration)
                 .signWith(secretKey, SignatureAlgorithm.HS256)
                 .compact();
+    }
+
+    public String generateToken(Long userId, String username) {
+        return generateToken(userId, username, "user");
     }
 
     public Long getUserIdFromToken(String token) {
@@ -64,6 +69,20 @@ public class JwtConfig {
             return claims.getSubject();
         } catch (Exception e) {
             return null;
+        }
+    }
+
+    public String getRoleFromToken(String token) {
+        try {
+            Claims claims = io.jsonwebtoken.Jwts.parserBuilder()
+                    .setSigningKey(secretKey)
+                    .build()
+                    .parseClaimsJws(token)
+                    .getBody();
+            Object role = claims.get("role");
+            return role != null ? role.toString() : "user";
+        } catch (Exception e) {
+            return "user";
         }
     }
 

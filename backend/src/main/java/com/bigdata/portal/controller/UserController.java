@@ -81,6 +81,18 @@ public class UserController {
             result.put("success", false);
             return result;
         }
+        String username = params.get("username");
+        String password = params.get("password");
+        if (username == null || username.trim().isEmpty() || username.length() < 2 || username.length() > 20) {
+            result.put("error", "用户名需2-20个字符");
+            result.put("success", false);
+            return result;
+        }
+        if (password == null || password.length() < 6 || password.length() > 50) {
+            result.put("error", "密码需6-50个字符");
+            result.put("success", false);
+            return result;
+        }
 
         Map<String, Object> data = userService.register(
             params.get("username"), params.get("password"), email);
@@ -161,7 +173,7 @@ public class UserController {
             return result;
         }
         Long userId = jwtConfig.getUserIdFromToken(token);
-        List<UserFavorite> favorites = favoriteMapper.findByUserId(userId);
+        List<Map<String, Object>> favorites = favoriteMapper.findWithNewsByUserId(userId);
         result.put("data", favorites);
         result.put("success", true);
         return result;

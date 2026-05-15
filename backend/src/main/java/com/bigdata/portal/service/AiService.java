@@ -50,6 +50,10 @@ public class AiService {
             "4. 最后给出今日科技趋势一句话总结\n" +
             "格式要求：使用**加粗**标记关键词，用编号列表组织内容。";
 
+    private volatile String cachedHotSummary = null;
+    private volatile long cachedHotSummaryTime = 0;
+    private static final long HOT_SUMMARY_CACHE_TTL = 3600000;
+
     public interface StreamCallback {
         void onToken(String token);
         void onComplete();
@@ -327,6 +331,10 @@ public class AiService {
     }
 
     public String hotSummary(String instruction) throws Exception {
+        long now = System.currentTimeMillis();
+        if (cachedHotSummary != null && (now - cachedHotSummaryTime) < HOT_SUMMARY_CACHE_TTL && (instruction == null || instruction.trim().isEmpty())) {
+            return cachedHotSummary;
+        }
         String prompt = buildHotSummaryPrompt(instruction);
         ObjectNode requestBody = buildRequestBody(SYSTEM_PROMPT_HOT_SUMMARY, prompt, false, 800, 0.5);
         String jsonBody = objectMapper.writeValueAsString(requestBody);
@@ -338,7 +346,12 @@ public class AiService {
         }
         JsonNode choices = root.get("choices");
         if (choices != null && choices.size() > 0) {
-            return choices.get(0).get("message").get("content").asText().trim();
+            String result = choices.get(0).get("message").get("content").asText().trim();
+            if (instruction == null || instruction.trim().isEmpty()) {
+                cachedHotSummary = result;
+                cachedHotSummaryTime = now;
+            }
+            return result;
         }
         return null;
     }

@@ -1,5 +1,6 @@
 <template>
   <div class="news-detail-page" v-if="news">
+    <div class="reading-progress" :style="{ width: readingProgress + '%' }"></div>
     <transition name="toast-fade">
       <div v-if="toastMsg" class="toast-msg">{{ toastMsg }}</div>
     </transition>
@@ -120,6 +121,7 @@ const translating = ref(false)
 const translated = ref(false)
 const toastMsg = ref('')
 const showBackTop = ref(false)
+const readingProgress = ref(0)
 let viewStartTime = Date.now()
 let toastTimer = null
 
@@ -135,6 +137,8 @@ function scrollToTop() {
 
 function onScroll() {
   showBackTop.value = window.scrollY > 400
+  const docHeight = document.documentElement.scrollHeight - window.innerHeight
+  readingProgress.value = docHeight > 0 ? Math.min((window.scrollY / docHeight) * 100, 100) : 0
 }
 
 const relatedNews = ref([])
@@ -324,6 +328,15 @@ watch(() => route.params.id, () => {
 </script>
 
 <style scoped>
+.reading-progress {
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 3px;
+  background: linear-gradient(90deg, #1a2a4a, #3a7bd5);
+  z-index: 9999;
+  transition: width 0.1s linear;
+}
 .toast-msg {
   position: fixed;
   top: 20px;

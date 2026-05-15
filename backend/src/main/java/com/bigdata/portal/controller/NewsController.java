@@ -1,5 +1,6 @@
 package com.bigdata.portal.controller;
 
+import com.bigdata.portal.config.JwtConfig;
 import com.bigdata.portal.entity.Comment;
 import com.bigdata.portal.entity.News;
 import com.bigdata.portal.service.AiService;
@@ -7,6 +8,8 @@ import com.bigdata.portal.service.NewsService;
 import com.bigdata.portal.service.RssService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
+
+import javax.servlet.http.HttpServletRequest;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -24,11 +27,16 @@ public class NewsController {
     @Autowired
     private AiService aiService;
 
+    @Autowired
+    private JwtConfig jwtConfig;
+
     @GetMapping
     public Map<String, Object> getList(@RequestParam(required = false) String channel,
                                        @RequestParam(required = false) String keyword,
                                        @RequestParam(defaultValue = "1") int page,
                                        @RequestParam(defaultValue = "20") int size) {
+        if (page < 1) page = 1;
+        if (size < 1 || size > 50) size = 10;
         if (keyword != null && !keyword.isEmpty()) {
             return newsService.search(keyword, page, size);
         } else if (channel != null && !channel.isEmpty()) {
@@ -46,9 +54,14 @@ public class NewsController {
     }
 
     @GetMapping("/{id}")
-    public Map<String, Object> getById(@PathVariable Long id) {
+    public Map<String, Object> getById(@PathVariable Long id, HttpServletRequest request) {
         Map<String, Object> result = new HashMap<>();
-        News news = newsService.getById(id);
+        Long userId = null;
+        String token = jwtConfig.extractToken(request.getHeader("Authorization"));
+        if (token != null && jwtConfig.validateToken(token)) {
+            userId = jwtConfig.getUserIdFromToken(token);
+        }
+        News news = newsService.getById(id, userId);
         if (news == null) {
             result.put("data", null);
             result.put("success", false);
@@ -71,8 +84,13 @@ public class NewsController {
             result.put("message", "参数不完整");
             return result;
         }
-        Long userId = Long.valueOf(userIdObj.toString());
         String content = contentObj.toString();
+        if (content.length() > 1000) {
+            result.put("error", "评论内容不能超过1000字");
+            result.put("success", false);
+            return result;
+        }
+        Long userId = Long.valueOf(userIdObj.toString());
         newsService.addComment(id, userId, content);
         result.put("success", true);
         return result;
@@ -89,7 +107,7 @@ public class NewsController {
     public Map<String, Object> update(@PathVariable Long id, @RequestBody Map<String, Object> params) {
         Map<String, Object> result = new HashMap<>();
         try {
-            News news = newsService.getById(id);
+            News news = newsService.getById(id, null);
             if (news == null) {
                 result.put("success", false);
                 result.put("message", "新闻不存在");
@@ -129,7 +147,7 @@ public class NewsController {
     public Map<String, Object> translate(@PathVariable Long id) {
         Map<String, Object> result = new HashMap<>();
         try {
-            News news = newsService.getById(id);
+            News news = newsService.getById(id, null);
             if (news == null) {
                 result.put("success", false);
                 result.put("message", "新闻不存在");

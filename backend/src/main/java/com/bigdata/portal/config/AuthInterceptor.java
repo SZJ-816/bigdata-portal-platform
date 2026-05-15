@@ -7,7 +7,6 @@ import org.springframework.web.servlet.HandlerInterceptor;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -16,8 +15,6 @@ public class AuthInterceptor implements HandlerInterceptor {
 
     @Autowired
     private JwtConfig jwtConfig;
-
-    private final ObjectMapper objectMapper = new ObjectMapper();
 
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
@@ -29,26 +26,36 @@ public class AuthInterceptor implements HandlerInterceptor {
         String token = jwtConfig.extractToken(authHeader);
 
         if (token == null || !jwtConfig.validateToken(token)) {
-            sendUnauthorized(response, "Token missing or invalid");
+            sendError(response, 401, "未登录或token无效");
             return false;
         }
 
         Long userId = jwtConfig.getUserIdFromToken(token);
         if (userId == null) {
-            sendUnauthorized(response, "Invalid token");
+            sendError(response, 401, "Invalid token");
             return false;
         }
 
         request.setAttribute("userId", userId);
+
+        String uri = request.getRequestURI();
+        if (uri.startsWith("/api/admin/")) {
+            String role = jwtConfig.getRoleFromToken(token);
+            if (!"admin".equals(role)) {
+                sendError(response, 403, "权限不足");
+                return false;
+            }
+        }
+
         return true;
     }
 
-    private void sendUnauthorized(HttpServletResponse response, String message) throws IOException {
-        response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+    private void sendError(HttpServletResponse response, int status, String message) throws Exception {
+        response.setStatus(status);
         response.setContentType("application/json;charset=UTF-8");
         Map<String, Object> result = new HashMap<>();
-        result.put("code", 401);
-        result.put("message", message);
-        response.getWriter().write(objectMapper.writeValueAsString(result));
+        result.put("success", false);
+        result.put("error", message);
+        response.getWriter().write(new ObjectMapper().writeValueAsString(result));
     }
 }

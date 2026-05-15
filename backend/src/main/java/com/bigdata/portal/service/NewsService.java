@@ -46,8 +46,25 @@ public class NewsService {
         return result;
     }
 
-    public News getById(Long id) {
-        newsMapper.incrementView(id);
+    private final java.util.concurrent.ConcurrentHashMap<String, Long> viewDedup = new java.util.concurrent.ConcurrentHashMap<>();
+
+    private boolean shouldCountView(Long newsId, Long userId) {
+        String key = newsId + ":" + (userId != null ? userId : "anon");
+        long now = System.currentTimeMillis();
+        Long last = viewDedup.put(key, now);
+        if (last != null && now - last < 86400000) {
+            return false;
+        }
+        if (viewDedup.size() > 10000) {
+            viewDedup.entrySet().removeIf(e -> now - e.getValue() > 86400000);
+        }
+        return true;
+    }
+
+    public News getById(Long id, Long userId) {
+        if (shouldCountView(id, userId)) {
+            newsMapper.incrementView(id);
+        }
         return newsMapper.findById(id);
     }
 
@@ -100,6 +117,9 @@ public class NewsService {
     }
 
     public void addComment(Long newsId, Long userId, String content) {
+        if (content != null) {
+            content = org.jsoup.Jsoup.clean(content, org.jsoup.safety.Whitelist.basic());
+        }
         Comment comment = new Comment();
         comment.setNewsId(newsId);
         comment.setUserId(userId);

@@ -34,6 +34,11 @@
           </div>
         </section>
 
+        <div class="time-range-bar">
+          <button :class="['range-btn', { active: timeRange === 'today' }]" @click="timeRange = 'today'">今日</button>
+          <button :class="['range-btn', { active: timeRange === 'week' }]" @click="timeRange = 'week'">近7天</button>
+          <button :class="['range-btn', { active: timeRange === 'month' }]" @click="timeRange = 'month'">近30天</button>
+        </div>
         <div class="overview-grid">
           <section class="panel panel-trend">
             <div class="panel-head">
@@ -220,6 +225,7 @@ const usersList = ref([])
 const usersPage = ref(1)
 const usersTotal = ref(0)
 const usersTotalPages = computed(() => Math.max(1, Math.ceil(usersTotal.value / 20)))
+const timeRange = ref('today')
 
 const switchTab = (tab) => {
   activeTab.value = tab
@@ -380,9 +386,17 @@ const loadUsers = async (page) => {
 const deleteUser = async (id, username) => { if (!confirm(`确定删除用户 "${username}"？`)) return; try { await adminApi.deleteUser(id); loadUsers() } catch (e) { console.error(e) } }
 const loadChannels = async () => { try { const res = await adminApi.listChannels(); channels.value = (res.data || []).map(d => d.channel) } catch (e) { console.error(e) } }
 
+const loadOverviewData = async () => {
+  await updateRealtimeStats()
+  await initCharts()
+}
+
 let statsInterval = null, timeInterval = null
 const initCharts = async () => { await nextTick(); initTrendChart(); initHotNewsChart(); initChannelChart(); initFunnelChart(); initRegionChart() }
 watch(activeTab, async (val) => { if (val === 'overview') { await nextTick(); initCharts() } })
+watch(timeRange, () => {
+  loadOverviewData()
+})
 onMounted(() => { updateTime(); timeInterval = setInterval(updateTime, 1000); updateRealtimeStats(); statsInterval = setInterval(updateRealtimeStats, 10000); initCharts(); loadChannels(); window.addEventListener('resize', handleResize) })
 onUnmounted(() => { if (statsInterval) clearInterval(statsInterval); if (timeInterval) clearInterval(timeInterval); trendChart?.dispose(); hotNewsChart?.dispose(); channelChart?.dispose(); funnelChart?.dispose(); regionChart?.dispose(); window.removeEventListener('resize', handleResize) })
 </script>
@@ -562,6 +576,30 @@ onUnmounted(() => { if (statsInterval) clearInterval(statsInterval); if (timeInt
   font-weight: 500;
 }
 
+.time-range-bar {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+.range-btn {
+  padding: 6px 16px;
+  border: 1px solid #E2E8F0;
+  border-radius: 6px;
+  background: #fff;
+  color: #64748B;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.range-btn:hover {
+  border-color: #2F6BFF;
+  color: #2F6BFF;
+}
+.range-btn.active {
+  background: #2F6BFF;
+  color: #fff;
+  border-color: #2F6BFF;
+}
 .overview-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;

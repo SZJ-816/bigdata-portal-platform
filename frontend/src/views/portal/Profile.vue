@@ -28,9 +28,12 @@
         <h3 class="section-title">我的收藏</h3>
         <div v-if="loading" class="loading-state">加载中...</div>
         <div v-else-if="favorites.length" class="news-list">
-          <div v-for="item in favorites" :key="item.id" class="news-item" @click="goNews(item.id)">
+          <div v-for="item in favorites" :key="item.id" class="news-item" @click="goNews(item.newsId)">
+            <div v-if="item.imageUrl" class="news-image">
+              <img v-lazy="item.imageUrl" :alt="item.newsTitle || ''" />
+            </div>
             <div class="news-body">
-              <h4 class="news-title">新闻 {{ item.newsId }}</h4>
+              <h4 class="news-title">{{ item.newsTitle || item.title || '新闻 ' + item.newsId }}</h4>
               <div class="news-meta">
                 <span>{{ formatDate(item.createdAt) }}</span>
               </div>

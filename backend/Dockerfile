@@ -8,14 +8,17 @@ RUN mvn dependency:go-offline -B -DskipTests || true
 COPY src ./src
 RUN mvn package -DskipTests -B
 
-FROM eclipse-temurin:11-jdk-alpine
+FROM eclipse-temurin:11-jre-alpine
 
-RUN apk add --no-cache curl
+RUN apk add --no-cache curl && \
+    addgroup -S appgroup && adduser -S appuser -G appgroup
 
 WORKDIR /app
 
 COPY --from=build /app/target/portal-1.0.0.jar app.jar
 
+USER appuser
+
 EXPOSE 8090
 
-ENTRYPOINT ["java", "-jar", "app.jar"]
+ENTRYPOINT ["java", "-Xms256m", "-Xmx512m", "-jar", "app.jar"]
