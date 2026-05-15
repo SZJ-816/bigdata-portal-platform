@@ -1,4 +1,4 @@
-const SW_VERSION = 'v1'
+const SW_VERSION = 'v2'
 const CACHE_STATIC = `static-${SW_VERSION}`
 const CACHE_API = `api-${SW_VERSION}`
 const CACHE_IMAGE = `image-${SW_VERSION}`
@@ -16,6 +16,7 @@ const PRE_CACHE_URLS = [
 
 const MAX_API_ENTRIES = 100
 const MAX_IMAGE_ENTRIES = 200
+const NETWORK_TIMEOUT = 4000
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
@@ -70,12 +71,12 @@ self.addEventListener('fetch', (event) => {
   }
 
   if (url.pathname.startsWith('/api/')) {
-    event.respondWith(staleWhileRevalidate(request, CACHE_API, MAX_API_ENTRIES))
+    event.respondWith(networkFirstWithTimeout(request, CACHE_API, MAX_API_ENTRIES))
     return
   }
 
   if (request.headers.get('accept')?.includes('text/html')) {
-    event.respondWith(staleWhileRevalidate(request, CACHE_HTML, 10))
+    event.respondWith(networkFirstWithTimeout(request, CACHE_HTML, 10))
     return
   }
 })
@@ -111,22 +112,34 @@ async function cacheFirstWithLimit(request, cacheName, maxEntries) {
   }
 }
 
-async function staleWhileRevalidate(request, cacheName, maxEntries) {
+async function networkFirstWithTimeout(request, cacheName, maxEntries) {
   const cache = await caches.open(cacheName)
   const cached = await cache.match(request)
-  const fetchPromise = fetch(request)
-    .then((response) => {
-      if (response.ok) {
-        cache.put(request, response.clone())
-        trimCache(cacheName, maxEntries)
-      }
-      return response
-    })
-    .catch(() => cached || new Response('{"success":false}', {
+
+  const timeoutPromise = new Promise((_, reject) => {
+    setTimeout(() => reject(new Error('timeout')), NETWORK_TIMEOUT)
+  })
+
+  try {
+    const response = await Promise.race([fetch(request), timeoutPromise])
+    if (response.ok) {
+      cache.put(request, response.clone())
+      trimCache(cacheName, maxEntries)
+    }
+    return response
+  } catch {
+    if (cached) return cached
+    if (request.headers.get('accept')?.includes('text/html')) {
+      return cached || new Response('<!DOCTYPE html><html><body><h1>加载中...</h1><p>网络较慢，请稍后刷新</p></body></html>', {
+        status: 200,
+        headers: { 'Content-Type': 'text/html' }
+      })
+    }
+    return new Response('{"success":false}', {
       status: 503,
       headers: { 'Content-Type': 'application/json' }
-    }))
-  return cached || fetchPromise
+    })
+  }
 }
 
 function trimCache(cacheName, maxEntries) {

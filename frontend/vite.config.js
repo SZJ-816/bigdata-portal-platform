@@ -5,20 +5,13 @@ function preloadPlugin() {
   return {
     name: 'preload-critical-assets',
     transformIndexHtml: {
-      enforce: 'after',
-      transform(html, ctx) {
+      order: 'after',
+      handler(html, ctx) {
         if (!ctx.bundle) return html
         const links = []
         for (const [, chunk] of Object.entries(ctx.bundle)) {
           if (chunk.type === 'chunk' && chunk.isEntry) {
-            links.push(`<link rel="preload" href="/${chunk.fileName}" as="script" crossorigin>`)
-          }
-        }
-        for (const [, chunk] of Object.entries(ctx.bundle)) {
-          if (chunk.type === 'asset' && chunk.fileName.endsWith('.css')) {
-            if (chunk.fileName.includes('index-') || chunk.fileName.includes('PortalLayout-')) {
-              links.push(`<link rel="preload" href="/${chunk.fileName}" as="style">`)
-            }
+            links.push(`<link rel="modulepreload" href="/${chunk.fileName}">`)
           }
         }
         if (links.length === 0) return html

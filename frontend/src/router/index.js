@@ -45,13 +45,24 @@ const prefetched = new Set()
 function prefetchRoute(name) {
   if (prefetched.has(name)) return
   prefetched.add(name)
-  const route = router.resolve({ name })
-  if (route?.matched?.length) {
-    route.matched.forEach(record => {
-      if (record.components?.default?.__asyncLoader) {
-        record.components.default.__asyncLoader()
-      }
-    })
+  let resolved
+  try {
+    if (name === 'NewsDetail') {
+      resolved = router.resolve({ name, params: { id: 0 } })
+    } else if (name === 'Channel') {
+      resolved = router.resolve({ name, params: { name: 'ai' } })
+    } else {
+      resolved = router.resolve({ name })
+    }
+    if (resolved?.matched?.length) {
+      resolved.matched.forEach(record => {
+        if (record.components?.default?.__asyncLoader) {
+          record.components.default.__asyncLoader()
+        }
+      })
+    }
+  } catch (e) {
+    console.warn('Prefetch failed for', name, e)
   }
 }
 
