@@ -54,6 +54,10 @@ public class AiService {
     private volatile long cachedHotSummaryTime = 0;
     private static final long HOT_SUMMARY_CACHE_TTL = 3600000;
 
+    private static final int MAX_KEYWORD_LENGTH = 100;
+    private static final int MAX_INSTRUCTION_LENGTH = 500;
+    private static final int MAX_SEARCH_RESULT_LENGTH = 10000;
+
     public interface StreamCallback {
         void onToken(String token);
         void onComplete();
