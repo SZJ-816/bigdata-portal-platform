@@ -59,6 +59,10 @@ public class ImageProxyController {
             return ResponseEntity.badRequest().build();
         }
 
+        if (isPrivateOrInternalUrl(url)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+
         CacheEntry cached = imageCache.get(url);
         if (cached != null && !cached.isExpired()) {
             HttpHeaders headers = new HttpHeaders();
@@ -146,6 +150,19 @@ public class ImageProxyController {
                     .sorted(Map.Entry.comparingByValue((a, b) -> Long.compare(a.timestamp, b.timestamp)))
                     .limit(imageCache.size() - MAX_CACHE_SIZE / 2)
                     .forEach(e -> imageCache.remove(e.getKey(), e.getValue()));
+        }
+    }
+
+    private boolean isPrivateOrInternalUrl(String url) {
+        try {
+            java.net.URL u = new java.net.URL(url);
+            String host = u.getHost();
+            if (host == null || host.isEmpty()) return true;
+            java.net.InetAddress addr = java.net.InetAddress.getByName(host);
+            return addr.isLoopbackAddress() || addr.isSiteLocalAddress()
+                || addr.isLinkLocalAddress() || addr.isAnyLocalAddress();
+        } catch (Exception e) {
+            return true;
         }
     }
 }

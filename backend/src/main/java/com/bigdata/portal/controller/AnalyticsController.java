@@ -130,7 +130,10 @@ public class AnalyticsController {
             }
         }
         if (list.isEmpty()) {
-            list.add(Map.of("name", "浏览", "value", 0));
+            Map<String, Object> empty = new HashMap<>();
+            empty.put("name", "浏览");
+            empty.put("value", 0);
+            list.add(empty);
         }
         result.put("data", list);
         return result;

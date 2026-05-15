@@ -69,3 +69,18 @@ ai:
     base-url: https://integrate.api.nvidia.com/v1
     api-key: ${AI_NVIDIA_API_KEY:your-nvidia-api-key}
     model: meta/llama-3.1-8b-instruct
+
+jwt:
+  secret: ${JWT_SECRET:BigDataPortalSecretKey2024ForJWTTokenGeneration32Bytes}
+
+cors:
+  allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:5173,http://localhost:3000,http://192.168.146.128,http://192.168.146.128:80,https://707b799d.r7.cpolar.cn}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: when-authorized

@@ -78,6 +78,7 @@ export const newsApi = {
   search: (keyword) => request.get('/news', { params: { keyword, page: 1, size: 20 } }),
   getHot: (useCache = true) => cachedGet('/news/hot', {}, useCache),
   getRelated: (id) => request.get(`/news/${id}/related`),
+  translate: (id) => request.post(`/news/${id}/translate`),
   clearCache: () => newsCache.clear(),
 }
 
@@ -107,6 +108,7 @@ export const userApi = {
   removeFavorite: (newsId) => request.delete(`/users/favorites/${newsId}`),
   getHistory: () => request.get('/users/history'),
   addHistory: (newsId, duration = 0) => request.post('/users/history', { newsId, duration }),
+  getChannelPreference: () => request.get('/users/channel-preference'),
   logout: () => {
     localStorage.removeItem('token')
     localStorage.removeItem('userId')

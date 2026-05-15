@@ -18,4 +18,7 @@ public interface UserHistoryMapper {
 
     @Select("SELECT COUNT(*) FROM user_history")
     long countTotal();
+
+    @Select("SELECT n.channel, COUNT(*) as count FROM user_history h LEFT JOIN news n ON h.news_id = n.id WHERE h.user_id = #{userId} AND n.channel IS NOT NULL GROUP BY n.channel ORDER BY count DESC")
+    List<Map<String, Object>> countByChannelByUserId(@Param("userId") Long userId);
 }

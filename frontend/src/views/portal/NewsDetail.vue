@@ -1,5 +1,9 @@
 <template>
   <div class="news-detail-page" v-if="news">
+    <transition name="toast-fade">
+      <div v-if="toastMsg" class="toast-msg">{{ toastMsg }}</div>
+    </transition>
+    <button v-if="showBackTop" class="back-top-btn" @click="scrollToTop">↑</button>
     <div class="detail-layout">
       <div class="detail-main">
         <nav class="breadcrumb">
@@ -97,7 +101,7 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { newsApi, behaviorApi, userApi } from '../../api'
+import { newsApi, behaviorApi, userApi, commentApi } from '../../api'
 import { channels, formatRelativeTime } from '../../mock/newsData'
 import { cleanText, cleanHtmlContent, formatViewCount, getChannelIcon, CHANNEL_LABEL_MAP } from '../../utils'
 
@@ -114,7 +118,24 @@ const isLoggedIn = computed(() => !!localStorage.getItem('token'))
 const loading = ref(true)
 const translating = ref(false)
 const translated = ref(false)
+const toastMsg = ref('')
+const showBackTop = ref(false)
 let viewStartTime = Date.now()
+let toastTimer = null
+
+function showToast(msg) {
+  toastMsg.value = msg
+  clearTimeout(toastTimer)
+  toastTimer = setTimeout(() => { toastMsg.value = '' }, 2000)
+}
+
+function scrollToTop() {
+  window.scrollTo({ top: 0, behavior: 'smooth' })
+}
+
+function onScroll() {
+  showBackTop.value = window.scrollY > 400
+}
 
 const relatedNews = ref([])
 const hotNews = ref([])
@@ -128,8 +149,11 @@ async function translateNews() {
   if (!news.value || translating.value || translated.value) return
   translating.value = true
   try {
-    const res = await newsApi.getById(news.value.id)
+    const res = await newsApi.translate(news.value.id)
     if (res.data.success && res.data.data) {
+      const parts = res.data.data.split('|||')
+      if (parts.length >= 1 && parts[0]) news.value.title = parts[0]
+      if (parts.length >= 2 && parts[1]) news.value.summary = parts[1]
       translated.value = true
     }
   } catch (err) {
@@ -180,29 +204,68 @@ function goChannel(name) {
 function handleShare() {
   behaviorApi.report({ eventType: 'share', targetId: String(news.value.id), targetType: 'news' })
   if (navigator.clipboard) {
-    navigator.clipboard.writeText(window.location.href)
+    navigator.clipboard.writeText(window.location.href).then(() => showToast('链接已复制'))
+  }
+}
+
+async function checkFavorite() {
+  if (!isLoggedIn.value || !news.value) return
+  try {
+    const res = await userApi.getFavorites()
+    if (res.data.success && res.data.data) {
+      isFavorited.value = res.data.data.some(f => f.newsId === news.value.id)
+    }
+  } catch (err) {
+    // ignore
   }
 }
 
 function handleFavorite() {
+  if (!isLoggedIn.value) {
+    router.push('/login')
+    return
+  }
   isFavorited.value = !isFavorited.value
   if (isFavorited.value) {
-    userApi.addFavorite(news.value.id).catch(() => {})
+    userApi.addFavorite(news.value.id).catch(() => { isFavorited.value = false })
   } else {
-    userApi.removeFavorite(news.value.id).catch(() => {})
+    userApi.removeFavorite(news.value.id).catch(() => { isFavorited.value = true })
   }
 }
 
-function submitComment() {
+async function loadComments() {
+  try {
+    const res = await commentApi.getList(news.value.id)
+    if (res.data.data) {
+      comments.value = res.data.data.map(c => ({
+        id: c.id,
+        username: c.username || '用户' + c.userId,
+        content: c.content,
+        time: new Date(c.createdAt).getTime(),
+      }))
+    }
+  } catch (err) {
+    console.error('Failed to load comments:', err)
+  }
+}
+
+async function submitComment() {
   if (!commentText.value.trim()) return
-  behaviorApi.report({ eventType: 'comment', targetId: String(news.value.id), targetType: 'news' })
-  comments.value.unshift({
-    id: Date.now(),
-    username: '当前用户',
-    content: commentText.value,
-    time: Date.now(),
-  })
-  commentText.value = ''
+  if (!isLoggedIn.value) {
+    router.push('/login')
+    return
+  }
+  try {
+    const userId = localStorage.getItem('userId')
+    const res = await commentApi.add(news.value.id, { userId: Number(userId), content: commentText.value })
+    if (res.data.success) {
+      commentText.value = ''
+      await loadComments()
+      behaviorApi.report({ eventType: 'comment', targetId: String(news.value.id), targetType: 'news' })
+    }
+  } catch (err) {
+    console.error('Failed to submit comment:', err)
+  }
 }
 
 async function loadNews() {
@@ -217,12 +280,9 @@ async function loadNews() {
       raw.content = cleanHtmlContent(raw.content)
       news.value = raw
       viewStartTime = Date.now()
-      comments.value = [
-        { id: 1, username: '科技观察者', content: '这个技术突破确实令人振奋，期待看到更多实际应用场景。', time: Date.now() - 30 * 60 * 1000 },
-        { id: 2, username: '数据工程师', content: '从技术角度来看，这个方案还有很多需要验证的地方，不能盲目乐观。', time: Date.now() - 60 * 60 * 1000 },
-        { id: 3, username: '行业分析师', content: '市场反应很积极，但长期影响还需要观察。', time: Date.now() - 120 * 60 * 1000 },
-      ]
+      loadComments()
       loadRelatedNews()
+      checkFavorite()
       recordHistory()
     } else {
       news.value = null
@@ -244,11 +304,14 @@ function recordHistory() {
 onMounted(() => {
   loadNews()
   behaviorApi.report({ eventType: 'page_view', targetId: String(route.params.id), targetType: 'news' })
+  window.addEventListener('scroll', onScroll, { passive: true })
 })
 
 onUnmounted(() => {
   recordHistory()
   behaviorApi.flush()
+  window.removeEventListener('scroll', onScroll)
+  clearTimeout(toastTimer)
 })
 
 watch(() => route.params.id, () => {
@@ -261,6 +324,44 @@ watch(() => route.params.id, () => {
 </script>
 
 <style scoped>
+.toast-msg {
+  position: fixed;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(26, 42, 74, 0.92);
+  color: #fff;
+  padding: 10px 28px;
+  border-radius: 6px;
+  font-size: 14px;
+  z-index: 9999;
+  pointer-events: none;
+}
+.toast-fade-enter-active, .toast-fade-leave-active {
+  transition: opacity 0.3s;
+}
+.toast-fade-enter-from, .toast-fade-leave-to {
+  opacity: 0;
+}
+.back-top-btn {
+  position: fixed;
+  bottom: 32px;
+  right: 32px;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: #1a2a4a;
+  color: #fff;
+  border: none;
+  font-size: 20px;
+  cursor: pointer;
+  z-index: 999;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+  transition: background 0.2s;
+}
+.back-top-btn:hover {
+  background: #243656;
+}
 .detail-layout {
   display: flex;
   gap: 24px;

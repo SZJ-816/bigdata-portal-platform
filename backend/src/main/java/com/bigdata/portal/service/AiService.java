@@ -11,12 +11,9 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.io.BufferedReader;
-import java.io.FileOutputStream;
+import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.List;
 
 @Service
@@ -195,6 +192,79 @@ public class AiService {
         return translatedTitle + "|||" + translatedSummary;
     }
 
+    private String doPost(String jsonBody, String apiUrl) throws Exception {
+        java.net.URL url = new java.net.URL(apiUrl);
+        java.net.HttpURLConnection conn = (java.net.HttpURLConnection) url.openConnection();
+        conn.setRequestMethod("POST");
+        conn.setRequestProperty("Content-Type", "application/json");
+        conn.setRequestProperty("Authorization", "Bearer " + apiKey);
+        conn.setConnectTimeout(15000);
+        conn.setReadTimeout(60000);
+        conn.setDoOutput(true);
+        try (java.io.OutputStream os = conn.getOutputStream()) {
+            os.write(jsonBody.getBytes(StandardCharsets.UTF_8));
+        }
+        int code = conn.getResponseCode();
+        InputStream is = code >= 400 ? conn.getErrorStream() : conn.getInputStream();
+        if (is == null) {
+            throw new RuntimeException("HTTP " + code + " with no body");
+        }
+        StringBuilder response = new StringBuilder();
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                response.append(line);
+            }
+        }
+        conn.disconnect();
+        if (code >= 400) {
+            throw new RuntimeException("HTTP " + code + ": " + response.toString());
+        }
+        return response.toString();
+    }
+
+    private void doPostStream(String jsonBody, String apiUrl, StreamCallback callback) throws Exception {
+        java.net.URL url = new java.net.URL(apiUrl);
+        java.net.HttpURLConnection conn = (java.net.HttpURLConnection) url.openConnection();
+        conn.setRequestMethod("POST");
+        conn.setRequestProperty("Content-Type", "application/json");
+        conn.setRequestProperty("Authorization", "Bearer " + apiKey);
+        conn.setConnectTimeout(15000);
+        conn.setReadTimeout(90000);
+        conn.setDoOutput(true);
+        try (java.io.OutputStream os = conn.getOutputStream()) {
+            os.write(jsonBody.getBytes(StandardCharsets.UTF_8));
+        }
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(conn.getInputStream(), StandardCharsets.UTF_8))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                if (line.startsWith("data: ")) {
+                    String data = line.substring(6).trim();
+                    if ("[DONE]".equals(data)) {
+                        callback.onComplete();
+                        conn.disconnect();
+                        return;
+                    }
+                    try {
+                        JsonNode chunk = objectMapper.readTree(data);
+                        JsonNode choices = chunk.get("choices");
+                        if (choices != null && choices.size() > 0) {
+                            JsonNode delta = choices.get(0).get("delta");
+                            if (delta != null && delta.has("content")) {
+                                String content = delta.get("content").asText();
+                                if (content != null && !content.isEmpty()) {
+                                    callback.onToken(content);
+                                }
+                            }
+                        }
+                    } catch (Exception ignored) {}
+                }
+            }
+        }
+        conn.disconnect();
+        callback.onComplete();
+    }
+
     private String callAi(String prompt, int maxTokens) throws Exception {
         ObjectNode requestBody = objectMapper.createObjectNode();
         requestBody.put("model", model);
@@ -208,42 +278,17 @@ public class AiService {
         requestBody.put("temperature", 0.3);
         requestBody.put("max_tokens", maxTokens);
         String jsonBody = objectMapper.writeValueAsString(requestBody);
-        Path tempFile = writeTempJson(jsonBody);
-        try {
-            String apiUrl = baseUrl + "/chat/completions";
-            ProcessBuilder pb = new ProcessBuilder(
-                    "curl", "-s", "-X", "POST", apiUrl,
-                    "-H", "Content-Type: application/json",
-                    "-H", "Authorization: Bearer " + apiKey,
-                    "--connect-timeout", "15",
-                    "--max-time", "30",
-                    "-d", "@" + tempFile.toString()
-            );
-            pb.redirectErrorStream(true);
-            Process process = pb.start();
-            StringBuilder response = new StringBuilder();
-            try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream(), StandardCharsets.UTF_8))) {
-                String line;
-                while ((line = reader.readLine()) != null) {
-                    response.append(line);
-                }
-            }
-            int exitCode = process.waitFor();
-            if (exitCode != 0) {
-                throw new RuntimeException("curl exited with code " + exitCode);
-            }
-            JsonNode root = objectMapper.readTree(response.toString());
-            if (root.has("error")) {
-                throw new RuntimeException("NVIDIA API error: " + root.get("error").toString());
-            }
-            JsonNode choices = root.get("choices");
-            if (choices != null && choices.size() > 0) {
-                return choices.get(0).get("message").get("content").asText().trim();
-            }
-            return null;
-        } finally {
-            Files.deleteIfExists(tempFile);
+        String apiUrl = baseUrl + "/chat/completions";
+        String response = doPost(jsonBody, apiUrl);
+        JsonNode root = objectMapper.readTree(response);
+        if (root.has("error")) {
+            throw new RuntimeException("NVIDIA API error: " + root.get("error").toString());
         }
+        JsonNode choices = root.get("choices");
+        if (choices != null && choices.size() > 0) {
+            return choices.get(0).get("message").get("content").asText().trim();
+        }
+        return null;
     }
 
     private ObjectNode buildRequestBody(String systemPrompt, String userPrompt, boolean stream, int maxTokens, double temperature) {
@@ -264,195 +309,53 @@ public class AiService {
         return requestBody;
     }
 
-    private Path writeTempJson(String jsonBody) throws Exception {
-        Path tempFile = Files.createTempFile("nvidia_req_", ".json");
-        try (OutputStreamWriter writer = new OutputStreamWriter(new FileOutputStream(tempFile.toFile()), StandardCharsets.UTF_8)) {
-            writer.write(jsonBody);
-        }
-        return tempFile;
-    }
-
     public String searchNews(String keyword) throws Exception {
         String prompt = buildSearchPrompt(keyword);
         ObjectNode requestBody = buildRequestBody(SYSTEM_PROMPT_SEARCH, prompt, false, 800, 0.5);
         String jsonBody = objectMapper.writeValueAsString(requestBody);
-        Path tempFile = writeTempJson(jsonBody);
-        try {
-            String apiUrl = baseUrl + "/chat/completions";
-            ProcessBuilder pb = new ProcessBuilder(
-                    "curl", "-s", "-X", "POST", apiUrl,
-                    "-H", "Content-Type: application/json",
-                    "-H", "Authorization: Bearer " + apiKey,
-                    "--connect-timeout", "15",
-                    "--max-time", "60",
-                    "-d", "@" + tempFile.toString()
-            );
-            pb.redirectErrorStream(true);
-            Process process = pb.start();
-            StringBuilder response = new StringBuilder();
-            try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream(), StandardCharsets.UTF_8))) {
-                String line;
-                while ((line = reader.readLine()) != null) {
-                    response.append(line);
-                }
-            }
-            int exitCode = process.waitFor();
-            if (exitCode != 0) {
-                throw new RuntimeException("curl exited with code " + exitCode + ": " + response.toString());
-            }
-            JsonNode root = objectMapper.readTree(response.toString());
-            if (root.has("error")) {
-                throw new RuntimeException("NVIDIA API error: " + root.get("error").toString());
-            }
-            JsonNode choices = root.get("choices");
-            if (choices != null && choices.size() > 0) {
-                return choices.get(0).get("message").get("content").asText();
-            }
-            return "AI未返回有效回答";
-        } finally {
-            Files.deleteIfExists(tempFile);
+        String apiUrl = baseUrl + "/chat/completions";
+        String response = doPost(jsonBody, apiUrl);
+        JsonNode root = objectMapper.readTree(response);
+        if (root.has("error")) {
+            throw new RuntimeException("NVIDIA API error: " + root.get("error").toString());
         }
+        JsonNode choices = root.get("choices");
+        if (choices != null && choices.size() > 0) {
+            return choices.get(0).get("message").get("content").asText();
+        }
+        return "AI未返回有效回答";
     }
 
     public String hotSummary(String instruction) throws Exception {
         String prompt = buildHotSummaryPrompt(instruction);
         ObjectNode requestBody = buildRequestBody(SYSTEM_PROMPT_HOT_SUMMARY, prompt, false, 800, 0.5);
         String jsonBody = objectMapper.writeValueAsString(requestBody);
-        Path tempFile = writeTempJson(jsonBody);
-        try {
-            String apiUrl = baseUrl + "/chat/completions";
-            ProcessBuilder pb = new ProcessBuilder(
-                    "curl", "-s", "-X", "POST", apiUrl,
-                    "-H", "Content-Type: application/json",
-                    "-H", "Authorization: Bearer " + apiKey,
-                    "--connect-timeout", "15",
-                    "--max-time", "60",
-                    "-d", "@" + tempFile.toString()
-            );
-            pb.redirectErrorStream(true);
-            Process process = pb.start();
-            StringBuilder response = new StringBuilder();
-            try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream(), StandardCharsets.UTF_8))) {
-                String line;
-                while ((line = reader.readLine()) != null) {
-                    response.append(line);
-                }
-            }
-            int exitCode = process.waitFor();
-            if (exitCode != 0) {
-                throw new RuntimeException("curl exited with code " + exitCode);
-            }
-            JsonNode root = objectMapper.readTree(response.toString());
-            if (root.has("error")) {
-                throw new RuntimeException("NVIDIA API error: " + root.get("error").toString());
-            }
-            JsonNode choices = root.get("choices");
-            if (choices != null && choices.size() > 0) {
-                return choices.get(0).get("message").get("content").asText().trim();
-            }
-            return null;
-        } finally {
-            Files.deleteIfExists(tempFile);
+        String apiUrl = baseUrl + "/chat/completions";
+        String response = doPost(jsonBody, apiUrl);
+        JsonNode root = objectMapper.readTree(response);
+        if (root.has("error")) {
+            throw new RuntimeException("NVIDIA API error: " + root.get("error").toString());
         }
+        JsonNode choices = root.get("choices");
+        if (choices != null && choices.size() > 0) {
+            return choices.get(0).get("message").get("content").asText().trim();
+        }
+        return null;
     }
 
     public void hotSummaryStream(String instruction, StreamCallback callback) throws Exception {
         String prompt = buildHotSummaryPrompt(instruction);
         ObjectNode requestBody = buildRequestBody(SYSTEM_PROMPT_HOT_SUMMARY, prompt, true, 800, 0.5);
         String jsonBody = objectMapper.writeValueAsString(requestBody);
-        Path tempFile = writeTempJson(jsonBody);
-        try {
-            String apiUrl = baseUrl + "/chat/completions";
-            ProcessBuilder pb = new ProcessBuilder(
-                    "curl", "-s", "-N", "-X", "POST", apiUrl,
-                    "-H", "Content-Type: application/json",
-                    "-H", "Authorization: Bearer " + apiKey,
-                    "--connect-timeout", "15",
-                    "--max-time", "90",
-                    "-d", "@" + tempFile.toString()
-            );
-            pb.redirectErrorStream(true);
-            Process process = pb.start();
-            try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream(), StandardCharsets.UTF_8))) {
-                String line;
-                while ((line = reader.readLine()) != null) {
-                    if (line.startsWith("data: ")) {
-                        String data = line.substring(6).trim();
-                        if ("[DONE]".equals(data)) {
-                            callback.onComplete();
-                            process.waitFor();
-                            return;
-                        }
-                        try {
-                            JsonNode chunk = objectMapper.readTree(data);
-                            JsonNode choices = chunk.get("choices");
-                            if (choices != null && choices.size() > 0) {
-                                JsonNode delta = choices.get(0).get("delta");
-                                if (delta != null && delta.has("content")) {
-                                    String content = delta.get("content").asText();
-                                    if (content != null && !content.isEmpty()) {
-                                        callback.onToken(content);
-                                    }
-                                }
-                            }
-                        } catch (Exception ignored) {}
-                    }
-                }
-            }
-            process.waitFor();
-            callback.onComplete();
-        } finally {
-            Files.deleteIfExists(tempFile);
-        }
+        String apiUrl = baseUrl + "/chat/completions";
+        doPostStream(jsonBody, apiUrl, callback);
     }
 
     public void searchNewsStream(String keyword, StreamCallback callback) throws Exception {
         String prompt = buildSearchPrompt(keyword);
         ObjectNode requestBody = buildRequestBody(SYSTEM_PROMPT_SEARCH, prompt, true, 800, 0.5);
         String jsonBody = objectMapper.writeValueAsString(requestBody);
-        Path tempFile = writeTempJson(jsonBody);
-        try {
-            String apiUrl = baseUrl + "/chat/completions";
-            ProcessBuilder pb = new ProcessBuilder(
-                    "curl", "-s", "-N", "-X", "POST", apiUrl,
-                    "-H", "Content-Type: application/json",
-                    "-H", "Authorization: Bearer " + apiKey,
-                    "--connect-timeout", "15",
-                    "--max-time", "90",
-                    "-d", "@" + tempFile.toString()
-            );
-            pb.redirectErrorStream(true);
-            Process process = pb.start();
-            try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream(), StandardCharsets.UTF_8))) {
-                String line;
-                while ((line = reader.readLine()) != null) {
-                    if (line.startsWith("data: ")) {
-                        String data = line.substring(6).trim();
-                        if ("[DONE]".equals(data)) {
-                            callback.onComplete();
-                            process.waitFor();
-                            return;
-                        }
-                        try {
-                            JsonNode chunk = objectMapper.readTree(data);
-                            JsonNode choices = chunk.get("choices");
-                            if (choices != null && choices.size() > 0) {
-                                JsonNode delta = choices.get(0).get("delta");
-                                if (delta != null && delta.has("content")) {
-                                    String content = delta.get("content").asText();
-                                    if (content != null && !content.isEmpty()) {
-                                        callback.onToken(content);
-                                    }
-                                }
-                            }
-                        } catch (Exception ignored) {}
-                    }
-                }
-            }
-            process.waitFor();
-            callback.onComplete();
-        } finally {
-            Files.deleteIfExists(tempFile);
-        }
+        String apiUrl = baseUrl + "/chat/completions";
+        doPostStream(jsonBody, apiUrl, callback);
     }
 }

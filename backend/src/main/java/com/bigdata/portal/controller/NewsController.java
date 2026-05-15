@@ -2,6 +2,7 @@ package com.bigdata.portal.controller;
 
 import com.bigdata.portal.entity.Comment;
 import com.bigdata.portal.entity.News;
+import com.bigdata.portal.service.AiService;
 import com.bigdata.portal.service.NewsService;
 import com.bigdata.portal.service.RssService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,6 +20,9 @@ public class NewsController {
 
     @Autowired
     private RssService rssService;
+
+    @Autowired
+    private AiService aiService;
 
     @GetMapping
     public Map<String, Object> getList(@RequestParam(required = false) String channel,
@@ -117,6 +121,31 @@ public class NewsController {
         } catch (Exception e) {
             result.put("success", false);
             result.put("message", "抓取失败: " + e.getMessage());
+        }
+        return result;
+    }
+
+    @PostMapping("/{id}/translate")
+    public Map<String, Object> translate(@PathVariable Long id) {
+        Map<String, Object> result = new HashMap<>();
+        try {
+            News news = newsService.getById(id);
+            if (news == null) {
+                result.put("success", false);
+                result.put("message", "新闻不存在");
+                return result;
+            }
+            String translated = aiService.translateNews(news.getTitle(), news.getSummary());
+            if (translated != null) {
+                result.put("data", translated);
+                result.put("success", true);
+            } else {
+                result.put("success", false);
+                result.put("message", "无需翻译或翻译失败");
+            }
+        } catch (Exception e) {
+            result.put("success", false);
+            result.put("message", "翻译失败: " + e.getMessage());
         }
         return result;
     }

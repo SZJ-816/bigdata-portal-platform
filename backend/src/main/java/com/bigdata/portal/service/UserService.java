@@ -28,15 +28,7 @@ public class UserService {
         }
         
         boolean passwordValid = passwordEncoder.matches(password, user.getPassword());
-        
-        if (!passwordValid) {
-            if ("admin".equals(username) && "123456".equals(password)) {
-                passwordValid = true;
-            } else if ("test".equals(username) && "123456".equals(password)) {
-                passwordValid = true;
-            }
-        }
-        
+
         if (!passwordValid) {
             return null;
         }

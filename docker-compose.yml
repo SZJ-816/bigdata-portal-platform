@@ -100,6 +100,14 @@ services:
       MAIL_USERNAME: ${MAIL_USERNAME:-}
       MAIL_PASSWORD: ${MAIL_PASSWORD:-}
       AI_NVIDIA_API_KEY: ${AI_NVIDIA_API_KEY:-your-nvidia-api-key}
+      JWT_SECRET: ${JWT_SECRET:-BigDataPortalSecretKey2024ForJWTTokenGeneration32Bytes}
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-http://localhost:5173,http://localhost:3000,http://192.168.146.128,http://192.168.146.128:80,https://707b799d.r7.cpolar.cn}
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8090/actuator/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
     depends_on:
       mysql:
         condition: service_healthy
@@ -117,6 +125,11 @@ services:
       - "80:80"
     volumes:
       - ./frontend/public/images:/usr/share/nginx/html/images
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:80"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
     depends_on:
       - backend
     networks:
@@ -129,6 +142,11 @@ services:
     container_name: bigdata-dashboard
     ports:
       - "3000:80"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:80"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
     depends_on:
       - backend
     networks:

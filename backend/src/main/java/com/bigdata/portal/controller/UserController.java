@@ -246,4 +246,26 @@ public class UserController {
         result.put("success", true);
         return result;
     }
+
+    @GetMapping("/channel-preference")
+    public Map<String, Object> getChannelPreference(@RequestHeader(value = "Authorization", required = false) String authHeader) {
+        Map<String, Object> result = new HashMap<>();
+        String token = jwtConfig.extractToken(authHeader);
+        if (token == null || !jwtConfig.validateToken(token)) {
+            result.put("error", "未登录或token无效");
+            result.put("success", false);
+            return result;
+        }
+        Long userId = jwtConfig.getUserIdFromToken(token);
+        List<Map<String, Object>> channelData = historyMapper.countByChannelByUserId(userId);
+        long total = channelData.stream().mapToLong(m -> ((Number) m.get("count")).longValue()).sum();
+        if (total == 0) total = 1;
+        for (Map<String, Object> m : channelData) {
+            long count = ((Number) m.get("count")).longValue();
+            m.put("percent", Math.round((count * 100.0) / total));
+        }
+        result.put("data", channelData);
+        result.put("success", true);
+        return result;
+    }
 }

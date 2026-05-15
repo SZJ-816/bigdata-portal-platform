@@ -3,8 +3,10 @@ package com.bigdata.portal.config;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 
+import javax.annotation.PostConstruct;
 import javax.crypto.SecretKey;
 import java.util.Base64;
 import java.util.Date;
@@ -12,13 +14,16 @@ import java.util.Date;
 @Configuration
 public class JwtConfig {
 
-    private static final String SECRET = "BigDataPortalSecretKey2024ForJWTTokenGeneration32Bytes";
     private static final long EXPIRATION = 86400000L;
 
-    private final SecretKey secretKey;
+    private SecretKey secretKey;
 
-    public JwtConfig() {
-        byte[] keyBytes = Base64.getEncoder().encode(SECRET.getBytes());
+    @Value("${jwt.secret:BigDataPortalSecretKey2024ForJWTTokenGeneration32Bytes}")
+    private String secret;
+
+    @PostConstruct
+    public void init() {
+        byte[] keyBytes = Base64.getEncoder().encode(secret.getBytes());
         this.secretKey = Keys.hmacShaKeyFor(keyBytes);
     }
 

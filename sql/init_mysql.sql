@@ -20,7 +20,11 @@ CREATE TABLE IF NOT EXISTS news (
     publish_time DATETIME,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    source_url VARCHAR(500)
+    source_url VARCHAR(500),
+    INDEX idx_channel (channel),
+    INDEX idx_publish_time (publish_time),
+    INDEX idx_source_url (source_url(255)),
+    INDEX idx_channel_publish (channel, publish_time)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE IF NOT EXISTS comment (

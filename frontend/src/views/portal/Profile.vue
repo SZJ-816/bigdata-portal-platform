@@ -158,7 +158,7 @@ async function loadHistory() {
 function calculatePreference() {
   const channelCounts = {}
   history.value.forEach(h => {
-    const channel = getChannelFromNewsId(h.newsId)
+    const channel = h.channel || '其他'
     channelCounts[channel] = (channelCounts[channel] || 0) + 1
   })
   const total = history.value.length || 1
@@ -168,9 +168,17 @@ function calculatePreference() {
   }))
 }
 
-function getChannelFromNewsId(newsId) {
-  const channels = ['科技', 'AI', '互联网', '数码', '商业']
-  return channels[newsId % channels.length] || '科技'
+async function loadChannelPreference() {
+  try {
+    const res = await userApi.getChannelPreference()
+    if (res.data.success && res.data.data) {
+      channelPreference.value = res.data.data
+    } else {
+      calculatePreference()
+    }
+  } catch (err) {
+    calculatePreference()
+  }
 }
 
 async function removeFavorite(newsId) {
@@ -194,6 +202,7 @@ async function loadData() {
   await loadProfile()
   await loadFavorites()
   await loadHistory()
+  await loadChannelPreference()
 }
 
 onMounted(async () => {
