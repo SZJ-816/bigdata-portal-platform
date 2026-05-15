@@ -27,8 +27,18 @@ public class DataInitializer implements CommandLineRunner {
             admin.setUsername("admin");
             admin.setPassword(passwordEncoder.encode(adminPwd));
             admin.setEmail("admin@bigdata-portal.local");
+            admin.setRole("admin");
+            admin.setIsActive(true);
             userMapper.insert(admin);
             logger.warn("Default admin account created - username: admin, password: {} - CHANGE IMMEDIATELY!", adminPwd);
+        } else {
+            User admin = userMapper.findByUsername("admin");
+            if (admin.getRole() == null || !admin.getRole().equals("admin")) {
+                userMapper.updateRole(admin.getId(), "admin");
+            }
+            if (admin.getIsActive() == null) {
+                userMapper.updateActive(admin.getId(), true);
+            }
         }
         if (userMapper.findByUsername("test") == null) {
             String testPwd = "Test@2024!";
@@ -36,6 +46,8 @@ public class DataInitializer implements CommandLineRunner {
             test.setUsername("test");
             test.setPassword(passwordEncoder.encode(testPwd));
             test.setEmail("test@bigdata-portal.local");
+            test.setRole("user");
+            test.setIsActive(true);
             userMapper.insert(test);
             logger.warn("Default test account created - username: test, password: {} - CHANGE IMMEDIATELY!", testPwd);
         }

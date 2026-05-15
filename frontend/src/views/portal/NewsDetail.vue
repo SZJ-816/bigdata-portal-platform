@@ -103,7 +103,7 @@
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { newsApi, behaviorApi, userApi, commentApi } from '../../api'
-import { channels, formatRelativeTime } from '../../mock/newsData'
+import { channels, formatRelativeTime } from '../../utils'
 import { cleanText, cleanHtmlContent, formatViewCount, getChannelIcon, CHANNEL_LABEL_MAP } from '../../utils'
 
 const channelLabelMap = CHANNEL_LABEL_MAP
@@ -124,6 +124,7 @@ const showBackTop = ref(false)
 const readingProgress = ref(0)
 let viewStartTime = Date.now()
 let toastTimer = null
+let newsAbortController = null
 
 function showToast(msg) {
   toastMsg.value = msg
@@ -274,9 +275,11 @@ async function submitComment() {
 
 async function loadNews() {
   loading.value = true
+  if (newsAbortController) newsAbortController.abort()
+  newsAbortController = new AbortController()
   const id = route.params.id
   try {
-    const newsRes = await newsApi.getById(id)
+    const newsRes = await newsApi.getById(id, { signal: newsAbortController.signal })
     if (newsRes.data.success && newsRes.data.data) {
       const raw = newsRes.data.data
       raw.title = cleanText(raw.title)
@@ -316,6 +319,7 @@ onUnmounted(() => {
   behaviorApi.flush()
   window.removeEventListener('scroll', onScroll)
   clearTimeout(toastTimer)
+  if (newsAbortController) newsAbortController.abort()
 })
 
 watch(() => route.params.id, () => {

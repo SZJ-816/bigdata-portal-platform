@@ -1,3 +1,5 @@
+import DOMPurify from 'dompurify'
+
 export function cleanText(text) {
   if (!text) return ''
   let cleaned = text
@@ -9,22 +11,12 @@ export function cleanText(text) {
 
 export function cleanHtmlContent(html) {
   if (!html) return ''
-  let cleaned = html
-  cleaned = cleaned.replace(/[\uFFFD\u00EF\u00BF\u00BD]/g, '')
-  cleaned = cleaned.replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
-  cleaned = cleaned.replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
-  cleaned = cleaned.replace(/<iframe[^>]*>[\s\S]*?<\/iframe>/gi, '')
-  cleaned = cleaned.replace(/<iframe[^>]*\/?>/gi, '')
-  cleaned = cleaned.replace(/<object[^>]*>[\s\S]*?<\/object>/gi, '')
-  cleaned = cleaned.replace(/<embed[^>]*\/?>/gi, '')
-  cleaned = cleaned.replace(/<form[^>]*>[\s\S]*?<\/form>/gi, '')
-  cleaned = cleaned.replace(/\son\w+\s*=\s*["'][^"']*["']/gi, '')
-  cleaned = cleaned.replace(/\son\w+\s*=\s*[^\s>]*/gi, '')
-  cleaned = cleaned.replace(/href\s*=\s*["']javascript:[^"']*["']/gi, 'href="#"')
-  cleaned = cleaned.replace(/(<img[^>]+src=["'])(https?:\/\/[^"']+)(["'][^>]*>)/gi, (match, prefix, url, suffix) => {
-    return prefix + '/api/image/proxy?url=' + encodeURIComponent(url) + suffix
+  return DOMPurify.sanitize(html, {
+    ALLOWED_TAGS: ['h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'p', 'br', 'hr', 'blockquote', 'pre', 'code', 'strong', 'em', 'b', 'i', 'u', 's', 'a', 'ul', 'ol', 'li', 'img', 'table', 'thead', 'tbody', 'tr', 'th', 'td', 'figure', 'figcaption', 'span', 'div'],
+    ALLOWED_ATTR: ['href', 'src', 'alt', 'title', 'class', 'id', 'target', 'rel', 'colspan', 'rowspan', 'style', 'data-channel'],
+    ALLOW_DATA_ATTR: false,
+    ADD_ATTR: ['target']
   })
-  return cleaned.trim()
 }
 
 export function formatViewCount(count) {
@@ -81,5 +73,38 @@ export function renderMarkdown(text) {
   html = html.replace(/\n\n/g, '</p><p>')
   html = html.replace(/\n/g, '<br>')
   html = '<p>' + html + '</p>'
-  return html
+  return DOMPurify.sanitize(html, {
+    ALLOWED_TAGS: ['p', 'br', 'strong', 'em', 'pre', 'code', 'a', 'ul', 'ol', 'li'],
+    ALLOWED_ATTR: ['href', 'target', 'rel']
+  })
+}
+
+export const channels = [
+  { name: 'AI', label: '人工智能' },
+  { name: '大数据', label: '大数据' },
+  { name: '云计算', label: '云计算' },
+  { name: '互联网', label: '互联网' },
+  { name: '硬件', label: '硬件' },
+  { name: '创业', label: '创业' }
+]
+
+export const hotSearchWords = ['GPT-5', '大模型', 'AI Agent', '云计算', '5G-A', '自动驾驶']
+
+export function formatRelativeTime(time) {
+  if (!time) return ''
+  const date = new Date(time)
+  if (isNaN(date.getTime())) return ''
+  const now = Date.now()
+  const diff = now - date.getTime()
+  const seconds = Math.floor(diff / 1000)
+  if (seconds < 60) return '刚刚'
+  const minutes = Math.floor(seconds / 60)
+  if (minutes < 60) return `${minutes}分钟前`
+  const hours = Math.floor(minutes / 60)
+  if (hours < 24) return `${hours}小时前`
+  const days = Math.floor(hours / 24)
+  if (days < 30) return `${days}天前`
+  const months = Math.floor(days / 30)
+  if (months < 12) return `${months}个月前`
+  return `${Math.floor(months / 12)}年前`
 }

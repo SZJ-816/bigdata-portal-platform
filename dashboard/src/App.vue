@@ -1,6 +1,6 @@
 <template>
   <Login v-if="!isLoggedIn" @login="onLogin" />
-  <Dashboard v-else />
+  <Dashboard v-else @logout="onLogout" />
 </template>
 
 <script setup>
@@ -12,6 +12,10 @@ const isLoggedIn = ref(false)
 
 function onLogin() {
   isLoggedIn.value = true
+}
+
+function onLogout() {
+  isLoggedIn.value = false
 }
 
 onMounted(() => {
@@ -38,5 +42,20 @@ html, body {
   color: #1E293B;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+.logout-btn {
+  padding: 4px 12px;
+  background: transparent;
+  border: 1px solid rgba(255,255,255,0.3);
+  color: #94A3B8;
+  border-radius: 4px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.logout-btn:hover {
+  border-color: #EF4444;
+  color: #EF4444;
 }
 </style>

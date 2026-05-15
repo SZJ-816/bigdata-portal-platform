@@ -141,7 +141,7 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { newsApi, behaviorApi } from '../../api'
-import { channels, formatRelativeTime } from '../../mock/newsData'
+import { channels, formatRelativeTime } from '../../utils'
 import { cleanText, formatViewCount, CHANNEL_LABEL_MAP, renderMarkdown } from '../../utils'
 
 const channelLabelMap = CHANNEL_LABEL_MAP
@@ -154,6 +154,7 @@ const hotInstruction = ref('')
 const newsLoading = ref(true)
 const newsError = ref(false)
 let abortController = null
+let hotSummaryAbortController = null
 
 const headline = computed(() => {
   if (!allNews.value[0]) {
@@ -212,10 +213,18 @@ function loadMore() {
 async function fetchHotSummary() {
   hotSummaryLoading.value = true
   hotSummary.value = ''
+  if (hotSummaryAbortController) hotSummaryAbortController.abort()
+  hotSummaryAbortController = new AbortController()
   let streamSuccess = false
   try {
     const params = hotInstruction.value.trim() ? `?instruction=${encodeURIComponent(hotInstruction.value.trim())}` : ''
-    const response = await fetch(`/api/ai/hot-summary/stream${params}`)
+    const headers = {}
+    const token = localStorage.getItem('token')
+    if (token) headers['Authorization'] = `Bearer ${token}`
+    const response = await fetch(`/api/ai/hot-summary/stream${params}`, {
+      signal: hotSummaryAbortController.signal,
+      headers
+    })
     if (!response.ok) throw new Error('Stream failed')
     const reader = response.body.getReader()
     const decoder = new TextDecoder()
@@ -281,6 +290,7 @@ onMounted(async () => {
 
 onUnmounted(() => {
   behaviorApi.flush()
+  if (hotSummaryAbortController) hotSummaryAbortController.abort()
 })
 </script>
 
@@ -410,7 +420,7 @@ onUnmounted(() => {
   gap: 12px;
   cursor: pointer;
   padding: 12px;
-  background: #f8f9fa;
+  background: var(--color-bg-secondary);
   border-radius: 8px;
   transition: all 0.2s;
 }

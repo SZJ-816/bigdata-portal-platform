@@ -69,7 +69,7 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import { channels } from '../../mock/newsData'
+import { channels } from '../../utils'
 
 const router = useRouter()
 const route = useRoute()
@@ -88,7 +88,7 @@ function updateAuth() {
 }
 
 function goLogin() {
-  router.push('/login')
+  router.push({ path: '/login', query: { redirect: route.path } })
 }
 
 function toggleTheme() {
@@ -139,7 +139,7 @@ onUnmounted(() => {
   padding-bottom: 0;
 }
 .portal-header {
-  background: #1a2a4a;
+  background: var(--color-header-bg);
   position: sticky;
   top: 0;
   z-index: 100;
@@ -175,14 +175,14 @@ onUnmounted(() => {
 .logo-text {
   font-size: 16px;
   font-weight: 600;
-  color: #ffffff;
+  color: var(--color-header-text-hover);
 }
 .nav-menu {
   display: flex;
   gap: 20px;
 }
 .nav-menu a {
-  color: rgba(255,255,255,0.75);
+  color: var(--color-header-text);
   font-size: 14px;
   padding: 4px 0;
   border-bottom: 2px solid transparent;
@@ -191,7 +191,7 @@ onUnmounted(() => {
 }
 .nav-menu a:hover,
 .nav-menu a.active {
-  color: #ffffff;
+  color: var(--color-header-text-hover);
   border-bottom-color: #c41230;
   text-decoration: none;
 }
@@ -224,7 +224,7 @@ onUnmounted(() => {
 }
 .username {
   font-size: 14px;
-  color: rgba(255,255,255,0.85);
+  color: var(--color-header-text);
 }
 .auth-btns {
   position: relative;
@@ -260,12 +260,12 @@ onUnmounted(() => {
 }
 .btn-outline {
   background: transparent;
-  color: rgba(255,255,255,0.85);
+  color: var(--color-header-text);
   border-color: rgba(255,255,255,0.4);
 }
 .btn-outline:hover {
-  color: #fff;
-  border-color: #fff;
+  color: var(--color-header-text-hover);
+  border-color: var(--color-header-text-hover);
   text-decoration: none;
 }
 .menu-toggle {
@@ -305,7 +305,7 @@ onUnmounted(() => {
   margin: 0 auto;
 }
 .portal-footer {
-  background: #1a2a4a;
+  background: var(--color-header-bg);
   padding: 20px 0;
 }
 .footer-inner {
@@ -324,11 +324,11 @@ onUnmounted(() => {
   bottom: 0;
   left: 0;
   right: 0;
-  background: #ffffff;
-  border-top: 1px solid #e0e0e0;
+  background: var(--color-mobile-nav-bg);
+  border-top: 1px solid var(--color-mobile-nav-border);
   padding: 8px 0;
   z-index: 200;
-  box-shadow: 0 -2px 12px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 -2px 12px var(--color-card-shadow);
 }
 .mobile-nav .nav-item {
   flex: 1;
@@ -337,7 +337,7 @@ onUnmounted(() => {
   align-items: center;
   gap: 4px;
   padding: 6px 0;
-  color: #999;
+  color: var(--color-mobile-nav-text);
   text-decoration: none;
   transition: all 0.2s;
 }
@@ -393,7 +393,7 @@ onUnmounted(() => {
     top: var(--header-height-mobile);
     left: 0;
     right: 0;
-    background: rgba(26, 42, 74, 0.99);
+    background: var(--color-header-bg);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
     flex-direction: column;
@@ -497,11 +497,11 @@ onUnmounted(() => {
     bottom: 0;
     left: 0;
     right: 0;
-    background: #ffffff;
-    border-top: 1px solid #e0e0e0;
+    background: var(--color-mobile-nav-bg);
+    border-top: 1px solid var(--color-mobile-nav-border);
     padding: 6px 0 10px;
     z-index: 200;
-    box-shadow: 0 -2px 12px rgba(0, 0, 0, 0.08);
+    box-shadow: 0 -2px 12px var(--color-card-shadow);
   }
   @supports (padding-bottom: env(safe-area-inset-bottom)) {
     .mobile-nav {
@@ -517,7 +517,7 @@ onUnmounted(() => {
     justify-content: center;
     gap: 2px;
     padding: 4px 0;
-    color: #999;
+    color: var(--color-mobile-nav-text);
     text-decoration: none;
     transition: all 0.2s;
     touch-action: manipulation;

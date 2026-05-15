@@ -7,6 +7,11 @@ import lazyLoadDirective from './directives/lazyLoad'
 const app = createApp(App)
 app.use(router)
 app.directive('lazy', lazyLoadDirective)
+
+app.config.errorHandler = (err, instance, info) => {
+  console.error('Vue error:', err, info)
+}
+
 app.mount('#app')
 
 if ('serviceWorker' in navigator) {

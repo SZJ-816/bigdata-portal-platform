@@ -24,12 +24,18 @@ public class AnalyticsController {
     @Autowired
     private CommentMapper commentMapper;
 
+    private String normalizeRange(String range) {
+        if ("week".equals(range) || "month".equals(range)) return range;
+        return "today";
+    }
+
     @GetMapping("/realtime")
-    public Map<String, Object> getRealtimeStats() {
+    public Map<String, Object> getRealtimeStats(@RequestParam(defaultValue = "today") String range) {
+        String r = normalizeRange(range);
         Map<String, Object> result = new HashMap<>();
         Map<String, Object> data = new HashMap<>();
-        data.put("todayUV", behaviorMapper.countTodayUV());
-        data.put("todayPV", behaviorMapper.countTodayPV());
+        data.put("todayUV", behaviorMapper.countUVByRange(r));
+        data.put("todayPV", behaviorMapper.countPVByRange(r));
         data.put("onlineUsers", behaviorMapper.countOnlineUsers());
         data.put("avgDuration", historyMapper.avgDurationToday());
         data.put("totalUsers", userMapper.count());
@@ -41,18 +47,19 @@ public class AnalyticsController {
     }
 
     @GetMapping("/trend")
-    public Map<String, Object> getTrend() {
+    public Map<String, Object> getTrend(@RequestParam(defaultValue = "today") String range) {
+        String r = normalizeRange(range);
         Map<String, Object> result = new HashMap<>();
-        List<Map<String, Object>> raw = behaviorMapper.trendByHourToday();
+        List<Map<String, Object>> raw = behaviorMapper.trendByHourByRange(r);
         List<Map<String, Object>> list = new ArrayList<>();
         Set<Integer> existingHours = new HashSet<>();
-        for (Map<String, Object> r : raw) {
+        for (Map<String, Object> r2 : raw) {
             Map<String, Object> item = new HashMap<>();
-            int hour = ((Number) r.get("hour")).intValue();
+            int hour = ((Number) r2.get("hour")).intValue();
             existingHours.add(hour);
             item.put("hour", hour + ":00");
-            item.put("uv", r.get("uv"));
-            item.put("pv", r.get("pv"));
+            item.put("uv", r2.get("uv"));
+            item.put("pv", r2.get("pv"));
             list.add(item);
         }
         for (int i = 0; i < 24; i++) {
@@ -99,21 +106,23 @@ public class AnalyticsController {
     }
 
     @GetMapping("/region-dist")
-    public Map<String, Object> getRegionDist() {
+    public Map<String, Object> getRegionDist(@RequestParam(defaultValue = "today") String range) {
+        String r = normalizeRange(range);
         Map<String, Object> result = new HashMap<>();
-        List<Map<String, Object>> list = behaviorMapper.countByEventTypeToday();
+        List<Map<String, Object>> list = behaviorMapper.countByEventTypeByRange(r);
         result.put("data", list);
         return result;
     }
 
     @GetMapping("/funnel")
-    public Map<String, Object> getFunnel() {
+    public Map<String, Object> getFunnel(@RequestParam(defaultValue = "today") String range) {
+        String r = normalizeRange(range);
         Map<String, Object> result = new HashMap<>();
-        List<Map<String, Object>> raw = behaviorMapper.countByEventTypeToday();
+        List<Map<String, Object>> raw = behaviorMapper.countByEventTypeByRange(r);
         Map<String, Long> eventMap = new LinkedHashMap<>();
-        for (Map<String, Object> r : raw) {
-            String eventType = (String) r.get("event_type");
-            long cnt = ((Number) r.get("cnt")).longValue();
+        for (Map<String, Object> r2 : raw) {
+            String eventType = (String) r2.get("event_type");
+            long cnt = ((Number) r2.get("cnt")).longValue();
             eventMap.put(eventType, cnt);
         }
         String[] funnelOrder = {"view", "click", "read", "comment", "share", "favorite"};

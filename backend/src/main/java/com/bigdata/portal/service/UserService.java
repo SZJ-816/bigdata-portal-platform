@@ -26,19 +26,27 @@ public class UserService {
         if (user == null) {
             return null;
         }
-        
+
+        if (user.getIsActive() != null && !user.getIsActive()) {
+            Map<String, Object> result = new HashMap<>();
+            result.put("error", "账号已被禁用");
+            return result;
+        }
+
         boolean passwordValid = passwordEncoder.matches(password, user.getPassword());
 
         if (!passwordValid) {
             return null;
         }
-        String role = "admin".equals(user.getUsername()) ? "admin" : "user";
+
+        String role = user.getRole() != null ? user.getRole() : "user";
         String token = jwtConfig.generateToken(user.getId(), user.getUsername(), role);
         Map<String, Object> result = new HashMap<>();
         result.put("token", token);
         result.put("username", user.getUsername());
         result.put("userId", user.getId());
         result.put("email", user.getEmail());
+        result.put("role", role);
         return result;
     }
 
@@ -51,6 +59,8 @@ public class UserService {
         user.setUsername(username);
         user.setPassword(passwordEncoder.encode(password));
         user.setEmail(email);
+        user.setRole("user");
+        user.setIsActive(true);
         userMapper.insert(user);
 
         String token = jwtConfig.generateToken(user.getId(), user.getUsername(), "user");
@@ -59,6 +69,7 @@ public class UserService {
         result.put("username", user.getUsername());
         result.put("userId", user.getId());
         result.put("email", user.getEmail());
+        result.put("role", "user");
         return result;
     }
 

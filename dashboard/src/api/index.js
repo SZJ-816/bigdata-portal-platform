@@ -57,6 +57,12 @@ export const adminApi = {
   deleteUser(id) {
     return request.delete(`/admin/users/${id}`)
   },
+  updateUserRole(id, role) {
+    return request.put(`/admin/users/${id}/role`, { role })
+  },
+  updateUserActive(id, isActive) {
+    return request.put(`/admin/users/${id}/active`, { isActive })
+  },
   listChannels() {
     return request.get('/admin/channels')
   }

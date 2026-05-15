@@ -55,7 +55,7 @@
 <script setup>
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { channels, formatRelativeTime } from '../../mock/newsData'
+import { channels, formatRelativeTime } from '../../utils'
 import { behaviorApi, newsApi } from '../../api'
 import { cleanText, formatViewCount } from '../../utils'
 

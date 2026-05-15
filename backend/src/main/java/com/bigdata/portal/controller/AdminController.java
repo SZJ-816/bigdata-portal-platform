@@ -4,13 +4,18 @@ import com.bigdata.portal.entity.News;
 import com.bigdata.portal.entity.User;
 import com.bigdata.portal.mapper.NewsMapper;
 import com.bigdata.portal.mapper.UserMapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
+import javax.servlet.http.HttpServletRequest;
 import java.util.*;
 
 @RestController
 @RequestMapping("/api/admin")
 public class AdminController {
+
+    private static final Logger auditLog = LoggerFactory.getLogger("AUDIT");
 
     @Autowired
     private NewsMapper newsMapper;
@@ -61,7 +66,7 @@ public class AdminController {
     }
 
     @PutMapping("/news/{id}")
-    public Map<String, Object> updateNews(@PathVariable Long id, @RequestBody Map<String, Object> params) {
+    public Map<String, Object> updateNews(@PathVariable Long id, @RequestBody Map<String, Object> params, HttpServletRequest request) {
         Map<String, Object> result = new HashMap<>();
         News news = newsMapper.findById(id);
         if (news == null) {
@@ -76,14 +81,16 @@ public class AdminController {
         if (params.containsKey("imageUrl")) news.setImageUrl((String) params.get("imageUrl"));
         if (params.containsKey("isBreaking")) news.setIsBreaking(((Number) params.get("isBreaking")).intValue());
         newsMapper.updateFull(news);
+        auditLog.info("ADMIN action=UPDATE_NEWS id={} by={}", id, request.getAttribute("userId"));
         result.put("success", true);
         return result;
     }
 
     @DeleteMapping("/news/{id}")
-    public Map<String, Object> deleteNews(@PathVariable Long id) {
+    public Map<String, Object> deleteNews(@PathVariable Long id, HttpServletRequest request) {
         Map<String, Object> result = new HashMap<>();
         newsMapper.deleteById(id);
+        auditLog.info("ADMIN action=DELETE_NEWS id={} by={}", id, request.getAttribute("userId"));
         result.put("success", true);
         return result;
     }
@@ -104,8 +111,50 @@ public class AdminController {
         return result;
     }
 
+    @PutMapping("/users/{id}/role")
+    public Map<String, Object> updateUserRole(@PathVariable Long id, @RequestBody Map<String, String> params, HttpServletRequest request) {
+        Map<String, Object> result = new HashMap<>();
+        String role = params.get("role");
+        if (role == null || (!role.equals("admin") && !role.equals("user"))) {
+            result.put("error", "无效的角色");
+            result.put("success", false);
+            return result;
+        }
+        User user = userMapper.findById(id);
+        if (user == null) {
+            result.put("error", "用户不存在");
+            result.put("success", false);
+            return result;
+        }
+        userMapper.updateRole(id, role);
+        auditLog.info("ADMIN action=UPDATE_USER_ROLE id={} role={} by={}", id, role, request.getAttribute("userId"));
+        result.put("success", true);
+        return result;
+    }
+
+    @PutMapping("/users/{id}/active")
+    public Map<String, Object> updateUserActive(@PathVariable Long id, @RequestBody Map<String, Boolean> params, HttpServletRequest request) {
+        Map<String, Object> result = new HashMap<>();
+        Boolean isActive = params.get("isActive");
+        if (isActive == null) {
+            result.put("error", "缺少isActive参数");
+            result.put("success", false);
+            return result;
+        }
+        User user = userMapper.findById(id);
+        if (user == null) {
+            result.put("error", "用户不存在");
+            result.put("success", false);
+            return result;
+        }
+        userMapper.updateActive(id, isActive);
+        auditLog.info("ADMIN action=UPDATE_USER_ACTIVE id={} active={} by={}", id, isActive, request.getAttribute("userId"));
+        result.put("success", true);
+        return result;
+    }
+
     @DeleteMapping("/users/{id}")
-    public Map<String, Object> deleteUser(@PathVariable Long id) {
+    public Map<String, Object> deleteUser(@PathVariable Long id, HttpServletRequest request) {
         Map<String, Object> result = new HashMap<>();
         User user = userMapper.findById(id);
         if (user == null) {
@@ -114,6 +163,7 @@ public class AdminController {
             return result;
         }
         userMapper.deleteById(id);
+        auditLog.info("ADMIN action=DELETE_USER id={} by={}", id, request.getAttribute("userId"));
         result.put("success", true);
         return result;
     }

@@ -21,6 +21,7 @@
         <div class="bar-right">
           <span class="live-tag"><i class="dot"></i>LIVE</span>
           <span class="clock">{{ currentTime }}</span>
+          <button class="logout-btn" @click="handleLogout">退出</button>
         </div>
       </div>
     </header>
@@ -156,6 +157,8 @@
                 <th style="width:60px">ID</th>
                 <th style="width:160px">用户名</th>
                 <th>邮箱</th>
+                <th style="width:80px">角色</th>
+                <th style="width:80px">状态</th>
                 <th style="width:160px">注册时间</th>
                 <th style="width:100px">操作</th>
               </tr>
@@ -170,10 +173,19 @@
                   </div>
                 </td>
                 <td>{{ item.email || '-' }}</td>
+                <td>
+                  <span :class="['role-badge', item.role === 'admin' ? 'role-admin' : 'role-user']" @click="toggleRole(item)">{{ item.role || 'user' }}</span>
+                </td>
+                <td>
+                  <span :class="['status-badge', item.isActive !== false ? 'status-active' : 'status-disabled']">{{ item.isActive !== false ? '正常' : '禁用' }}</span>
+                </td>
                 <td>{{ formatDate(item.createdAt) }}</td>
-                <td><button class="btn-del" @click="deleteUser(item.id, item.username)">删除</button></td>
+                <td class="action-cell">
+                  <button :class="['btn-sm', item.isActive !== false ? 'btn-disable' : 'btn-enable']" @click="toggleActive(item)">{{ item.isActive !== false ? '禁用' : '启用' }}</button>
+                  <button class="btn-del" @click="deleteUser(item.id, item.username)">删除</button>
+                </td>
               </tr>
-              <tr v-if="usersList.length === 0"><td colspan="5" class="empty-row">暂无数据</td></tr>
+              <tr v-if="usersList.length === 0"><td colspan="7" class="empty-row">暂无数据</td></tr>
             </tbody>
           </table>
         </div>
@@ -231,6 +243,14 @@ const switchTab = (tab) => {
   activeTab.value = tab
   if (tab === 'news') loadNews(1)
   if (tab === 'users') loadUsers(1)
+}
+
+const emit = defineEmits(['logout'])
+
+const handleLogout = () => {
+  localStorage.removeItem('dashboard_token')
+  localStorage.removeItem('dashboard_user')
+  emit('logout')
 }
 
 const updateTime = () => {
@@ -384,6 +404,19 @@ const loadUsers = async (page) => {
   try { const res = await adminApi.listUsers(usersPage.value, 20); usersList.value = res.data || []; usersTotal.value = res.total || 0 } catch (e) { console.error(e) }
 }
 const deleteUser = async (id, username) => { if (!confirm(`确定删除用户 "${username}"？`)) return; try { await adminApi.deleteUser(id); loadUsers() } catch (e) { console.error(e) } }
+
+const toggleRole = async (user) => {
+  const newRole = user.role === 'admin' ? 'user' : 'admin'
+  if (!confirm(`确定将用户 "${user.username}" 角色改为 ${newRole}？`)) return
+  try { await adminApi.updateUserRole(user.id, newRole); loadUsers() } catch (e) { console.error(e) }
+}
+
+const toggleActive = async (user) => {
+  const newActive = user.isActive === false ? true : false
+  const action = newActive ? '启用' : '禁用'
+  if (!confirm(`确定${action}用户 "${user.username}"？`)) return
+  try { await adminApi.updateUserActive(user.id, newActive); loadUsers() } catch (e) { console.error(e) }
+}
 const loadChannels = async () => { try { const res = await adminApi.listChannels(); channels.value = (res.data || []).map(d => d.channel) } catch (e) { console.error(e) } }
 
 const loadOverviewData = async () => {
@@ -826,6 +859,62 @@ onUnmounted(() => { if (statsInterval) clearInterval(statsInterval); if (timeInt
 }
 
 .btn-del:hover { background: #FEE2E2; }
+
+.role-badge {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.role-admin { background: #DBEAFE; color: #1D4ED8; }
+.role-admin:hover { background: #BFDBFE; }
+.role-user { background: #F1F5F9; color: #64748B; }
+.role-user:hover { background: #E2E8F0; }
+
+.status-badge {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+}
+.status-active { background: #DCFCE7; color: #16A34A; }
+.status-disabled { background: #FEF2F2; color: #EF4444; }
+
+.btn-sm {
+  padding: 5px 10px;
+  border: none;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+  margin-right: 4px;
+}
+.btn-disable { background: #FFF7ED; color: #EA580C; }
+.btn-disable:hover { background: #FFEDD5; }
+.btn-enable { background: #DCFCE7; color: #16A34A; }
+.btn-enable:hover { background: #BBF7D0; }
+
+.action-cell { white-space: nowrap; }
+
+.logout-btn {
+  padding: 4px 12px;
+  background: transparent;
+  border: 1px solid rgba(255,255,255,0.3);
+  color: #94A3B8;
+  border-radius: 4px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.logout-btn:hover {
+  border-color: #EF4444;
+  color: #EF4444;
+}
 
 .empty-row { text-align: center; color: #94A3B8; padding: 60px 0 !important; font-size: 14px; }
 

@@ -50,9 +50,12 @@ public class UserController {
     public Map<String, Object> login(@RequestBody Map<String, String> params) {
         Map<String, Object> result = new HashMap<>();
         Map<String, Object> data = userService.login(params.get("username"), params.get("password"));
-        if (data != null) {
+        if (data != null && data.containsKey("token")) {
             result.put("data", data);
             result.put("success", true);
+        } else if (data != null && data.containsKey("error")) {
+            result.put("error", data.get("error"));
+            result.put("success", false);
         } else {
             result.put("error", "用户名或密码错误");
             result.put("success", false);

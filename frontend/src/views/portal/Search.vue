@@ -3,7 +3,7 @@
     <div class="search-hero">
       <h1 class="search-title">搜索新闻</h1>
       <div class="search-bar">
-        <input v-model="keyword" class="search-input" placeholder="输入关键词搜索科技资讯..." @keyup.enter="doSearch" @input="debouncedSearch" />
+        <input v-model="keyword" class="search-input" placeholder="输入关键词搜索科技资讯..." @keyup.enter="doSearch" />
         <button class="btn btn-primary search-btn" @click="doSearch">搜索</button>
         <button class="btn btn-ai search-btn" @click="doAiSearch" :disabled="aiLoading">
           <span v-if="aiLoading" class="ai-loading"></span>
@@ -63,7 +63,7 @@
 <script setup>
 import { ref, onMounted, onUnmounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { hotSearchWords, formatRelativeTime } from '../../mock/newsData'
+import { hotSearchWords, formatRelativeTime } from '../../utils'
 import { behaviorApi, newsApi } from '../../api'
 import request from '../../api'
 import { cleanText, formatViewCount, CHANNEL_LABEL_MAP, renderMarkdown } from '../../utils'
@@ -79,6 +79,7 @@ const activeTab = ref('news')
 
 const aiAnswer = ref('')
 const aiLoading = ref(false)
+let aiAbortController = null
 
 const channelLabelMap = CHANNEL_LABEL_MAP
 
@@ -128,15 +129,18 @@ async function doAiSearch() {
   activeTab.value = 'ai'
   aiAnswer.value = ''
   aiLoading.value = true
+  if (aiAbortController) aiAbortController.abort()
+  aiAbortController = new AbortController()
 
   let streamSuccess = false
   try {
-    const controller = new AbortController()
-    const timeoutId = setTimeout(() => controller.abort(), 120000)
+    const headers = {}
+    const token = localStorage.getItem('token')
+    if (token) headers['Authorization'] = `Bearer ${token}`
     const response = await fetch(`/api/ai/search/stream?keyword=${encodeURIComponent(keyword.value)}`, {
-      signal: controller.signal
+      signal: aiAbortController.signal,
+      headers
     })
-    clearTimeout(timeoutId)
     if (!response.ok) throw new Error('Stream response not ok')
 
     const reader = response.body.getReader()
@@ -218,6 +222,7 @@ onUnmounted(() => {
     clearTimeout(searchTimer)
     searchTimer = null
   }
+  if (aiAbortController) aiAbortController.abort()
   behaviorApi.flush()
 })
 

@@ -5,7 +5,7 @@ services:
     image: mysql:8.0
     container_name: bigdata-mysql
     environment:
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root123}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
       MYSQL_DATABASE: bigdata_portal
       MYSQL_CHARACTER_SET_SERVER: utf8mb4
       MYSQL_COLLATION_SERVER: utf8mb4_unicode_ci
@@ -16,7 +16,7 @@ services:
       - ./sql/init_mysql.sql:/docker-entrypoint-initdb.d/init.sql
     command: --default-authentication-plugin=mysql_native_password
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-p${MYSQL_ROOT_PASSWORD:-root123}"]
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-p${MYSQL_ROOT_PASSWORD}"]
       interval: 10s
       timeout: 5s
       retries: 10
@@ -28,6 +28,13 @@ services:
     container_name: bigdata-zookeeper
     ports:
       - "127.0.0.1:2181:2181"
+    volumes:
+      - zookeeper-data:/opt/zookeeper-3.4.13/data
+    healthcheck:
+      test: ["CMD-SHELL", "echo ruok | nc localhost 2181 | grep imok"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
     networks:
       - bigdata-net
 
@@ -43,8 +50,17 @@ services:
       KAFKA_CREATE_TOPICS: "user-behavior:1:1,analytics-result:1:1"
     ports:
       - "127.0.0.1:9092:9092"
+    volumes:
+      - kafka-data:/var/lib/kafka/data
     depends_on:
-      - zookeeper
+      zookeeper:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "kafka-topics.sh --bootstrap-server localhost:9092 --list"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+      start_period: 20s
     networks:
       - bigdata-net
 
@@ -57,6 +73,14 @@ services:
     volumes:
       - clickhouse-data:/var/lib/clickhouse
       - ./sql/init_clickhouse.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./docker/clickhouse-init.sh:/docker-entrypoint-initdb.d/init.sh
+    entrypoint: ["/bin/bash", "/docker-entrypoint-initdb.d/init.sh"]
+    healthcheck:
+      test: ["CMD", "clickhouse-client", "--query", "SELECT 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
     networks:
       - bigdata-net
 
@@ -93,15 +117,15 @@ services:
     environment:
       SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/bigdata_portal?useSSL=false&characterEncoding=utf8&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
       SPRING_DATASOURCE_USERNAME: root
-      SPRING_DATASOURCE_PASSWORD: ${SPRING_DATASOURCE_PASSWORD:-root123}
+      SPRING_DATASOURCE_PASSWORD: ${SPRING_DATASOURCE_PASSWORD}
       SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
       MAIL_HOST: ${MAIL_HOST:-smtp.qq.com}
       MAIL_PORT: ${MAIL_PORT:-587}
       MAIL_USERNAME: ${MAIL_USERNAME:-}
       MAIL_PASSWORD: ${MAIL_PASSWORD:-}
       AI_NVIDIA_API_KEY: ${AI_NVIDIA_API_KEY:-your-nvidia-api-key}
-      JWT_SECRET: ${JWT_SECRET:-BigDataPortalSecretKey2024ForJWTTokenGeneration32Bytes}
-      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-http://localhost:5173,http://localhost:3000,http://192.168.146.128,http://192.168.146.128:80}
+      JWT_SECRET: ${JWT_SECRET}
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-http://localhost:5173,http://localhost:3000}
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8090/actuator/health"]
       interval: 15s
@@ -155,6 +179,8 @@ services:
 volumes:
   mysql-data:
   clickhouse-data:
+  zookeeper-data:
+  kafka-data:
 
 networks:
   bigdata-net:
