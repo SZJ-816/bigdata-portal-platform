@@ -29,7 +29,7 @@ request.interceptors.response.use(
 )
 
 const newsCache = new Map()
-const CACHE_TTL = 120000
+const CACHE_TTL = 300000
 
 function cachedGet(url, params = {}, useCache = true) {
   const cacheKey = url + JSON.stringify(params)
@@ -41,7 +41,7 @@ function cachedGet(url, params = {}, useCache = true) {
   }
   return request.get(url, { params }).then(res => {
     newsCache.set(cacheKey, { data: res, time: Date.now() })
-    if (newsCache.size > 80) {
+    if (newsCache.size > 60) {
       const keysToDelete = []
       for (const [key, val] of newsCache) {
         if (Date.now() - val.time > CACHE_TTL) {
@@ -53,7 +53,7 @@ function cachedGet(url, params = {}, useCache = true) {
         for (const [key] of newsCache) {
           keysToDelete.push(key)
           count++
-          if (count >= 30) break
+          if (count >= 20) break
         }
       }
       keysToDelete.forEach(k => newsCache.delete(k))

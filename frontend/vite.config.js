@@ -1,8 +1,35 @@
 import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
 
+function preloadPlugin() {
+  return {
+    name: 'preload-critical-assets',
+    transformIndexHtml: {
+      enforce: 'after',
+      transform(html, ctx) {
+        if (!ctx.bundle) return html
+        const links = []
+        for (const [, chunk] of Object.entries(ctx.bundle)) {
+          if (chunk.type === 'chunk' && chunk.isEntry) {
+            links.push(`<link rel="preload" href="/${chunk.fileName}" as="script" crossorigin>`)
+          }
+        }
+        for (const [, chunk] of Object.entries(ctx.bundle)) {
+          if (chunk.type === 'asset' && chunk.fileName.endsWith('.css')) {
+            if (chunk.fileName.includes('index-') || chunk.fileName.includes('PortalLayout-')) {
+              links.push(`<link rel="preload" href="/${chunk.fileName}" as="style">`)
+            }
+          }
+        }
+        if (links.length === 0) return html
+        return html.replace('</head>', links.join('\n') + '\n</head>')
+      }
+    }
+  }
+}
+
 export default defineConfig({
-  plugins: [vue()],
+  plugins: [vue(), preloadPlugin()],
   server: {
     host: '0.0.0.0',
     port: 3000,

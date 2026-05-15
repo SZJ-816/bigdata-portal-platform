@@ -49,12 +49,12 @@ const sharedObserver = new IntersectionObserver((entries) => {
     }
   })
 }, {
-  rootMargin: '800px 0px',
+  rootMargin: '400px 0px',
   threshold: 0.01
 })
 
 function loadImage(el, src) {
-  const MAX_RETRY = 2
+  const MAX_RETRY = 1
 
   if (isLocalPath(src)) {
     if (el.tagName === 'IMG') {
@@ -153,17 +153,17 @@ export default {
         if (el._lazyLoaded) return
         const rect = el.getBoundingClientRect()
         const vh = window.innerHeight || document.documentElement.clientHeight
-        if (rect.top < vh + 200 && rect.bottom > -200) {
+        if (rect.top < vh + 100 && rect.bottom > -100) {
           forceLoad(el, src)
         }
-      }, 150)
+      }, 100)
     })
 
     setTimeout(() => {
       if (!el._lazyLoaded) {
         forceLoad(el, src)
       }
-    }, 3000)
+    }, 5000)
   },
   updated(el, binding) {
     if (binding.value !== binding.oldValue) {
