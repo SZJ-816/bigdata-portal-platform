@@ -82,17 +82,20 @@ function handleAuthUpdate() {
   updateAuth()
 }
 
+function handleStorageUpdate(e) {
+  if (e.key === 'token' || e.key === 'username') {
+    updateAuth()
+  }
+}
+
 onMounted(() => {
   updateAuth()
-  window.addEventListener('storage', (e) => {
-    if (e.key === 'token' || e.key === 'username') {
-      updateAuth()
-    }
-  })
+  window.addEventListener('storage', handleStorageUpdate)
   window.addEventListener('auth-updated', handleAuthUpdate)
 })
 
 onUnmounted(() => {
+  window.removeEventListener('storage', handleStorageUpdate)
   window.removeEventListener('auth-updated', handleAuthUpdate)
 })
 </script>

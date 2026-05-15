@@ -19,8 +19,20 @@ public interface NewsMapper {
     @Select("SELECT COUNT(*) FROM news WHERE channel = #{channel}")
     long countByChannel(@Param("channel") String channel);
 
+    @Select("SELECT * FROM news ORDER BY publish_time DESC")
+    List<News> findAll();
+
     @Select("SELECT id, title, summary, channel, source, image_url, view_count, comment_count, is_breaking, publish_time, created_at FROM news WHERE title LIKE CONCAT('%',#{keyword},'%') OR summary LIKE CONCAT('%',#{keyword},'%') OR channel LIKE CONCAT('%',#{keyword},'%') ORDER BY publish_time DESC LIMIT #{offset}, #{limit}")
     List<News> searchPage(@Param("keyword") String keyword, @Param("offset") int offset, @Param("limit") int limit);
+
+    @Select("SELECT id, title, summary, channel, source, image_url, view_count, comment_count, is_breaking, publish_time, created_at FROM news WHERE title LIKE CONCAT('%',#{keyword},'%') OR summary LIKE CONCAT('%',#{keyword},'%') OR channel LIKE CONCAT('%',#{keyword},'%') ORDER BY publish_time DESC")
+    List<News> search(@Param("keyword") String keyword);
+
+    @Select("SELECT id, title, summary, channel, source, image_url, view_count, comment_count, is_breaking, publish_time, created_at FROM news ORDER BY publish_time DESC LIMIT 20")
+    List<News> findTop20();
+
+    @Select("SELECT id, title, summary, channel, source, image_url, view_count, comment_count, is_breaking, publish_time, created_at FROM news WHERE channel = #{channel} ORDER BY publish_time DESC LIMIT 20")
+    List<News> findByChannelTop20(@Param("channel") String channel);
 
     @Select("SELECT COUNT(*) FROM news WHERE title LIKE CONCAT('%',#{keyword},'%') OR summary LIKE CONCAT('%',#{keyword},'%') OR channel LIKE CONCAT('%',#{keyword},'%')")
     long countByKeyword(@Param("keyword") String keyword);

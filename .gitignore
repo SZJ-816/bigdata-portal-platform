@@ -35,11 +35,14 @@ build/
 # Custom images (SVG channel images)
 frontend/images/
 images/
+!frontend/public/images/
 
 # Temporary files
 *.tmp
 *.bak
 *.swp
+test_*.conf
+test_*.sh
 
 # Database backups
 *.sql.bak

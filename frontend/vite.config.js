@@ -22,9 +22,19 @@ export default defineConfig({
     },
     rollupOptions: {
       output: {
-        manualChunks: {
-          'vue-vendor': ['vue', 'vue-router'],
-          'echarts': ['echarts']
+        manualChunks(id) {
+          if (id.includes('node_modules')) {
+            if (id.includes('vue/') || id.includes('vue-router')) {
+              return 'vue-vendor'
+            }
+            if (id.includes('axios')) {
+              return 'axios-vendor'
+            }
+            if (id.includes('echarts') || id.includes('zrender')) {
+              return undefined
+            }
+            return 'vendor'
+          }
         },
         chunkFileNames: 'assets/js/[name]-[hash].js',
         entryFileNames: 'assets/js/[name]-[hash].js',
@@ -34,9 +44,7 @@ export default defineConfig({
     chunkSizeWarningLimit: 500,
     assetsInlineLimit: 4096,
     sourcemap: false,
-    codeSplitting: {
-      groups: ['vue-vendor', 'echarts', 'default']
-    }
+    reportCompressedSize: false
   },
   css: {
     devSourcemap: false,
@@ -45,6 +53,6 @@ export default defineConfig({
     }
   },
   optimizeDeps: {
-    include: ['vue', 'vue-router', 'axios', 'echarts']
+    include: ['vue', 'vue-router', 'axios']
   }
 })

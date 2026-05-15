@@ -60,8 +60,15 @@ public class NewsController {
     public Map<String, Object> addComment(@PathVariable Long id,
                                           @RequestBody Map<String, Object> params) {
         Map<String, Object> result = new HashMap<>();
-        Long userId = Long.valueOf(params.get("userId").toString());
-        String content = params.get("content").toString();
+        Object userIdObj = params.get("userId");
+        Object contentObj = params.get("content");
+        if (userIdObj == null || contentObj == null || contentObj.toString().trim().isEmpty()) {
+            result.put("success", false);
+            result.put("message", "参数不完整");
+            return result;
+        }
+        Long userId = Long.valueOf(userIdObj.toString());
+        String content = contentObj.toString();
         newsService.addComment(id, userId, content);
         result.put("success", true);
         return result;

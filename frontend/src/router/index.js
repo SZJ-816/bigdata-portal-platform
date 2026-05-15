@@ -4,7 +4,7 @@ import { userApi } from '../api'
 const routes = [
   {
     path: '/',
-    component: () => import('../components/common/PortalLayout.vue'),
+    component: () => import(/* webpackChunkName: "layout" */ '../components/common/PortalLayout.vue'),
     children: [
       { path: '', name: 'Home', component: () => import('../views/portal/Home.vue') },
       { path: 'news/:id', name: 'NewsDetail', component: () => import('../views/portal/NewsDetail.vue') },
@@ -23,7 +23,11 @@ const routes = [
 
 const router = createRouter({
   history: createWebHistory(),
-  routes
+  routes,
+  scrollBehavior(to, from, savedPosition) {
+    if (savedPosition) return savedPosition
+    return { top: 0 }
+  }
 })
 
 router.beforeEach((to, from, next) => {
@@ -34,6 +38,32 @@ router.beforeEach((to, from, next) => {
     })
   } else {
     next()
+  }
+})
+
+const prefetched = new Set()
+function prefetchRoute(name) {
+  if (prefetched.has(name)) return
+  prefetched.add(name)
+  const route = router.resolve({ name })
+  if (route?.matched?.length) {
+    route.matched.forEach(record => {
+      if (record.components?.default?.__asyncLoader) {
+        record.components.default.__asyncLoader()
+      }
+    })
+  }
+}
+
+router.afterEach((to) => {
+  if (to.name === 'Home') {
+    setTimeout(() => {
+      prefetchRoute('Channel')
+      prefetchRoute('Search')
+    }, 1000)
+  }
+  if (to.name === 'Channel') {
+    setTimeout(() => prefetchRoute('NewsDetail'), 500)
   }
 })
 

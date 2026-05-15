@@ -44,7 +44,7 @@ public class AiService {
 
     private String buildContext(String keyword) {
         List<News> searchResults = newsMapper.search(keyword);
-        List<News> channelResults = newsMapper.findByChannel(keyword);
+        List<News> channelResults = newsMapper.findByChannelTop20(keyword);
         if (searchResults.size() < 3 && channelResults != null) {
             for (News n : channelResults) {
                 if (searchResults.stream().noneMatch(s -> s.getId().equals(n.getId()))) {
@@ -80,7 +80,7 @@ public class AiService {
     }
 
     private String buildHotSummaryContext() {
-        List<News> allNews = newsMapper.findAll();
+        List<News> allNews = newsMapper.findTop20();
         if (allNews == null || allNews.isEmpty()) {
             return "暂无新闻";
         }

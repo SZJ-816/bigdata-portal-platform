@@ -65,6 +65,7 @@ import { ref, onMounted, onUnmounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { hotSearchWords, formatRelativeTime } from '../../mock/newsData'
 import { behaviorApi, newsApi } from '../../api'
+import request from '../../api'
 
 const route = useRoute()
 const router = useRouter()
@@ -203,7 +204,7 @@ async function doAiSearch() {
   if (!streamSuccess) {
     aiAnswer.value = ''
     try {
-      const res = await axios.get(`/api/ai/search`, { params: { keyword: keyword.value }, timeout: 90000 })
+      const res = await request.get('/ai/search', { params: { keyword: keyword.value }, timeout: 90000 })
       if (res.data.success) {
         aiAnswer.value = res.data.data
       } else {

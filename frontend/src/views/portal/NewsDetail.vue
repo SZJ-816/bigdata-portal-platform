@@ -24,7 +24,7 @@
               {{ translated ? '已翻译' : '✦ 翻译' }}
             </button>
           </div>
-          <img v-if="news.imageUrl" v-lazy="news.imageUrl" :alt="news.title" class="article-cover" />
+          <img v-if="news.imageUrl" :src="resolveImageUrl(news.imageUrl)" :alt="news.title" :data-channel="news.channel" class="article-cover" @error="onCoverImgError" />
           <div class="article-content" v-html="news.content"></div>
         </article>
 
@@ -99,16 +99,9 @@ import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { newsApi, behaviorApi, userApi } from '../../api'
 import { channels, formatRelativeTime } from '../../mock/newsData'
+import { cleanText, cleanHtmlContent, formatViewCount, getChannelIcon, CHANNEL_LABEL_MAP } from '../../utils'
 
-const channelLabelMap = {
-  'AI': '人工智能',
-  '大数据': '大数据',
-  '云计算': '云计算',
-  '互联网': '互联网',
-  '硬件': '硬件',
-  '创业': '创业',
-  '人工智能': '人工智能'
-}
+const channelLabelMap = CHANNEL_LABEL_MAP
 
 const route = useRoute()
 const router = useRouter()
@@ -160,31 +153,23 @@ async function loadRelatedNews() {
   }
 }
 
-function cleanText(text) {
-  if (!text) return ''
-  let cleaned = text
-  cleaned = cleaned.replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&').replace(/&nbsp;/g, ' ').replace(/&quot;/g, '"').replace(/&#39;/g, "'")
-  cleaned = cleaned.replace(/[\uFFFD\u00EF\u00BF\u00BD]/g, '')
-  return cleaned.trim()
-}
-
-function cleanHtmlContent(html) {
-  if (!html) return ''
-  let cleaned = html
-  cleaned = cleaned.replace(/[\uFFFD\u00EF\u00BF\u00BD]/g, '')
-  cleaned = cleaned.replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
-  cleaned = cleaned.replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
-  return cleaned.trim()
-}
-
-function formatViewCount(count) {
-  if (!count) return 0
-  if (count >= 10000) return (count / 10000).toFixed(1) + '万'
-  return count
-}
-
 function goNews(id) {
   router.push(`/news/${id}`)
+}
+
+function resolveImageUrl(url) {
+  if (!url) return ''
+  if (url.startsWith('/') || url.startsWith('data:')) return url
+  return '/api/image/proxy?url=' + encodeURIComponent(url)
+}
+
+function onCoverImgError(e) {
+  const el = e.target
+  const channel = el.dataset?.channel || ''
+  const fallback = getChannelIcon(channel)
+  if (!el.src.endsWith(fallback)) {
+    el.src = fallback
+  }
 }
 
 function goChannel(name) {
@@ -398,8 +383,10 @@ watch(() => route.params.id, () => {
   width: 100%;
   max-height: 400px;
   object-fit: cover;
+  object-position: center;
   border-radius: 4px;
   margin-bottom: 24px;
+  background-color: #f0f0f0;
 }
 .article-content {
   font-size: 16px;
@@ -409,6 +396,15 @@ watch(() => route.params.id, () => {
 .article-content :deep(p) {
   margin-bottom: 18px;
   text-indent: 2em;
+}
+.article-content :deep(img) {
+  max-width: 100%;
+  height: auto;
+  max-height: 500px;
+  object-fit: contain;
+  border-radius: 4px;
+  display: block;
+  margin: 12px auto;
 }
 .article-footer {
   display: flex;

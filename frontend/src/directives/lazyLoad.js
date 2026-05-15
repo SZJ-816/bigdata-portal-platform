@@ -1,27 +1,142 @@
+const CHANNEL_ICONS = {
+  'ai': '/images/channel-ai.svg',
+  '人工智能': '/images/channel-ai.svg',
+  'bigdata': '/images/channel-bigdata.svg',
+  '大数据': '/images/channel-bigdata.svg',
+  'cloud': '/images/channel-cloud.svg',
+  '云计算': '/images/channel-cloud.svg',
+  'internet': '/images/channel-internet.svg',
+  '互联网': '/images/channel-internet.svg',
+  'hardware': '/images/channel-hardware.svg',
+  '硬件': '/images/channel-hardware.svg',
+  'startup': '/images/channel-startup.svg',
+  '创业': '/images/channel-startup.svg',
+}
+
+function getChannelFromEl(el) {
+  return el.dataset?.channel || el.getAttribute('data-channel') || ''
+}
+
+function getChannelFallback(channel) {
+  if (!channel) return null
+  const lower = channel.toLowerCase().trim()
+  for (const [key, icon] of Object.entries(CHANNEL_ICONS)) {
+    if (lower.includes(key.toLowerCase()) || key.toLowerCase().includes(lower)) {
+      return icon
+    }
+  }
+  return '/images/channel-internet.svg'
+}
+
+function isLocalPath(url) {
+  if (!url) return true
+  return url.startsWith('/') || url.startsWith('./') || url.startsWith('data:')
+}
+
+function proxyUrl(url) {
+  if (isLocalPath(url)) return url
+  return '/api/image/proxy?url=' + encodeURIComponent(url)
+}
+
+const sharedObserver = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      const el = entry.target
+      const src = el._lazySrc
+      if (src && !el._lazyLoaded) {
+        forceLoad(el, src)
+      }
+    }
+  })
+}, {
+  rootMargin: '800px 0px',
+  threshold: 0.01
+})
+
+function loadImage(el, src) {
+  const MAX_RETRY = 2
+
+  if (isLocalPath(src)) {
+    if (el.tagName === 'IMG') {
+      el.src = src
+      el.style.opacity = '1'
+      el.classList.add('loaded')
+      el.onerror = () => {
+        const channel = getChannelFromEl(el)
+        const fallback = getChannelFallback(channel)
+        if (fallback && el.src !== fallback) {
+          el.src = fallback
+        }
+      }
+    } else {
+      el.style.backgroundImage = `url(${src})`
+      el.style.backgroundSize = 'cover'
+      el.style.backgroundPosition = 'center'
+      el.classList.add('loaded')
+    }
+    return
+  }
+
+  const proxiedSrc = proxyUrl(src)
+
+  if (el.tagName === 'IMG') {
+    const img = new Image()
+    img.onload = () => {
+      el.src = proxiedSrc
+      el.style.opacity = '1'
+      el.classList.add('loaded')
+    }
+    img.onerror = () => {
+      if (el._lazyRetryCount < MAX_RETRY) {
+        el._lazyRetryCount++
+        setTimeout(() => {
+          const retrySrc = proxiedSrc + (proxiedSrc.includes('?') ? '&' : '?') + '_retry=' + el._lazyRetryCount
+          img.src = retrySrc
+        }, 500 * el._lazyRetryCount)
+      } else {
+        const channel = getChannelFromEl(el)
+        const fallback = getChannelFallback(channel)
+        el.src = fallback
+        el.style.opacity = '1'
+        el.classList.add('loaded')
+        el.classList.add('img-error')
+      }
+    }
+    img.src = proxiedSrc
+  } else {
+    el.style.backgroundImage = `url(${proxiedSrc})`
+    el.style.backgroundSize = 'cover'
+    el.style.backgroundPosition = 'center'
+    el.classList.add('loaded')
+  }
+}
+
+function forceLoad(el, src) {
+  if (el._lazyLoaded) return
+  el._lazyLoaded = true
+  sharedObserver.unobserve(el)
+  loadImage(el, src)
+}
+
 export default {
   mounted(el, binding) {
     const src = binding.value
-    if (!src) return
-
-    el._lazyObserver = null
-    el._lazyRetryCount = 0
-    const MAX_RETRY = 2
-
-    const options = {
-      rootMargin: '200px 0px',
-      threshold: 0.01
+    if (!src) {
+      const channel = getChannelFromEl(el)
+      const fallback = getChannelFallback(channel)
+      if (el.tagName === 'IMG') {
+        el.src = fallback
+      } else {
+        el.style.backgroundImage = `url(${fallback})`
+        el.style.backgroundSize = 'cover'
+        el.style.backgroundPosition = 'center'
+      }
+      return
     }
 
-    const observer = new IntersectionObserver((entries) => {
-      entries.forEach(entry => {
-        if (entry.isIntersecting) {
-          loadImage(el, src)
-          observer.unobserve(el)
-        }
-      })
-    }, options)
-
-    el._lazyObserver = observer
+    el._lazySrc = src
+    el._lazyRetryCount = 0
+    el._lazyLoaded = false
 
     if (el.tagName === 'IMG') {
       el.style.backgroundColor = '#f0f0f0'
@@ -30,54 +145,43 @@ export default {
     } else {
       el.style.backgroundColor = '#f0f0f0'
     }
-    observer.observe(el)
+
+    sharedObserver.observe(el)
+
+    requestAnimationFrame(() => {
+      setTimeout(() => {
+        if (el._lazyLoaded) return
+        const rect = el.getBoundingClientRect()
+        const vh = window.innerHeight || document.documentElement.clientHeight
+        if (rect.top < vh + 200 && rect.bottom > -200) {
+          forceLoad(el, src)
+        }
+      }, 150)
+    })
+
+    setTimeout(() => {
+      if (!el._lazyLoaded) {
+        forceLoad(el, src)
+      }
+    }, 3000)
   },
   updated(el, binding) {
-    if (binding.value !== binding.oldValue && binding.value) {
-      loadImage(el, binding.value)
+    if (binding.value !== binding.oldValue) {
+      if (binding.value) {
+        el._lazyLoaded = false
+        el._lazyRetryCount = 0
+        el._lazySrc = binding.value
+        loadImage(el, binding.value)
+      } else {
+        const channel = getChannelFromEl(el)
+        const fallback = getChannelFallback(channel)
+        if (el.tagName === 'IMG') {
+          el.src = fallback
+        }
+      }
     }
   },
   unmounted(el) {
-    if (el._lazyObserver) {
-      el._lazyObserver.disconnect()
-      el._lazyObserver = null
-    }
+    sharedObserver.unobserve(el)
   }
-}
-
-function loadImage(el, src) {
-  const MAX_RETRY = 2
-  if (el.tagName === 'IMG') {
-    const img = new Image()
-    img.onload = () => {
-      el.src = src
-      el.style.opacity = '1'
-      el.classList.add('loaded')
-    }
-    img.onerror = () => {
-      if (el._lazyRetryCount < MAX_RETRY) {
-        el._lazyRetryCount++
-        setTimeout(() => {
-          img.src = src + (src.includes('?') ? '&' : '?') + '_retry=' + el._lazyRetryCount
-        }, 500 * el._lazyRetryCount)
-      } else {
-        el.src = generatePlaceholder(el.alt || '')
-        el.style.opacity = '1'
-        el.classList.add('loaded')
-        el.classList.add('img-error')
-      }
-    }
-    img.src = src
-  } else {
-    el.style.backgroundImage = `url(${src})`
-    el.style.backgroundSize = 'cover'
-    el.style.backgroundPosition = 'center'
-    el.classList.add('loaded')
-  }
-}
-
-function generatePlaceholder(text) {
-  const shortText = text.length > 8 ? text.substring(0, 8) + '...' : text
-  const encoded = encodeURIComponent(shortText)
-  return `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 150'%3E%3Crect fill='%231a2a4a' width='200' height='150'/%3E%3Ctext fill='%23fff' font-family='sans-serif' font-size='12' x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle'%3E${encoded}%3C/text%3E%3C/svg%3E`
 }

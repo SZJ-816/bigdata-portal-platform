@@ -8,7 +8,7 @@
       <div class="content-main">
         <div class="news-list">
           <div v-for="item in channelNews" :key="item.id" class="news-item" @click="goNews(item.id)">
-            <img v-if="item.imageUrl" v-lazy="item.imageUrl" :alt="item.title" class="news-thumb" />
+            <img v-if="item.imageUrl" v-lazy="item.imageUrl" :alt="item.title" :data-channel="item.channel" class="news-thumb" />
             <div v-else class="news-thumb-placeholder"></div>
             <div class="news-body">
               <div class="news-header">
@@ -52,6 +52,7 @@ import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { channels, formatRelativeTime } from '../../mock/newsData'
 import { behaviorApi, newsApi } from '../../api'
+import { cleanText, formatViewCount } from '../../utils'
 
 const route = useRoute()
 const router = useRouter()
@@ -80,15 +81,6 @@ const channelNameMap = {
   '互联网': '互联网',
   '硬件': '硬件',
   '创业': '创业'
-}
-
-function cleanText(text) {
-  if (!text) return ''
-  let cleaned = text
-  cleaned = cleaned.replace(/<[^>]*>/g, '')
-  cleaned = cleaned.replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&').replace(/&nbsp;/g, ' ').replace(/&quot;/g, '"').replace(/&#39;/g, "'")
-  cleaned = cleaned.replace(/[\uFFFD\u00EF\u00BF\u00BD]/g, '')
-  return cleaned.trim()
 }
 
 async function loadChannelNews() {
@@ -121,11 +113,6 @@ const channelDesc = computed(() => {
   const actualChannelName = channelNameMap[channelName.value] || channelName.value
   return channelDescs[actualChannelName] || '科技新闻资讯'
 })
-
-function formatViewCount(count) {
-  if (count >= 10000) return (count / 10000).toFixed(1) + '万'
-  return count
-}
 
 function goNews(id) {
   behaviorApi.report({ eventType: 'click', targetId: String(id), targetType: 'news' })
@@ -203,8 +190,10 @@ watch(() => route.params.name, async () => {
   width: 180px;
   height: 110px;
   object-fit: cover;
+  object-position: center;
   border-radius: 3px;
   flex-shrink: 0;
+  background-color: #f0f0f0;
 }
 .news-thumb-placeholder {
   width: 180px;

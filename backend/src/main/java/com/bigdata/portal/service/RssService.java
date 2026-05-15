@@ -243,7 +243,13 @@ public class RssService {
     }
 
     private String readAndCleanXml(InputStream inputStream) throws Exception {
-        byte[] buffer = inputStream.readAllBytes();
+        java.io.ByteArrayOutputStream baos = new java.io.ByteArrayOutputStream();
+        byte[] tmp = new byte[4096];
+        int n;
+        while ((n = inputStream.read(tmp)) != -1) {
+            baos.write(tmp, 0, n);
+        }
+        byte[] buffer = baos.toByteArray();
         String xml = new String(buffer, StandardCharsets.UTF_8);
 
         xml = xml.replaceAll("(?i)<!DOCTYPE[^>]*>", "");

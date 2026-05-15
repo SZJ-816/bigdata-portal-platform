@@ -47,7 +47,7 @@
           <div v-else-if="history.length" class="news-list">
             <div v-for="item in history" :key="item.id" class="news-item" @click="goNews(item.newsId)">
               <div v-if="item.imageUrl" class="news-image">
-                <img :src="item.imageUrl" :alt="item.title" />
+                <img v-lazy="item.imageUrl" :alt="item.title || ''" />
               </div>
               <div class="news-body">
                 <h4 class="news-title">{{ item.title || '新闻 ' + item.newsId }}</h4>

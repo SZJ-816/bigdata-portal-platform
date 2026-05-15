@@ -4,8 +4,9 @@
       <div class="headline-main" @click="goNews(headline.id)">
         <img
           v-if="headline.imageUrl"
-          :src="headline.imageUrl"
+          v-lazy="headline.imageUrl"
           :alt="headline.title"
+          :data-channel="headline.channel"
           class="headline-img"
         />
         <div v-else class="headline-img-wrap">
@@ -28,6 +29,7 @@
             v-if="item.imageUrl"
             v-lazy="item.imageUrl"
             :alt="item.title"
+            :data-channel="item.channel"
             class="side-img"
           />
           <div v-else class="side-img-wrap"></div>
@@ -52,6 +54,7 @@
               v-if="item.imageUrl"
               v-lazy="item.imageUrl"
               :alt="item.title"
+              :data-channel="item.channel"
               class="thumb-img"
             />
             <div v-else class="thumb-wrap"></div>
@@ -132,16 +135,9 @@ import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { newsApi, behaviorApi } from '../../api'
 import { channels, formatRelativeTime } from '../../mock/newsData'
+import { cleanText, formatViewCount, CHANNEL_LABEL_MAP } from '../../utils'
 
-const channelLabelMap = {
-  'AI': '人工智能',
-  '大数据': '大数据',
-  '云计算': '云计算',
-  '互联网': '互联网',
-  '硬件': '硬件',
-  '创业': '创业',
-  '人工智能': '人工智能'
-}
+const channelLabelMap = CHANNEL_LABEL_MAP
 
 const router = useRouter()
 const allNews = ref([])
@@ -190,12 +186,6 @@ const centerNews = computed(() => allNews.value.slice(9, 14).map(item => ({
 const hotNews = computed(() => allNews.value.slice(0, 10))
 
 const allChannels = computed(() => channels)
-
-function formatViewCount(count) {
-  if (!count) return 0
-  if (count >= 10000) return (count / 10000).toFixed(1) + '万'
-  return count
-}
 
 function goNews(id) {
   router.push(`/news/${id}`)
@@ -269,15 +259,6 @@ function renderMarkdown(text) {
   return html
 }
 
-function cleanText(text) {
-  if (!text) return ''
-  let cleaned = text
-  cleaned = cleaned.replace(/<[^>]*>/g, '')
-  cleaned = cleaned.replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&').replace(/&nbsp;/g, ' ').replace(/&quot;/g, '"').replace(/&#39;/g, "'")
-  cleaned = cleaned.replace(/[\uFFFD\u00EF\u00BF\u00BD]/g, '')
-  return cleaned.trim()
-}
-
 onMounted(async () => {
   try {
     const res = await newsApi.getList()
@@ -311,7 +292,8 @@ onUnmounted(() => {
   cursor: pointer;
   overflow: hidden;
   border-radius: 4px;
-  min-height: 360px;
+  aspect-ratio: 16 / 9;
+  max-height: 400px;
 }
 .headline-img-wrap {
   position: absolute;
@@ -337,9 +319,11 @@ onUnmounted(() => {
 .side-img {
   border-radius: 4px;
   width: 100px;
-  min-height: 80px;
+  height: 68px;
   position: relative;
   flex-shrink: 0;
+  object-fit: cover;
+  object-position: center;
 }
 .thumb-img {
   width: 120px;
@@ -416,12 +400,13 @@ onUnmounted(() => {
 }
 .side-img-wrap {
   width: 100px;
-  min-height: 80px;
+  height: 68px;
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
   background-color: #dee2e6;
   border-radius: 4px;
+  flex-shrink: 0;
 }
 .side-content {
   flex: 1;
@@ -750,58 +735,42 @@ onUnmounted(() => {
     grid-column: span 2;
   }
 }
-@media (max-width: 1024px) {
+@media (max-width: 768px) {
   .headline-section {
     flex-direction: column;
     gap: 12px;
   }
   .headline-main {
-    min-height: 280px;
+    aspect-ratio: 16 / 9;
+    max-height: 280px;
     flex: none;
+    border-radius: var(--radius-lg);
+    overflow: hidden;
   }
-  .headline-side {
-    flex-direction: row;
-    flex-wrap: wrap;
-    gap: 12px;
-  }
-  .side-news {
-    flex: calc(50% - 6px);
-    min-width: 0;
-  }
-}
-
-@media (max-width: 768px) {
-  .headline-section {
-    gap: 16px;
+  .headline-img-wrap {
+    border-radius: var(--radius-lg);
+    aspect-ratio: 16 / 9;
+    max-height: 280px;
   }
   .headline-img, .side-img, .thumb-img {
     position: relative;
   }
   .headline-img {
     border-radius: var(--radius-lg);
-    min-height: 200px;
     object-fit: cover;
   }
   .side-img {
     width: 80px;
-    min-height: 60px;
+    height: 56px;
     border-radius: var(--radius-sm);
     flex-shrink: 0;
+    object-fit: cover;
   }
   .thumb-img {
     width: 85px;
     height: 65px;
     border-radius: var(--radius-sm);
     flex-shrink: 0;
-  }
-  .headline-main {
-    min-height: 220px;
-    border-radius: var(--radius-lg);
-    overflow: hidden;
-  }
-  .headline-img-wrap {
-    border-radius: var(--radius-lg);
-    min-height: 220px;
   }
   .headline-overlay {
     padding: 16px;
@@ -853,8 +822,9 @@ onUnmounted(() => {
   }
   .side-img-wrap {
     width: 80px;
-    min-height: 60px;
+    height: 56px;
     border-radius: var(--radius-sm);
+    flex-shrink: 0;
   }
   .side-content {
     justify-content: flex-start;
@@ -1074,10 +1044,12 @@ onUnmounted(() => {
 
 @media (max-width: 480px) {
   .headline-main {
-    min-height: 190px;
+    aspect-ratio: 16 / 9;
+    max-height: 190px;
   }
   .headline-img-wrap {
-    min-height: 190px;
+    aspect-ratio: 16 / 9;
+    max-height: 190px;
   }
   .headline-title {
     font-size: 17px;
@@ -1086,6 +1058,14 @@ onUnmounted(() => {
   .side-news {
     min-width: 155px;
     padding: 10px;
+  }
+  .side-img {
+    width: 70px;
+    height: 50px;
+  }
+  .side-img-wrap {
+    width: 70px;
+    height: 50px;
   }
   .news-title {
     font-size: 14px;

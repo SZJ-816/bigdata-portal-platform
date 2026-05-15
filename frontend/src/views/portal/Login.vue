@@ -46,7 +46,7 @@
 import { ref, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { userApi } from '../../api'
-import axios from 'axios'
+import request from '../../api'
 
 const router = useRouter()
 const isLogin = ref(true)
@@ -84,7 +84,7 @@ async function handleSendCode() {
   }
   sendingCode.value = true
   try {
-    const res = await axios.post('/api/users/send-code', { email: form.value.email })
+    const res = await request.post('/users/send-code', { email: form.value.email })
     if (res.data.success) {
       successMsg.value = '验证码已发送到您的邮箱'
       codeCooldown.value = 60

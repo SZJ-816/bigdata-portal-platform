@@ -29,19 +29,34 @@ request.interceptors.response.use(
 )
 
 const newsCache = new Map()
-const CACHE_TTL = 60000
+const CACHE_TTL = 120000
 
 function cachedGet(url, params = {}, useCache = true) {
   const cacheKey = url + JSON.stringify(params)
-  const cached = newsCache.get(cacheKey)
-  if (useCache && cached && Date.now() - cached.time < CACHE_TTL) {
-    return Promise.resolve(cached.data)
+  if (useCache) {
+    const cached = newsCache.get(cacheKey)
+    if (cached && Date.now() - cached.time < CACHE_TTL) {
+      return Promise.resolve(cached.data)
+    }
   }
   return request.get(url, { params }).then(res => {
     newsCache.set(cacheKey, { data: res, time: Date.now() })
-    if (newsCache.size > 50) {
-      const oldest = newsCache.keys().next().value
-      newsCache.delete(oldest)
+    if (newsCache.size > 80) {
+      const keysToDelete = []
+      for (const [key, val] of newsCache) {
+        if (Date.now() - val.time > CACHE_TTL) {
+          keysToDelete.push(key)
+        }
+      }
+      if (keysToDelete.length === 0) {
+        let count = 0
+        for (const [key] of newsCache) {
+          keysToDelete.push(key)
+          count++
+          if (count >= 30) break
+        }
+      }
+      keysToDelete.forEach(k => newsCache.delete(k))
     }
     return res
   })
@@ -55,12 +70,12 @@ export default request
 
 export const newsApi = {
   getList: (params = {}, useCache = true) => {
-    const p = { page: 1, size: 50, ...params }
+    const p = { page: 1, size: 20, ...params }
     return cachedGet('/news', p, useCache)
   },
-  getById: (id) => request.get(`/news/${id}`),
-  getByChannel: (channel, useCache = true) => cachedGet('/news', { channel, page: 1, size: 50 }, useCache),
-  search: (keyword) => request.get('/news', { params: { keyword, page: 1, size: 50 } }),
+  getById: (id, useCache = true) => cachedGet(`/news/${id}`, {}, useCache),
+  getByChannel: (channel, useCache = true) => cachedGet('/news', { channel, page: 1, size: 20 }, useCache),
+  search: (keyword) => request.get('/news', { params: { keyword, page: 1, size: 20 } }),
   getHot: (useCache = true) => cachedGet('/news/hot', {}, useCache),
   getRelated: (id) => request.get(`/news/${id}/related`),
   clearCache: () => newsCache.clear(),
