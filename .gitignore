@@ -20,8 +20,9 @@ logs/
 
 # Environment files with secrets
 .env
-.env.*
-*.env
+.env.local
+.env.production
+*.env.local
 
 # Docker
 docker/mysql-data/
