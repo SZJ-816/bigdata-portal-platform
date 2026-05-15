@@ -61,11 +61,10 @@
 </template>
 
 <script setup>
-import { ref, onMounted, watch } from 'vue'
+import { ref, onMounted, onUnmounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { hotSearchWords, formatRelativeTime } from '../../mock/newsData'
-import { behaviorApi } from '../../api'
-import axios from 'axios'
+import { behaviorApi, newsApi } from '../../api'
 
 const route = useRoute()
 const router = useRouter()
@@ -90,6 +89,7 @@ const channelLabelMap = {
 }
 
 const processedResults = ref([])
+let searchTimer = null
 
 function cleanText(text) {
   if (!text) return ''
@@ -126,11 +126,15 @@ function formatViewCount(count) {
 
 async function doSearch() {
   if (!keyword.value.trim()) return
+  if (searchTimer) {
+    clearTimeout(searchTimer)
+    searchTimer = null
+  }
   searched.value = true
   searchedKeyword.value = keyword.value
   activeTab.value = 'news'
   try {
-    const res = await axios.get(`/api/news?keyword=${encodeURIComponent(keyword.value)}`)
+    const res = await newsApi.search(keyword.value)
     if (res.data.data) {
       results.value = res.data.data
     } else {
@@ -141,7 +145,12 @@ async function doSearch() {
     results.value = []
   }
   updateProcessedResults()
-  behaviorApi.report({ eventType: 'search', targetId: keyword.value, targetType: 'keyword' }).catch(() => {})
+  behaviorApi.report({ eventType: 'search', targetId: keyword.value, targetType: 'keyword' })
+}
+
+function debouncedSearch() {
+  if (searchTimer) clearTimeout(searchTimer)
+  searchTimer = setTimeout(doSearch, 300)
 }
 
 async function doAiSearch() {
@@ -207,7 +216,7 @@ async function doAiSearch() {
   }
 
   aiLoading.value = false
-  behaviorApi.report({ eventType: 'ai_search', targetId: keyword.value, targetType: 'keyword' }).catch(() => {})
+  behaviorApi.report({ eventType: 'ai_search', targetId: keyword.value, targetType: 'keyword' })
 }
 
 function searchHotWord(word) {
@@ -216,7 +225,7 @@ function searchHotWord(word) {
 }
 
 function goNews(id) {
-  behaviorApi.report({ eventType: 'click', targetId: String(id), targetType: 'news' }).catch(() => {})
+  behaviorApi.report({ eventType: 'click', targetId: String(id), targetType: 'news' })
   router.push(`/news/${id}`)
 }
 
@@ -240,6 +249,14 @@ onMounted(() => {
     keyword.value = route.query.q
     doSearch()
   }
+})
+
+onUnmounted(() => {
+  if (searchTimer) {
+    clearTimeout(searchTimer)
+    searchTimer = null
+  }
+  behaviorApi.flush()
 })
 
 watch(() => route.query.q, (newQ) => {

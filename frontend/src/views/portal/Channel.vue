@@ -48,11 +48,10 @@
 </template>
 
 <script setup>
-import { ref, computed, watch, onMounted } from 'vue'
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { channels, formatRelativeTime } from '../../mock/newsData'
-import { behaviorApi } from '../../api'
-import axios from 'axios'
+import { behaviorApi, newsApi } from '../../api'
 
 const route = useRoute()
 const router = useRouter()
@@ -60,7 +59,6 @@ const router = useRouter()
 const channelName = computed(() => route.params.name)
 const channelInfo = computed(() => {
   const actualChannelName = channelNameMap[channelName.value] || channelName.value
-  // 优先找name匹配，找不到再找label匹配
   let info = channels.find(c => c.name === actualChannelName)
   if (!info) {
     info = channels.find(c => c.label === channelName.value)
@@ -96,7 +94,7 @@ function cleanText(text) {
 async function loadChannelNews() {
   try {
     const actualChannelName = channelNameMap[channelName.value] || channelName.value
-    const res = await axios.get(`/api/news?channel=${encodeURIComponent(actualChannelName)}`)
+    const res = await newsApi.getByChannel(actualChannelName)
     if (res.data.data) {
       channelNews.value = res.data.data.map(item => ({
         ...item,
@@ -130,18 +128,24 @@ function formatViewCount(count) {
 }
 
 function goNews(id) {
-  behaviorApi.report({ eventType: 'click', targetId: String(id), targetType: 'news' }).catch(() => {})
+  behaviorApi.report({ eventType: 'click', targetId: String(id), targetType: 'news' })
   router.push(`/news/${id}`)
 }
 
 onMounted(async () => {
   await loadChannelNews()
-  behaviorApi.report({ eventType: 'page_view', targetId: channelName.value, targetType: 'channel' }).catch(() => {})
+  behaviorApi.report({ eventType: 'page_view', targetId: channelName.value, targetType: 'channel' })
+})
+
+onUnmounted(() => {
+  behaviorApi.flush()
 })
 
 watch(() => route.params.name, async () => {
-  await loadChannelNews()
-  behaviorApi.report({ eventType: 'page_view', targetId: channelName.value, targetType: 'channel' }).catch(() => {})
+  if (route.params.name) {
+    await loadChannelNews()
+    behaviorApi.report({ eventType: 'page_view', targetId: channelName.value, targetType: 'channel' })
+  }
 })
 </script>
 

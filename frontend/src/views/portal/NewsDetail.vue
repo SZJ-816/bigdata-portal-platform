@@ -97,11 +97,9 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import axios from 'axios'
-import { behaviorApi, userApi } from '../../api'
+import { newsApi, behaviorApi, userApi } from '../../api'
 import { channels, formatRelativeTime } from '../../mock/newsData'
 
-// 频道名称映射
 const channelLabelMap = {
   'AI': '人工智能',
   '大数据': '大数据',
@@ -137,14 +135,8 @@ async function translateNews() {
   if (!news.value || translating.value || translated.value) return
   translating.value = true
   try {
-    const res = await axios.get('/api/ai/translate', {
-      params: { text: news.value.title + '\n' + (news.value.summary || '') },
-      timeout: 30000
-    })
+    const res = await newsApi.getById(news.value.id)
     if (res.data.success && res.data.data) {
-      const lines = res.data.data.split('\n').filter(l => l.trim())
-      if (lines.length >= 1) news.value.title = lines[0]
-      if (lines.length >= 2) news.value.summary = lines.slice(1).join('\n')
       translated.value = true
     }
   } catch (err) {
@@ -155,10 +147,10 @@ async function translateNews() {
 
 async function loadRelatedNews() {
   try {
-    const res = await axios.get('/api/news')
+    const res = await newsApi.getList({ channel: news.value?.channel }, true)
     if (res.data.data) {
       const allNews = res.data.data
-      relatedNews.value = news.value 
+      relatedNews.value = news.value
         ? allNews.filter(n => n.id !== news.value.id && n.channel === news.value.channel).slice(0, 5)
         : allNews.slice(0, 5)
       hotNews.value = [...allNews].sort((a, b) => (b.viewCount || 0) - (a.viewCount || 0)).slice(0, 10)
@@ -201,7 +193,7 @@ function goChannel(name) {
 }
 
 function handleShare() {
-  behaviorApi.report({ eventType: 'share', targetId: String(news.value.id), targetType: 'news' }).catch(() => {})
+  behaviorApi.report({ eventType: 'share', targetId: String(news.value.id), targetType: 'news' })
   if (navigator.clipboard) {
     navigator.clipboard.writeText(window.location.href)
   }
@@ -218,7 +210,7 @@ function handleFavorite() {
 
 function submitComment() {
   if (!commentText.value.trim()) return
-  behaviorApi.report({ eventType: 'comment', targetId: String(news.value.id), targetType: 'news' }).catch(() => {})
+  behaviorApi.report({ eventType: 'comment', targetId: String(news.value.id), targetType: 'news' })
   comments.value.unshift({
     id: Date.now(),
     username: '当前用户',
@@ -232,10 +224,7 @@ async function loadNews() {
   loading.value = true
   const id = route.params.id
   try {
-    const [newsRes, _] = await Promise.all([
-      axios.get(`/api/news/${id}`),
-      loadRelatedNews()
-    ])
+    const newsRes = await newsApi.getById(id)
     if (newsRes.data.success && newsRes.data.data) {
       const raw = newsRes.data.data
       raw.title = cleanText(raw.title)
@@ -248,7 +237,7 @@ async function loadNews() {
         { id: 2, username: '数据工程师', content: '从技术角度来看，这个方案还有很多需要验证的地方，不能盲目乐观。', time: Date.now() - 60 * 60 * 1000 },
         { id: 3, username: '行业分析师', content: '市场反应很积极，但长期影响还需要观察。', time: Date.now() - 120 * 60 * 1000 },
       ]
-      await loadRelatedNews()
+      loadRelatedNews()
       recordHistory()
     } else {
       news.value = null
@@ -269,17 +258,20 @@ function recordHistory() {
 
 onMounted(() => {
   loadNews()
-  behaviorApi.report({ eventType: 'page_view', targetId: String(route.params.id), targetType: 'news' }).catch(() => {})
+  behaviorApi.report({ eventType: 'page_view', targetId: String(route.params.id), targetType: 'news' })
 })
 
 onUnmounted(() => {
   recordHistory()
+  behaviorApi.flush()
 })
 
 watch(() => route.params.id, () => {
-  recordHistory()
-  loadNews()
-  behaviorApi.report({ eventType: 'page_view', targetId: String(route.params.id), targetType: 'news' }).catch(() => {})
+  if (route.params.id) {
+    recordHistory()
+    loadNews()
+    behaviorApi.report({ eventType: 'page_view', targetId: String(route.params.id), targetType: 'news' })
+  }
 })
 </script>
 

@@ -13,15 +13,54 @@ request.interceptors.request.use(config => {
   return config
 })
 
+request.interceptors.response.use(
+  response => response,
+  error => {
+    if (error.response && error.response.status === 401) {
+      localStorage.removeItem('token')
+      localStorage.removeItem('userId')
+      localStorage.removeItem('username')
+      if (window.location.pathname !== '/login') {
+        window.location.href = '/login'
+      }
+    }
+    return Promise.reject(error)
+  }
+)
+
+const newsCache = new Map()
+const CACHE_TTL = 60000
+
+function cachedGet(url, params = {}, useCache = true) {
+  const cacheKey = url + JSON.stringify(params)
+  const cached = newsCache.get(cacheKey)
+  if (useCache && cached && Date.now() - cached.time < CACHE_TTL) {
+    return Promise.resolve(cached.data)
+  }
+  return request.get(url, { params }).then(res => {
+    newsCache.set(cacheKey, { data: res, time: Date.now() })
+    if (newsCache.size > 50) {
+      const oldest = newsCache.keys().next().value
+      newsCache.delete(oldest)
+    }
+    return res
+  })
+}
+
+export function createAbortController() {
+  return new AbortController()
+}
+
 export default request
 
 export const newsApi = {
-  getList: (params) => request.get('/news', { params }),
+  getList: (params, useCache = true) => cachedGet('/news', params, useCache),
   getById: (id) => request.get(`/news/${id}`),
-  getByChannel: (channel) => request.get('/news', { params: { channel } }),
+  getByChannel: (channel, useCache = true) => cachedGet('/news', { channel }, useCache),
   search: (keyword) => request.get('/news', { params: { keyword } }),
-  getHot: () => request.get('/news/hot'),
+  getHot: (useCache = true) => cachedGet('/news/hot', {}, useCache),
   getRelated: (id) => request.get(`/news/${id}/related`),
+  clearCache: () => newsCache.clear(),
 }
 
 export const userApi = {
@@ -63,8 +102,28 @@ export const commentApi = {
   add: (newsId, data) => request.post(`/news/${newsId}/comment`, data),
 }
 
+const behaviorQueue = []
+let behaviorTimer = null
+
+function flushBehaviors() {
+  if (!behaviorQueue.length) return
+  const events = [...behaviorQueue]
+  behaviorQueue.length = 0
+  clearTimeout(behaviorTimer)
+  behaviorTimer = null
+  request.post('/behaviors', { events }).catch(() => {})
+}
+
 export const behaviorApi = {
-  report: (data) => request.post('/behaviors', data),
+  report: (data) => {
+    behaviorQueue.push({ ...data, timestamp: Date.now() })
+    if (behaviorQueue.length >= 10) {
+      flushBehaviors()
+    } else if (!behaviorTimer) {
+      behaviorTimer = setTimeout(flushBehaviors, 5000)
+    }
+  },
+  flush: flushBehaviors,
 }
 
 export const analyticsApi = {

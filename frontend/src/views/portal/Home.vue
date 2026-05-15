@@ -4,10 +4,9 @@
       <div class="headline-main" @click="goNews(headline.id)">
         <img
           v-if="headline.imageUrl"
-          v-lazy="headline.imageUrl"
+          :src="headline.imageUrl"
           :alt="headline.title"
           class="headline-img"
-          loading="eager"
         />
         <div v-else class="headline-img-wrap">
           <span v-if="headline.isBreaking" class="breaking-tag">BREAKING</span>
@@ -30,7 +29,6 @@
             v-lazy="item.imageUrl"
             :alt="item.title"
             class="side-img"
-            loading="lazy"
           />
           <div v-else class="side-img-wrap"></div>
           <div class="side-content">
@@ -55,7 +53,6 @@
               v-lazy="item.imageUrl"
               :alt="item.title"
               class="thumb-img"
-              loading="lazy"
             />
             <div v-else class="thumb-wrap"></div>
             <div class="news-body">
@@ -131,12 +128,11 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
-import axios from 'axios'
+import { newsApi, behaviorApi } from '../../api'
 import { channels, formatRelativeTime } from '../../mock/newsData'
 
-// 频道名称映射
 const channelLabelMap = {
   'AI': '人工智能',
   '大数据': '大数据',
@@ -152,6 +148,7 @@ const allNews = ref([])
 const hotSummary = ref('')
 const hotSummaryLoading = ref(false)
 const hotInstruction = ref('')
+let abortController = null
 
 const headline = computed(() => {
   if (!allNews.value[0]) {
@@ -210,7 +207,7 @@ function goChannel(name) {
 }
 
 function loadMore() {
-  window.location.href = '/channel/AI'
+  router.push('/channel/AI')
 }
 
 async function fetchHotSummary() {
@@ -246,7 +243,7 @@ async function fetchHotSummary() {
   if (!streamSuccess) {
     try {
       const params = hotInstruction.value.trim() ? `?instruction=${encodeURIComponent(hotInstruction.value.trim())}` : ''
-      const res = await axios.get(`/api/ai/hot-summary${params}`, { timeout: 60000 })
+      const res = await newsApi.getList({ instruction: hotInstruction.value.trim() }, false)
       if (res.data.success) {
         hotSummary.value = res.data.data
         streamSuccess = true
@@ -283,7 +280,7 @@ function cleanText(text) {
 
 onMounted(async () => {
   try {
-    const res = await axios.get('/api/news')
+    const res = await newsApi.getList()
     if (res.data.data) {
       allNews.value = res.data.data.map(item => ({
         ...item,
@@ -294,6 +291,11 @@ onMounted(async () => {
   } catch (err) {
     console.error('Failed to load news:', err)
   }
+  behaviorApi.report({ eventType: 'page_view', targetId: 'home', targetType: 'page' })
+})
+
+onUnmounted(() => {
+  behaviorApi.flush()
 })
 </script>
 

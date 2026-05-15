@@ -3,6 +3,10 @@ export default {
     const src = binding.value
     if (!src) return
 
+    el._lazyObserver = null
+    el._lazyRetryCount = 0
+    const MAX_RETRY = 2
+
     const options = {
       rootMargin: '200px 0px',
       threshold: 0.01
@@ -11,33 +15,64 @@ export default {
     const observer = new IntersectionObserver((entries) => {
       entries.forEach(entry => {
         if (entry.isIntersecting) {
-          if (el.tagName === 'IMG') {
-            const img = new Image()
-            img.onload = () => {
-              el.src = src
-              el.classList.add('loaded')
-            }
-            img.onerror = () => {
-              el.src = generatePlaceholder(el.alt || '')
-              el.classList.add('loaded')
-              el.classList.add('img-error')
-            }
-            img.src = src
-          }
+          loadImage(el, src)
           observer.unobserve(el)
         }
       })
     }, options)
 
+    el._lazyObserver = observer
+
     if (el.tagName === 'IMG') {
       el.style.backgroundColor = '#f0f0f0'
-      observer.observe(el)
+      el.style.opacity = '0'
+      el.style.transition = 'opacity 0.3s ease-in-out'
+    } else {
+      el.style.backgroundColor = '#f0f0f0'
     }
+    observer.observe(el)
   },
   updated(el, binding) {
-    if (binding.value !== binding.oldValue && el.tagName === 'IMG') {
-      el.src = binding.value
+    if (binding.value !== binding.oldValue && binding.value) {
+      loadImage(el, binding.value)
     }
+  },
+  unmounted(el) {
+    if (el._lazyObserver) {
+      el._lazyObserver.disconnect()
+      el._lazyObserver = null
+    }
+  }
+}
+
+function loadImage(el, src) {
+  const MAX_RETRY = 2
+  if (el.tagName === 'IMG') {
+    const img = new Image()
+    img.onload = () => {
+      el.src = src
+      el.style.opacity = '1'
+      el.classList.add('loaded')
+    }
+    img.onerror = () => {
+      if (el._lazyRetryCount < MAX_RETRY) {
+        el._lazyRetryCount++
+        setTimeout(() => {
+          img.src = src + (src.includes('?') ? '&' : '?') + '_retry=' + el._lazyRetryCount
+        }, 500 * el._lazyRetryCount)
+      } else {
+        el.src = generatePlaceholder(el.alt || '')
+        el.style.opacity = '1'
+        el.classList.add('loaded')
+        el.classList.add('img-error')
+      }
+    }
+    img.src = src
+  } else {
+    el.style.backgroundImage = `url(${src})`
+    el.style.backgroundSize = 'cover'
+    el.style.backgroundPosition = 'center'
+    el.classList.add('loaded')
   }
 }
 
