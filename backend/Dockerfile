@@ -17,6 +17,8 @@ WORKDIR /app
 
 COPY --from=build /app/target/portal-1.0.0.jar app.jar
 
+RUN mkdir -p /app/logs && chown appuser:appgroup /app/logs
+
 USER appuser
 
 EXPOSE 8090
