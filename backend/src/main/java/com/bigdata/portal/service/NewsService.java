@@ -118,7 +118,7 @@ public class NewsService {
 
     public void addComment(Long newsId, Long userId, String content) {
         if (content != null) {
-            content = org.jsoup.Jsoup.clean(content, org.jsoup.safety.Whitelist.basic());
+            content = org.jsoup.Jsoup.clean(content, org.jsoup.safety.Safelist.basic());
         }
         Comment comment = new Comment();
         comment.setNewsId(newsId);
