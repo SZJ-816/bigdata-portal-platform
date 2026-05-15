@@ -5,8 +5,7 @@ import com.bigdata.portal.kafka.BehaviorProducer;
 import com.bigdata.portal.mapper.UserBehaviorMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 @RestController
 @RequestMapping("/api/behaviors")
@@ -19,14 +18,53 @@ public class BehaviorController {
     private UserBehaviorMapper behaviorMapper;
 
     @PostMapping
-    public Map<String, Object> report(@RequestBody UserBehavior behavior) {
+    public Map<String, Object> report(@RequestBody Map<String, Object> body) {
         Map<String, Object> result = new HashMap<>();
         try {
-            behaviorMapper.insert(behavior);
-            behaviorProducer.sendBehavior(behavior);
+            if (body.containsKey("events") && body.get("events") instanceof List) {
+                List<Map<String, Object>> events = (List<Map<String, Object>>) body.get("events");
+                for (Map<String, Object> event : events) {
+                    UserBehavior behavior = new UserBehavior();
+                    behavior.setEventType((String) event.getOrDefault("eventType", ""));
+                    Object targetIdObj = event.get("targetId");
+                    if (targetIdObj instanceof Number) {
+                        behavior.setTargetId(((Number) targetIdObj).longValue());
+                    } else if (targetIdObj instanceof String) {
+                        try { behavior.setTargetId(Long.parseLong((String) targetIdObj)); } catch (NumberFormatException e) { behavior.setTargetId(0L); }
+                    }
+                    behavior.setTargetType((String) event.getOrDefault("targetType", ""));
+                    Object userIdObj = event.get("userId");
+                    if (userIdObj instanceof Number) {
+                        behavior.setUserId(((Number) userIdObj).longValue());
+                    }
+                    if (behavior.getEventType() != null && !behavior.getEventType().isEmpty()) {
+                        behaviorMapper.insert(behavior);
+                        behaviorProducer.sendBehavior(behavior);
+                    }
+                }
+            } else {
+                UserBehavior behavior = new UserBehavior();
+                behavior.setEventType((String) body.getOrDefault("eventType", ""));
+                Object targetIdObj = body.get("targetId");
+                if (targetIdObj instanceof Number) {
+                    behavior.setTargetId(((Number) targetIdObj).longValue());
+                } else if (targetIdObj instanceof String) {
+                    try { behavior.setTargetId(Long.parseLong((String) targetIdObj)); } catch (NumberFormatException e) { behavior.setTargetId(0L); }
+                }
+                behavior.setTargetType((String) body.getOrDefault("targetType", ""));
+                Object userIdObj = body.get("userId");
+                if (userIdObj instanceof Number) {
+                    behavior.setUserId(((Number) userIdObj).longValue());
+                }
+                if (behavior.getEventType() != null && !behavior.getEventType().isEmpty()) {
+                    behaviorMapper.insert(behavior);
+                    behaviorProducer.sendBehavior(behavior);
+                }
+            }
             result.put("success", true);
         } catch (Exception e) {
-            result.put("success", true);
+            result.put("success", false);
+            result.put("message", e.getMessage());
         }
         return result;
     }

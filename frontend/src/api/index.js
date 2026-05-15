@@ -54,10 +54,13 @@ export function createAbortController() {
 export default request
 
 export const newsApi = {
-  getList: (params, useCache = true) => cachedGet('/news', params, useCache),
+  getList: (params = {}, useCache = true) => {
+    const p = { page: 1, size: 50, ...params }
+    return cachedGet('/news', p, useCache)
+  },
   getById: (id) => request.get(`/news/${id}`),
-  getByChannel: (channel, useCache = true) => cachedGet('/news', { channel }, useCache),
-  search: (keyword) => request.get('/news', { params: { keyword } }),
+  getByChannel: (channel, useCache = true) => cachedGet('/news', { channel, page: 1, size: 50 }, useCache),
+  search: (keyword) => request.get('/news', { params: { keyword, page: 1, size: 50 } }),
   getHot: (useCache = true) => cachedGet('/news/hot', {}, useCache),
   getRelated: (id) => request.get(`/news/${id}/related`),
   clearCache: () => newsCache.clear(),

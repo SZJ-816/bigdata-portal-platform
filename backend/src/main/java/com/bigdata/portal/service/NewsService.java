@@ -34,8 +34,16 @@ public class NewsService {
         CHANNEL_MAP.put("创业", "创业");
     }
 
-    public List<News> getList() {
-        return newsMapper.findAll();
+    public Map<String, Object> getList(int page, int size) {
+        int offset = (page - 1) * size;
+        List<News> list = newsMapper.findPage(offset, size);
+        long total = newsMapper.count();
+        Map<String, Object> result = new HashMap<>();
+        result.put("data", list);
+        result.put("total", total);
+        result.put("page", page);
+        result.put("size", size);
+        return result;
     }
 
     public News getById(Long id) {
@@ -43,11 +51,41 @@ public class NewsService {
         return newsMapper.findById(id);
     }
 
-    public List<News> search(String keyword) {
-        return newsMapper.search(keyword);
+    public Map<String, Object> search(String keyword, int page, int size) {
+        int offset = (page - 1) * size;
+        List<News> list = newsMapper.searchPage(keyword, offset, size);
+        long total = newsMapper.countByKeyword(keyword);
+        Map<String, Object> result = new HashMap<>();
+        result.put("data", list);
+        result.put("total", total);
+        result.put("page", page);
+        result.put("size", size);
+        return result;
     }
 
-    public List<News> getByChannel(String channel) {
+    public Map<String, Object> getByChannel(String channel, int page, int size) {
+        String decodedChannel = channel;
+        try {
+            decodedChannel = URLDecoder.decode(channel, StandardCharsets.UTF_8.name());
+        } catch (UnsupportedEncodingException e) {
+        }
+        String actualChannel = CHANNEL_MAP.getOrDefault(decodedChannel, decodedChannel);
+        int offset = (page - 1) * size;
+        List<News> list = newsMapper.findByChannelPage(actualChannel, offset, size);
+        long total = newsMapper.countByChannel(actualChannel);
+        Map<String, Object> result = new HashMap<>();
+        result.put("data", list);
+        result.put("total", total);
+        result.put("page", page);
+        result.put("size", size);
+        return result;
+    }
+
+    public List<News> getBreaking() {
+        return newsMapper.findBreaking();
+    }
+
+    public List<News> getByChannelAll(String channel) {
         String decodedChannel = channel;
         try {
             decodedChannel = URLDecoder.decode(channel, StandardCharsets.UTF_8.name());
@@ -57,8 +95,8 @@ public class NewsService {
         return newsMapper.findByChannel(actualChannel);
     }
 
-    public List<News> getBreaking() {
-        return newsMapper.findBreaking();
+    public List<News> getListAll() {
+        return newsMapper.findByChannel(null);
     }
 
     public void addComment(Long newsId, Long userId, String content) {

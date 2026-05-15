@@ -22,19 +22,16 @@ public class NewsController {
 
     @GetMapping
     public Map<String, Object> getList(@RequestParam(required = false) String channel,
-                                       @RequestParam(required = false) String keyword) {
-        Map<String, Object> result = new HashMap<>();
-        List<News> list;
+                                       @RequestParam(required = false) String keyword,
+                                       @RequestParam(defaultValue = "1") int page,
+                                       @RequestParam(defaultValue = "20") int size) {
         if (keyword != null && !keyword.isEmpty()) {
-            list = newsService.search(keyword);
+            return newsService.search(keyword, page, size);
         } else if (channel != null && !channel.isEmpty()) {
-            list = newsService.getByChannel(channel);
+            return newsService.getByChannel(channel, page, size);
         } else {
-            list = newsService.getList();
+            return newsService.getList(page, size);
         }
-        result.put("data", list);
-        result.put("total", list.size());
-        return result;
     }
 
     @GetMapping("/breaking")
