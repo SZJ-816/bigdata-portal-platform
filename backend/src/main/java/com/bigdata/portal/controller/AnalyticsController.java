@@ -1,5 +1,7 @@
 package com.bigdata.portal.controller;
 
+import com.bigdata.portal.mapper.*;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 import java.util.*;
 
@@ -7,15 +9,33 @@ import java.util.*;
 @RequestMapping("/api/analytics")
 public class AnalyticsController {
 
+    @Autowired
+    private UserBehaviorMapper behaviorMapper;
+
+    @Autowired
+    private NewsMapper newsMapper;
+
+    @Autowired
+    private UserMapper userMapper;
+
+    @Autowired
+    private UserHistoryMapper historyMapper;
+
+    @Autowired
+    private CommentMapper commentMapper;
+
     @GetMapping("/realtime")
     public Map<String, Object> getRealtimeStats() {
         Map<String, Object> result = new HashMap<>();
-        Random random = new Random();
         Map<String, Object> data = new HashMap<>();
-        data.put("todayUV", 3000 + random.nextInt(2000));
-        data.put("todayPV", 25000 + random.nextInt(8000));
-        data.put("onlineUsers", 500 + random.nextInt(300));
-        data.put("avgDuration", 180 + random.nextInt(180));
+        data.put("todayUV", behaviorMapper.countTodayUV());
+        data.put("todayPV", behaviorMapper.countTodayPV());
+        data.put("onlineUsers", behaviorMapper.countOnlineUsers());
+        data.put("avgDuration", historyMapper.avgDurationToday());
+        data.put("totalUsers", userMapper.count());
+        data.put("totalNews", newsMapper.count());
+        data.put("todayNews", newsMapper.countToday());
+        data.put("totalViews", newsMapper.sumViewCount() != null ? newsMapper.sumViewCount() : 0);
         result.put("data", data);
         return result;
     }
@@ -23,14 +43,26 @@ public class AnalyticsController {
     @GetMapping("/trend")
     public Map<String, Object> getTrend() {
         Map<String, Object> result = new HashMap<>();
-        Random random = new Random();
+        List<Map<String, Object>> raw = behaviorMapper.trendByHourToday();
         List<Map<String, Object>> list = new ArrayList<>();
-        for (int i = 0; i < 24; i++) {
+        Set<Integer> existingHours = new HashSet<>();
+        for (Map<String, Object> r : raw) {
             Map<String, Object> item = new HashMap<>();
-            item.put("hour", i + ":00");
-            item.put("pv", 500 + random.nextInt(2000));
-            item.put("uv", 100 + random.nextInt(500));
+            int hour = ((Number) r.get("hour")).intValue();
+            existingHours.add(hour);
+            item.put("hour", hour + ":00");
+            item.put("uv", r.get("uv"));
+            item.put("pv", r.get("pv"));
             list.add(item);
+        }
+        for (int i = 0; i < 24; i++) {
+            if (!existingHours.contains(i)) {
+                Map<String, Object> item = new HashMap<>();
+                item.put("hour", i + ":00");
+                item.put("uv", 0);
+                item.put("pv", 0);
+                list.add(i, item);
+            }
         }
         result.put("data", list);
         return result;
@@ -39,13 +71,12 @@ public class AnalyticsController {
     @GetMapping("/hot-news")
     public Map<String, Object> getHotNews() {
         Map<String, Object> result = new HashMap<>();
+        List<Map<String, Object>> raw = newsMapper.findTopByViews(10);
         List<Map<String, Object>> list = new ArrayList<>();
-        String[] names = {"GPT-5正式发布", "豆包AI月活破2亿", "月之暗面10亿融资", "Blackwell Ultra量产", "Spark 4.0发布", "通义千问3.0", "AlphaFold 4", "Flink 2.0", "Azure AI Agent", "Graviton5发布"};
-        int[] views = {5842, 4123, 2890, 3456, 2876, 2543, 3215, 2341, 2109, 1987};
-        for (int i = 0; i < names.length; i++) {
+        for (Map<String, Object> r : raw) {
             Map<String, Object> item = new HashMap<>();
-            item.put("name", names[i]);
-            item.put("value", views[i]);
+            item.put("name", r.get("title"));
+            item.put("value", r.get("viewCount"));
             list.add(item);
         }
         result.put("data", list);
@@ -55,13 +86,12 @@ public class AnalyticsController {
     @GetMapping("/channel-dist")
     public Map<String, Object> getChannelDist() {
         Map<String, Object> result = new HashMap<>();
+        List<Map<String, Object>> raw = newsMapper.countByChannelGroup();
         List<Map<String, Object>> list = new ArrayList<>();
-        String[] channels = {"AI", "大数据", "云计算", "互联网", "硬件", "创业"};
-        int[] values = {9057, 6784, 6639, 5999, 5110, 4124};
-        for (int i = 0; i < channels.length; i++) {
+        for (Map<String, Object> r : raw) {
             Map<String, Object> item = new HashMap<>();
-            item.put("name", channels[i]);
-            item.put("value", values[i]);
+            item.put("name", r.get("channel"));
+            item.put("value", r.get("cnt"));
             list.add(item);
         }
         result.put("data", list);
@@ -71,15 +101,7 @@ public class AnalyticsController {
     @GetMapping("/region-dist")
     public Map<String, Object> getRegionDist() {
         Map<String, Object> result = new HashMap<>();
-        List<Map<String, Object>> list = new ArrayList<>();
-        String[] regions = {"北京", "上海", "深圳", "杭州", "广州", "成都", "武汉", "南京", "西安", "重庆"};
-        int[] values = {3847, 3210, 2876, 2654, 1987, 1654, 1432, 1287, 1098, 987};
-        for (int i = 0; i < regions.length; i++) {
-            Map<String, Object> item = new HashMap<>();
-            item.put("name", regions[i]);
-            item.put("value", values[i]);
-            list.add(item);
-        }
+        List<Map<String, Object>> list = behaviorMapper.countByEventTypeToday();
         result.put("data", list);
         return result;
     }
@@ -87,16 +109,45 @@ public class AnalyticsController {
     @GetMapping("/funnel")
     public Map<String, Object> getFunnel() {
         Map<String, Object> result = new HashMap<>();
+        List<Map<String, Object>> raw = behaviorMapper.countByEventTypeToday();
+        Map<String, Long> eventMap = new LinkedHashMap<>();
+        for (Map<String, Object> r : raw) {
+            String eventType = (String) r.get("event_type");
+            long cnt = ((Number) r.get("cnt")).longValue();
+            eventMap.put(eventType, cnt);
+        }
+        String[] funnelOrder = {"view", "click", "read", "comment", "share", "favorite"};
+        String[] funnelLabels = {"浏览", "点击", "阅读", "评论", "分享", "收藏"};
+        long maxVal = eventMap.values().stream().max(Long::compare).orElse(1L);
         List<Map<String, Object>> list = new ArrayList<>();
-        String[] names = {"浏览", "点击", "阅读", "评论", "分享"};
-        int[] values = {100, 68, 42, 18, 8};
-        for (int i = 0; i < names.length; i++) {
-            Map<String, Object> item = new HashMap<>();
-            item.put("name", names[i]);
-            item.put("value", values[i]);
-            list.add(item);
+        for (int i = 0; i < funnelOrder.length; i++) {
+            long val = eventMap.getOrDefault(funnelOrder[i], 0L);
+            if (val > 0 || i == 0) {
+                Map<String, Object> item = new HashMap<>();
+                item.put("name", funnelLabels[i]);
+                item.put("value", maxVal > 0 ? Math.round(val * 100.0 / maxVal) : 0);
+                list.add(item);
+            }
+        }
+        if (list.isEmpty()) {
+            list.add(Map.of("name", "浏览", "value", 0));
         }
         result.put("data", list);
+        return result;
+    }
+
+    @GetMapping("/overview")
+    public Map<String, Object> getOverview() {
+        Map<String, Object> result = new HashMap<>();
+        Map<String, Object> data = new HashMap<>();
+        data.put("totalUsers", userMapper.count());
+        data.put("todayUsers", userMapper.countToday());
+        data.put("totalNews", newsMapper.count());
+        data.put("todayNews", newsMapper.countToday());
+        data.put("totalViews", newsMapper.sumViewCount() != null ? newsMapper.sumViewCount() : 0);
+        data.put("totalBehaviors", behaviorMapper.countTotalBehaviors());
+        data.put("totalReadHistory", historyMapper.countTotal());
+        result.put("data", data);
         return result;
     }
 }

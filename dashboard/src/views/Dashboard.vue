@@ -1,804 +1,890 @@
 <template>
   <div class="dashboard">
-    <header class="header">
-      <h1 class="title">科技新闻实时数据大屏</h1>
-      <div class="header-right">
-        <div class="live-indicator">
-          <span class="live-dot"></span>
-          <span class="live-text">LIVE</span>
+    <header class="top-bar">
+      <div class="bar-inner">
+        <div class="brand">
+          <span class="brand-icon">◆</span>
+          <span class="brand-name">BigData Portal</span>
+          <span class="brand-sub">数据管理平台</span>
         </div>
-        <span class="time">{{ currentTime }}</span>
+        <nav class="main-nav">
+          <button :class="['nav-link', { active: activeTab === 'overview' }]" @click="switchTab('overview')">
+            <span class="nav-icon">📊</span>数据总览
+          </button>
+          <button :class="['nav-link', { active: activeTab === 'news' }]" @click="switchTab('news')">
+            <span class="nav-icon">📰</span>新闻管理
+          </button>
+          <button :class="['nav-link', { active: activeTab === 'users' }]" @click="switchTab('users')">
+            <span class="nav-icon">👥</span>用户管理
+          </button>
+        </nav>
+        <div class="bar-right">
+          <span class="live-tag"><i class="dot"></i>LIVE</span>
+          <span class="clock">{{ currentTime }}</span>
+        </div>
       </div>
     </header>
 
-    <div class="stats-row">
-      <div class="stat-card" v-for="stat in statsData" :key="stat.label">
-        <div class="stat-icon" :style="{ color: stat.color }">
-          <span v-html="stat.icon"></span>
+    <main class="page-body">
+      <div v-if="activeTab === 'overview'" class="overview-page">
+        <section class="kpi-banner">
+          <div class="kpi-item" v-for="stat in statsData" :key="stat.label">
+            <div class="kpi-num" :style="{ color: stat.color }">{{ stat.value }}</div>
+            <div class="kpi-label">{{ stat.label }}</div>
+          </div>
+        </section>
+
+        <div class="overview-grid">
+          <section class="panel panel-trend">
+            <div class="panel-head">
+              <h2>今日阅读趋势</h2>
+              <span class="panel-tag">实时</span>
+            </div>
+            <div ref="trendChartRef" class="panel-chart"></div>
+          </section>
+
+          <section class="panel panel-hot">
+            <div class="panel-head">
+              <h2>热门新闻 TOP10</h2>
+              <span class="panel-tag">热度</span>
+            </div>
+            <div ref="hotNewsChartRef" class="panel-chart"></div>
+          </section>
+
+          <section class="panel panel-channel">
+            <div class="panel-head">
+              <h2>频道分布</h2>
+            </div>
+            <div ref="channelChartRef" class="panel-chart"></div>
+          </section>
+
+          <section class="panel panel-funnel">
+            <div class="panel-head">
+              <h2>行为漏斗</h2>
+            </div>
+            <div ref="funnelChartRef" class="panel-chart"></div>
+          </section>
+
+          <section class="panel panel-event">
+            <div class="panel-head">
+              <h2>行为类型分布</h2>
+            </div>
+            <div ref="regionChartRef" class="panel-chart"></div>
+          </section>
         </div>
-        <div class="stat-content">
-          <div class="stat-value">{{ stat.value }}</div>
-          <div class="stat-label">{{ stat.label }}</div>
-          <div class="stat-trend" :class="stat.trend > 0 ? 'up' : 'down'">
-            <span>{{ stat.trend > 0 ? '↑' : '↓' }}</span>
-            {{ Math.abs(stat.trend) }}%
+      </div>
+
+      <div v-if="activeTab === 'news'" class="manage-page">
+        <div class="search-bar">
+          <input v-model="newsKeyword" class="search-input" placeholder="搜索新闻标题或摘要..." @keyup.enter="loadNews(1)" />
+          <select v-model="newsChannel" class="search-select" @change="loadNews(1)">
+            <option value="">全部频道</option>
+            <option v-for="ch in channels" :key="ch" :value="ch">{{ ch }}</option>
+          </select>
+          <button class="btn-primary" @click="loadNews(1)">搜索</button>
+        </div>
+        <div class="table-card">
+          <table class="news-table">
+            <thead>
+              <tr>
+                <th class="col-id">ID</th>
+                <th class="col-title">标题</th>
+                <th class="col-ch">频道</th>
+                <th class="col-src">来源</th>
+                <th class="col-num">浏览</th>
+                <th class="col-num">评论</th>
+                <th class="col-time">发布时间</th>
+                <th class="col-act">操作</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="item in newsList" :key="item.id">
+                <td class="col-id">{{ item.id }}</td>
+                <td class="col-title">{{ item.title }}</td>
+                <td class="col-ch"><span class="ch-tag">{{ item.channel }}</span></td>
+                <td class="col-src">{{ item.source }}</td>
+                <td class="col-num">{{ item.viewCount }}</td>
+                <td class="col-num">{{ item.commentCount }}</td>
+                <td class="col-time">{{ formatDate(item.publishTime) }}</td>
+                <td class="col-act">
+                  <button class="btn-edit" @click="editNews(item)">编辑</button>
+                  <button class="btn-del" @click="deleteNews(item.id)">删除</button>
+                </td>
+              </tr>
+              <tr v-if="newsList.length === 0"><td colspan="8" class="empty-row">暂无数据</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="pager">
+          <button :disabled="newsPage <= 1" @click="loadNews(newsPage - 1)">‹ 上一页</button>
+          <span>{{ newsPage }} / {{ newsTotalPages || 1 }} 页 · 共 {{ newsTotal }} 条</span>
+          <button :disabled="newsPage >= newsTotalPages" @click="loadNews(newsPage + 1)">下一页 ›</button>
+        </div>
+
+        <div v-if="editingNews" class="overlay" @click.self="editingNews = null">
+          <div class="edit-modal">
+            <h3>编辑新闻</h3>
+            <div class="field"><label>标题</label><input v-model="editForm.title" /></div>
+            <div class="field"><label>摘要</label><textarea v-model="editForm.summary" rows="3"></textarea></div>
+            <div class="field-row">
+              <div class="field"><label>频道</label><input v-model="editForm.channel" /></div>
+              <div class="field"><label>来源</label><input v-model="editForm.source" /></div>
+            </div>
+            <div class="field"><label>图片URL</label><input v-model="editForm.imageUrl" /></div>
+            <div class="field"><label class="check-label"><input type="checkbox" v-model="editForm.isBreaking" :true-value="1" :false-value="0" /><span>突发新闻</span></label></div>
+            <div class="modal-foot">
+              <button class="btn-primary" @click="saveNews">保存</button>
+              <button class="btn-ghost" @click="editingNews = null">取消</button>
+            </div>
           </div>
         </div>
       </div>
-    </div>
 
-    <div class="charts-row">
-      <div class="chart-card chart-large">
-        <h3 class="chart-title">实时阅读趋势</h3>
-        <div ref="trendChartRef" class="chart-container"></div>
+      <div v-if="activeTab === 'users'" class="manage-page">
+        <div class="search-bar">
+          <span class="result-count">共 {{ usersTotal }} 个注册用户</span>
+        </div>
+        <div class="table-card">
+          <table class="news-table">
+            <thead>
+              <tr>
+                <th style="width:60px">ID</th>
+                <th style="width:160px">用户名</th>
+                <th>邮箱</th>
+                <th style="width:160px">注册时间</th>
+                <th style="width:100px">操作</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="item in usersList" :key="item.id">
+                <td>{{ item.id }}</td>
+                <td>
+                  <div class="user-cell">
+                    <span class="avatar">{{ (item.username || '?')[0].toUpperCase() }}</span>
+                    {{ item.username }}
+                  </div>
+                </td>
+                <td>{{ item.email || '-' }}</td>
+                <td>{{ formatDate(item.createdAt) }}</td>
+                <td><button class="btn-del" @click="deleteUser(item.id, item.username)">删除</button></td>
+              </tr>
+              <tr v-if="usersList.length === 0"><td colspan="5" class="empty-row">暂无数据</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="pager">
+          <button :disabled="usersPage <= 1" @click="loadUsers(usersPage - 1)">‹ 上一页</button>
+          <span>{{ usersPage }} / {{ usersTotalPages || 1 }} 页</span>
+          <button :disabled="usersPage >= usersTotalPages" @click="loadUsers(usersPage + 1)">下一页 ›</button>
+        </div>
       </div>
-      <div class="chart-card chart-large">
-        <h3 class="chart-title">新闻热度TOP10</h3>
-        <div ref="hotNewsChartRef" class="chart-container"></div>
-      </div>
-    </div>
-
-    <div class="charts-row">
-      <div class="chart-card">
-        <h3 class="chart-title">频道分布</h3>
-        <div ref="channelChartRef" class="chart-container"></div>
-      </div>
-      <div class="chart-card">
-        <h3 class="chart-title">用户行为漏斗</h3>
-        <div ref="funnelChartRef" class="chart-container"></div>
-      </div>
-      <div class="chart-card">
-        <h3 class="chart-title">地域分布TOP10</h3>
-        <div ref="regionChartRef" class="chart-container"></div>
-      </div>
-    </div>
-
-    <div class="news-ticker">
-      <div class="ticker-label">最新阅读</div>
-      <div class="ticker-content">
-        <span class="ticker-text" :style="{ animationDuration: tickerDuration + 's' }">
-          {{ tickerText }}
-        </span>
-      </div>
-    </div>
+    </main>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted, computed } from 'vue'
+import { ref, onMounted, onUnmounted, computed, nextTick, watch } from 'vue'
 import * as echarts from 'echarts'
-import { analyticsApi } from '../api/index.js'
+import { analyticsApi, adminApi } from '../api/index.js'
 
+const activeTab = ref('overview')
 const trendChartRef = ref(null)
 const hotNewsChartRef = ref(null)
 const channelChartRef = ref(null)
 const funnelChartRef = ref(null)
 const regionChartRef = ref(null)
-
-let trendChart = null
-let hotNewsChart = null
-let channelChart = null
-let funnelChart = null
-let regionChart = null
-
+let trendChart = null, hotNewsChart = null, channelChart = null, funnelChart = null, regionChart = null
 const currentTime = ref('')
-const tickerText = ref('')
-const tickerDuration = ref(30)
 
 const statsData = ref([
-  { label: '今日UV', value: '0', icon: '👁', color: '#00d4ff', trend: 0 },
-  { label: '今日PV', value: '0', icon: '📊', color: '#7c3aed', trend: 0 },
-  { label: '实时在线', value: '0', icon: '🔵', color: '#10b981', trend: 0 },
-  { label: '平均阅读时长', value: '0s', icon: '⏱', color: '#f59e0b', trend: 0 }
+  { label: '今日UV', value: '-', icon: '', color: '#2F6BFF' },
+  { label: '今日PV', value: '-', icon: '', color: '#7C3AED' },
+  { label: '实时在线', value: '-', icon: '', color: '#10B981' },
+  { label: '平均阅读时长', value: '-', icon: '', color: '#F59E0B' },
+  { label: '总用户数', value: '-', icon: '', color: '#EC4899' },
+  { label: '总新闻数', value: '-', icon: '', color: '#06B6D4' },
+  { label: '今日新增', value: '-', icon: '', color: '#8B5CF6' },
+  { label: '总浏览量', value: '-', icon: '', color: '#F97316' }
 ])
+
+const newsList = ref([])
+const newsPage = ref(1)
+const newsTotal = ref(0)
+const newsTotalPages = computed(() => Math.max(1, Math.ceil(newsTotal.value / 20)))
+const newsKeyword = ref('')
+const newsChannel = ref('')
+const channels = ref([])
+const editingNews = ref(null)
+const editForm = ref({})
+const usersList = ref([])
+const usersPage = ref(1)
+const usersTotal = ref(0)
+const usersTotalPages = computed(() => Math.max(1, Math.ceil(usersTotal.value / 20)))
+
+const switchTab = (tab) => {
+  activeTab.value = tab
+  if (tab === 'news') loadNews(1)
+  if (tab === 'users') loadUsers(1)
+}
 
 const updateTime = () => {
   const now = new Date()
-  currentTime.value = now.toLocaleString('zh-CN', {
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit',
-    hour12: false
-  })
-}
-
-const updateRealtimeStats = async () => {
-  try {
-    const data = await analyticsApi.getRealtimeStats()
-    statsData.value = [
-      { label: '今日UV', value: formatNumber(data.uv), icon: '👁', color: '#00d4ff', trend: data.uvTrend },
-      { label: '今日PV', value: formatNumber(data.pv), icon: '📊', color: '#7c3aed', trend: data.pvTrend },
-      { label: '实时在线', value: formatNumber(data.online), icon: '🔵', color: '#10b981', trend: data.onlineTrend },
-      { label: '平均阅读时长', value: formatDuration(data.avgDuration), icon: '⏱', color: '#f59e0b', trend: data.durationTrend }
-    ]
-    tickerText.value = data.latestNews || ''
-  } catch (error) {
-    console.error('Failed to fetch realtime stats:', error)
-    generateMockStats()
-  }
-}
-
-const generateMockStats = () => {
-  const uv = Math.floor(Math.random() * 50000) + 10000
-  const pv = uv * (Math.random() * 3 + 2)
-  const online = Math.floor(Math.random() * 5000) + 1000
-  const avgDuration = Math.floor(Math.random() * 300) + 60
-  const news = [
-    'OpenAI发布GPT-5，引发行业热议',
-    '苹果WWDC2026即将开幕，iOS 20要来了',
-    '特斯拉全自动驾驶获批在华运营',
-    '中国量子计算获重大突破',
-    'SpaceX星舰完成首次商业发射',
-    '华为发布鸿蒙5.0系统',
-    '英伟达发布新一代AI芯片',
-    '字节跳动推出AI搜索产品',
-    '谷歌量子计算机实现重大突破',
-    '小米汽车月销量突破2万台'
-  ]
-  statsData.value = [
-    { label: '今日UV', value: formatNumber(uv), icon: '👁', color: '#00d4ff', trend: Math.floor(Math.random() * 30) - 10 },
-    { label: '今日PV', value: formatNumber(pv), icon: '📊', color: '#7c3aed', trend: Math.floor(Math.random() * 30) - 10 },
-    { label: '实时在线', value: formatNumber(online), icon: '🔵', color: '#10b981', trend: Math.floor(Math.random() * 20) - 5 },
-    { label: '平均阅读时长', value: formatDuration(avgDuration), icon: '⏱', color: '#f59e0b', trend: Math.floor(Math.random() * 20) - 10 }
-  ]
-  tickerText.value = news.slice(0, 5).join(' | ')
-  tickerDuration.value = 30
+  currentTime.value = now.toLocaleString('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })
 }
 
 const formatNumber = (num) => {
+  if (num === null || num === undefined) return '0'
   if (num >= 10000) return (num / 10000).toFixed(1) + 'w'
   if (num >= 1000) return (num / 1000).toFixed(1) + 'k'
   return num.toString()
 }
 
-const formatDuration = (seconds) => {
-  if (seconds >= 60) {
-    const mins = Math.floor(seconds / 60)
-    const secs = seconds % 60
-    return `${mins}m${secs}s`
-  }
-  return `${seconds}s`
+const formatDuration = (s) => {
+  if (!s) return '0s'
+  return s >= 60 ? `${Math.floor(s / 60)}m${s % 60}s` : `${s}s`
+}
+
+const formatDate = (d) => {
+  if (!d) return '-'
+  return new Date(d).toLocaleString('zh-CN', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })
+}
+
+const updateRealtimeStats = async () => {
+  try {
+    const res = await analyticsApi.getRealtimeStats()
+    const d = res.data || res
+    statsData.value = [
+      { label: '今日UV', value: formatNumber(d.todayUV), color: '#2F6BFF' },
+      { label: '今日PV', value: formatNumber(d.todayPV), color: '#7C3AED' },
+      { label: '实时在线', value: formatNumber(d.onlineUsers), color: '#10B981' },
+      { label: '平均阅读时长', value: formatDuration(d.avgDuration), color: '#F59E0B' },
+      { label: '总用户数', value: formatNumber(d.totalUsers), color: '#EC4899' },
+      { label: '总新闻数', value: formatNumber(d.totalNews), color: '#06B6D4' },
+      { label: '今日新增', value: formatNumber(d.todayNews), color: '#8B5CF6' },
+      { label: '总浏览量', value: formatNumber(d.totalViews), color: '#F97316' }
+    ]
+  } catch (e) { console.error(e) }
+}
+
+const chartTheme = {
+  textColor: '#64748B',
+  splitColor: '#F1F5F9',
+  tipBg: '#1E293B',
+  tipText: '#F8FAFC'
 }
 
 const initTrendChart = async () => {
   if (!trendChartRef.value) return
+  if (trendChart) trendChart.dispose()
   trendChart = echarts.init(trendChartRef.value)
-  
-  const updateChart = async () => {
-    try {
-      const data = await analyticsApi.getTrend()
-      renderTrendChart(data)
-    } catch (error) {
-      console.error('Failed to fetch trend data:', error)
-      renderTrendChart(generateMockTrendData())
-    }
-  }
-  
-  updateChart()
-  setInterval(updateChart, 10000)
-}
-
-const generateMockTrendData = () => {
-  const hours = []
-  const uvData = []
-  const pvData = []
-  for (let i = 0; i < 24; i++) {
-    hours.push(i + '时')
-    uvData.push(Math.floor(Math.random() * 5000) + 1000)
-    pvData.push(Math.floor(Math.random() * 15000) + 3000)
-  }
-  return { hours, uv: uvData, pv: pvData }
-}
-
-const renderTrendChart = (data) => {
-  const option = {
-    backgroundColor: 'transparent',
-    tooltip: {
-      trigger: 'axis',
-      backgroundColor: 'rgba(10, 22, 40, 0.9)',
-      borderColor: '#1e3a5f',
-      textStyle: { color: '#e0e6ed' }
-    },
-    legend: {
-      data: ['UV', 'PV'],
-      textStyle: { color: '#a0aec0' },
-      top: 10
-    },
-    grid: {
-      left: '3%',
-      right: '4%',
-      bottom: '3%',
-      top: '15%',
-      containLabel: true
-    },
-    xAxis: {
-      type: 'category',
-      data: data.hours,
-      axisLine: { lineStyle: { color: '#2d4a6f' } },
-      axisLabel: { color: '#a0aec0' }
-    },
-    yAxis: {
-      type: 'value',
-      axisLine: { lineStyle: { color: '#2d4a6f' } },
-      axisLabel: { color: '#a0aec0' },
-      splitLine: { lineStyle: { color: '#1a2a40' } }
-    },
-    series: [
-      {
-        name: 'UV',
-        type: 'line',
-        smooth: true,
-        data: data.uv,
-        lineStyle: { color: '#00d4ff', width: 2 },
-        itemStyle: { color: '#00d4ff' },
-        areaStyle: {
-          color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-            { offset: 0, color: 'rgba(0, 212, 255, 0.3)' },
-            { offset: 1, color: 'rgba(0, 212, 255, 0)' }
-          ])
-        }
-      },
-      {
-        name: 'PV',
-        type: 'line',
-        smooth: true,
-        data: data.pv,
-        lineStyle: { color: '#7c3aed', width: 2 },
-        itemStyle: { color: '#7c3aed' },
-        areaStyle: {
-          color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-            { offset: 0, color: 'rgba(124, 58, 237, 0.3)' },
-            { offset: 1, color: 'rgba(124, 58, 237, 0)' }
-          ])
-        }
-      }
-    ]
-  }
-  trendChart.setOption(option)
+  try {
+    const res = await analyticsApi.getTrend()
+    const data = res.data || res
+    trendChart.setOption({
+      backgroundColor: 'transparent',
+      tooltip: { trigger: 'axis', backgroundColor: chartTheme.tipBg, borderColor: '#334155', textStyle: { color: chartTheme.tipText, fontSize: 12 } },
+      legend: { data: ['UV', 'PV'], textStyle: { color: chartTheme.textColor, fontSize: 11 }, top: 0, right: 0 },
+      grid: { left: 40, right: 16, bottom: 24, top: 32 },
+      xAxis: { type: 'category', data: data.map(d => d.hour), axisLine: { lineStyle: { color: '#E2E8F0' } }, axisLabel: { color: chartTheme.textColor, fontSize: 10 }, axisTick: { show: false } },
+      yAxis: { type: 'value', axisLine: { show: false }, axisLabel: { color: chartTheme.textColor, fontSize: 10 }, splitLine: { lineStyle: { color: chartTheme.splitColor } } },
+      series: [
+        { name: 'UV', type: 'line', smooth: true, data: data.map(d => d.uv), symbol: 'none', lineStyle: { color: '#2F6BFF', width: 2.5 }, areaStyle: { color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [{ offset: 0, color: 'rgba(47,107,255,0.18)' }, { offset: 1, color: 'rgba(47,107,255,0)' }]) } },
+        { name: 'PV', type: 'line', smooth: true, data: data.map(d => d.pv), symbol: 'none', lineStyle: { color: '#7C3AED', width: 2.5 }, areaStyle: { color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [{ offset: 0, color: 'rgba(124,58,237,0.18)' }, { offset: 1, color: 'rgba(124,58,237,0)' }]) } }
+      ]
+    })
+  } catch (e) { console.error(e) }
 }
 
 const initHotNewsChart = async () => {
   if (!hotNewsChartRef.value) return
+  if (hotNewsChart) hotNewsChart.dispose()
   hotNewsChart = echarts.init(hotNewsChartRef.value)
-  
-  const updateChart = async () => {
-    try {
-      const data = await analyticsApi.getHotNews()
-      renderHotNewsChart(data)
-    } catch (error) {
-      console.error('Failed to fetch hot news:', error)
-      renderHotNewsChart(generateMockHotNews())
-    }
-  }
-  
-  updateChart()
-  setInterval(updateChart, 15000)
-}
-
-const generateMockHotNews = () => {
-  const news = [
-    'ChatGPT-5发布：AI新纪元开启',
-    '苹果Vision Pro 2发布',
-    '华为Mate70系列发布',
-    'SpaceX火星计划新进展',
-    '量子计算突破1000量子比特',
-    '英伟达H200芯片供不应求',
-    '小米汽车月销破2万',
-    '字节跳动AI新产品发布',
-    '特斯拉FSD入华获批',
-    '中国6G技术重大突破'
-  ]
-  return news.map((title, i) => ({ title, views: 50000 - i * 4000 }))
-}
-
-const renderHotNewsChart = (data) => {
-  const option = {
-    backgroundColor: 'transparent',
-    tooltip: {
-      trigger: 'axis',
-      axisPointer: { type: 'shadow' },
-      backgroundColor: 'rgba(10, 22, 40, 0.9)',
-      borderColor: '#1e3a5f',
-      textStyle: { color: '#e0e6ed' }
-    },
-    grid: {
-      left: '3%',
-      right: '10%',
-      bottom: '3%',
-      top: '3%',
-      containLabel: true
-    },
-    xAxis: {
-      type: 'value',
-      axisLine: { lineStyle: { color: '#2d4a6f' } },
-      axisLabel: { color: '#a0aec0' },
-      splitLine: { lineStyle: { color: '#1a2a40' } }
-    },
-    yAxis: {
-      type: 'category',
-      data: data.map(d => d.title).reverse(),
-      axisLine: { lineStyle: { color: '#2d4a6f' } },
-      axisLabel: { color: '#a0aec0', fontSize: 10 }
-    },
-    series: [{
-      type: 'bar',
-      data: data.map(d => d.views).reverse(),
-      itemStyle: {
-        color: new echarts.graphic.LinearGradient(0, 0, 1, 0, [
-          { offset: 0, color: '#00d4ff' },
-          { offset: 1, color: '#7c3aed' }
-        ])
-      },
-      barWidth: 12
-    }]
-  }
-  hotNewsChart.setOption(option)
+  try {
+    const res = await analyticsApi.getHotNews()
+    const data = res.data || res
+    hotNewsChart.setOption({
+      backgroundColor: 'transparent',
+      tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' }, backgroundColor: chartTheme.tipBg, borderColor: '#334155', textStyle: { color: chartTheme.tipText, fontSize: 12 } },
+      grid: { left: 8, right: 40, bottom: 4, top: 4, containLabel: true },
+      xAxis: { type: 'value', axisLine: { show: false }, axisLabel: { color: chartTheme.textColor, fontSize: 10 }, splitLine: { lineStyle: { color: chartTheme.splitColor } } },
+      yAxis: { type: 'category', data: data.map(d => (d.name || '').substring(0, 10)).reverse(), axisLine: { show: false }, axisTick: { show: false }, axisLabel: { color: '#475569', fontSize: 11 } },
+      series: [{ type: 'bar', data: data.map(d => d.value).reverse(), itemStyle: { color: new echarts.graphic.LinearGradient(0, 0, 1, 0, [{ offset: 0, color: '#2F6BFF' }, { offset: 1, color: '#7C3AED' }]), borderRadius: [0, 4, 4, 0] }, barWidth: 14 }]
+    })
+  } catch (e) { console.error(e) }
 }
 
 const initChannelChart = async () => {
   if (!channelChartRef.value) return
+  if (channelChart) channelChart.dispose()
   channelChart = echarts.init(channelChartRef.value)
-  
-  const updateChart = async () => {
-    try {
-      const data = await analyticsApi.getChannelDist()
-      renderChannelChart(data)
-    } catch (error) {
-      console.error('Failed to fetch channel dist:', error)
-      renderChannelChart(generateMockChannelData())
-    }
-  }
-  
-  updateChart()
-  setInterval(updateChart, 20000)
-}
-
-const generateMockChannelData = () => [
-  { name: 'AI', value: 35 },
-  { name: '大数据', value: 25 },
-  { name: '云计算', value: 18 },
-  { name: '互联网', value: 12 },
-  { name: '硬件', value: 6 },
-  { name: '创业', value: 4 }
-]
-
-const renderChannelChart = (data) => {
-  const option = {
-    backgroundColor: 'transparent',
-    tooltip: {
-      trigger: 'item',
-      backgroundColor: 'rgba(10, 22, 40, 0.9)',
-      borderColor: '#1e3a5f',
-      textStyle: { color: '#e0e6ed' }
-    },
-    legend: {
-      orient: 'vertical',
-      right: '5%',
-      top: 'center',
-      textStyle: { color: '#a0aec0' }
-    },
-    series: [{
-      type: 'pie',
-      radius: ['40%', '70%'],
-      center: ['35%', '50%'],
-      avoidLabelOverlap: false,
-      label: { show: false },
-      emphasis: {
-        label: { show: true, fontSize: 14, fontWeight: 'bold', color: '#fff' }
-      },
-      labelLine: { show: false },
-      data: data.map((item, i) => ({
-        ...item,
-        itemStyle: {
-          color: ['#00d4ff', '#7c3aed', '#10b981', '#f59e0b', '#ef4444', '#ec4899'][i]
-        }
-      }))
-    }]
-  }
-  channelChart.setOption(option)
+  try {
+    const res = await analyticsApi.getChannelDist()
+    const data = res.data || res
+    const colors = ['#2F6BFF', '#7C3AED', '#10B981', '#F59E0B', '#EF4444', '#EC4899', '#06B6D4', '#8B5CF6']
+    channelChart.setOption({
+      backgroundColor: 'transparent',
+      tooltip: { trigger: 'item', backgroundColor: chartTheme.tipBg, borderColor: '#334155', textStyle: { color: chartTheme.tipText, fontSize: 12 }, formatter: '{b}: {c} ({d}%)' },
+      legend: { orient: 'vertical', right: 8, top: 'center', textStyle: { color: '#475569', fontSize: 11 }, itemWidth: 10, itemHeight: 10, itemGap: 8 },
+      series: [{ type: 'pie', radius: ['38%', '68%'], center: ['35%', '50%'], avoidLabelOverlap: false, label: { show: false }, emphasis: { label: { show: true, fontSize: 12, fontWeight: 'bold' } }, labelLine: { show: false }, data: data.map((item, i) => ({ ...item, itemStyle: { color: colors[i % colors.length] } })), itemStyle: { borderColor: '#fff', borderWidth: 2 } }]
+    })
+  } catch (e) { console.error(e) }
 }
 
 const initFunnelChart = async () => {
   if (!funnelChartRef.value) return
+  if (funnelChart) funnelChart.dispose()
   funnelChart = echarts.init(funnelChartRef.value)
-  
-  const updateChart = async () => {
-    try {
-      const data = await analyticsApi.getFunnel()
-      renderFunnelChart(data)
-    } catch (error) {
-      console.error('Failed to fetch funnel:', error)
-      renderFunnelChart(generateMockFunnelData())
-    }
-  }
-  
-  updateChart()
-  setInterval(updateChart, 25000)
-}
-
-const generateMockFunnelData = () => [
-  { name: '浏览', value: 100 },
-  { name: '点击', value: 75 },
-  { name: '阅读', value: 50 },
-  { name: '评论', value: 20 },
-  { name: '分享', value: 8 }
-]
-
-const renderFunnelChart = (data) => {
-  const option = {
-    backgroundColor: 'transparent',
-    tooltip: {
-      trigger: 'item',
-      backgroundColor: 'rgba(10, 22, 40, 0.9)',
-      borderColor: '#1e3a5f',
-      textStyle: { color: '#e0e6ed' }
-    },
-    legend: {
-      orient: 'vertical',
-      right: '5%',
-      top: 'center',
-      textStyle: { color: '#a0aec0' }
-    },
-    series: [{
-      type: 'funnel',
-      left: '5%',
-      top: 20,
-      bottom: 20,
-      width: '55%',
-      min: 0,
-      max: 100,
-      minSize: '0%',
-      maxSize: '100%',
-      sort: 'descending',
-      gap: 2,
-      label: {
-        show: true,
-        position: 'inside',
-        color: '#fff',
-        fontSize: 12
-      },
-      labelLine: { show: false },
-      itemStyle: {
-        borderColor: '#0a1628',
-        borderWidth: 2
-      },
-      data: data.map((item, i) => ({
-        name: item.name,
-        value: item.value,
-        itemStyle: {
-          color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-            { offset: 0, color: ['#00d4ff', '#7c3aed', '#10b981', '#f59e0b', '#ef4444'][i] },
-            { offset: 1, color: ['#0099cc', '#5b21b6', '#059669', '#d97706', '#dc2626'][i] }
-          ])
-        }
-      }))
-    }]
-  }
-  funnelChart.setOption(option)
+  try {
+    const res = await analyticsApi.getFunnel()
+    const data = res.data || res
+    const colors = ['#2F6BFF', '#7C3AED', '#10B981', '#F59E0B', '#EF4444', '#EC4899']
+    funnelChart.setOption({
+      backgroundColor: 'transparent',
+      tooltip: { trigger: 'item', backgroundColor: chartTheme.tipBg, borderColor: '#334155', textStyle: { color: chartTheme.tipText, fontSize: 12 } },
+      series: [{ type: 'funnel', left: '10%', top: 10, bottom: 10, width: '65%', min: 0, max: 100, minSize: '10%', maxSize: '100%', sort: 'descending', gap: 4, label: { show: true, position: 'inside', color: '#fff', fontSize: 11, fontWeight: 500 }, labelLine: { show: false }, itemStyle: { borderColor: '#fff', borderWidth: 1 }, data: data.map((item, i) => ({ name: item.name, value: item.value, itemStyle: { color: new echarts.graphic.LinearGradient(0, 0, 1, 0, [{ offset: 0, color: colors[i] || colors[0] }, { offset: 1, color: (colors[i] || colors[0]) + '88' }]) } })) }]
+    })
+  } catch (e) { console.error(e) }
 }
 
 const initRegionChart = async () => {
   if (!regionChartRef.value) return
+  if (regionChart) regionChart.dispose()
   regionChart = echarts.init(regionChartRef.value)
-  
-  const updateChart = async () => {
-    try {
-      const data = await analyticsApi.getRegionDist()
-      renderRegionChart(data)
-    } catch (error) {
-      console.error('Failed to fetch region dist:', error)
-      renderRegionChart(generateMockRegionData())
-    }
-  }
-  
-  updateChart()
-  setInterval(updateChart, 20000)
+  try {
+    const res = await analyticsApi.getRegionDist()
+    const data = res.data || res
+    regionChart.setOption({
+      backgroundColor: 'transparent',
+      tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' }, backgroundColor: chartTheme.tipBg, borderColor: '#334155', textStyle: { color: chartTheme.tipText, fontSize: 12 } },
+      grid: { left: 8, right: 30, bottom: 4, top: 4, containLabel: true },
+      xAxis: { type: 'value', axisLine: { show: false }, axisLabel: { color: chartTheme.textColor, fontSize: 10 }, splitLine: { lineStyle: { color: chartTheme.splitColor } } },
+      yAxis: { type: 'category', data: data.map(d => d.event_type || d.name || '').reverse(), axisLine: { show: false }, axisTick: { show: false }, axisLabel: { color: '#475569', fontSize: 11 } },
+      series: [{ type: 'bar', data: data.map(d => d.cnt || d.value || 0).reverse(), itemStyle: { color: new echarts.graphic.LinearGradient(0, 0, 1, 0, [{ offset: 0, color: '#10B981' }, { offset: 1, color: '#34D399' }]), borderRadius: [0, 4, 4, 0] }, barWidth: 16 }]
+    })
+  } catch (e) { console.error(e) }
 }
 
-const generateMockRegionData = () => [
-  { name: '北京', value: 8500 },
-  { name: '上海', value: 7200 },
-  { name: '深圳', value: 6500 },
-  { name: '广州', value: 5800 },
-  { name: '杭州', value: 4900 },
-  { name: '成都', value: 4200 },
-  { name: '南京', value: 3600 },
-  { name: '武汉', value: 3100 },
-  { name: '西安', value: 2600 },
-  { name: '苏州', value: 2200 }
-]
+const handleResize = () => { trendChart?.resize(); hotNewsChart?.resize(); channelChart?.resize(); funnelChart?.resize(); regionChart?.resize() }
 
-const renderRegionChart = (data) => {
-  const option = {
-    backgroundColor: 'transparent',
-    tooltip: {
-      trigger: 'axis',
-      axisPointer: { type: 'shadow' },
-      backgroundColor: 'rgba(10, 22, 40, 0.9)',
-      borderColor: '#1e3a5f',
-      textStyle: { color: '#e0e6ed' }
-    },
-    grid: {
-      left: '3%',
-      right: '8%',
-      bottom: '3%',
-      top: '3%',
-      containLabel: true
-    },
-    xAxis: {
-      type: 'value',
-      axisLine: { lineStyle: { color: '#2d4a6f' } },
-      axisLabel: { color: '#a0aec0' },
-      splitLine: { lineStyle: { color: '#1a2a40' } }
-    },
-    yAxis: {
-      type: 'category',
-      data: data.map(d => d.name).reverse(),
-      axisLine: { lineStyle: { color: '#2d4a6f' } },
-      axisLabel: { color: '#a0aec0' }
-    },
-    series: [{
-      type: 'bar',
-      data: data.map(d => d.value).reverse(),
-      itemStyle: {
-        color: new echarts.graphic.LinearGradient(0, 0, 1, 0, [
-          { offset: 0, color: '#10b981' },
-          { offset: 1, color: '#34d399' }
-        ])
-      },
-      barWidth: 15
-    }]
-  }
-  regionChart.setOption(option)
+const loadNews = async (page) => {
+  if (page) newsPage.value = page
+  try { const res = await adminApi.listNews(newsPage.value, 20, newsChannel.value || undefined, newsKeyword.value || undefined); newsList.value = res.data || []; newsTotal.value = res.total || 0 } catch (e) { console.error(e) }
 }
-
-const handleResize = () => {
-  trendChart?.resize()
-  hotNewsChart?.resize()
-  channelChart?.resize()
-  funnelChart?.resize()
-  regionChart?.resize()
+const editNews = (item) => { editingNews.value = item.id; editForm.value = { ...item } }
+const saveNews = async () => { try { await adminApi.updateNews(editingNews.value, editForm.value); editingNews.value = null; loadNews() } catch (e) { console.error(e) } }
+const deleteNews = async (id) => { if (!confirm('确定删除该新闻？')) return; try { await adminApi.deleteNews(id); loadNews() } catch (e) { console.error(e) } }
+const loadUsers = async (page) => {
+  if (page) usersPage.value = page
+  try { const res = await adminApi.listUsers(usersPage.value, 20); usersList.value = res.data || []; usersTotal.value = res.total || 0 } catch (e) { console.error(e) }
 }
+const deleteUser = async (id, username) => { if (!confirm(`确定删除用户 "${username}"？`)) return; try { await adminApi.deleteUser(id); loadUsers() } catch (e) { console.error(e) } }
+const loadChannels = async () => { try { const res = await adminApi.listChannels(); channels.value = (res.data || []).map(d => d.channel) } catch (e) { console.error(e) } }
 
-let statsInterval = null
-let timeInterval = null
-
-onMounted(() => {
-  updateTime()
-  timeInterval = setInterval(updateTime, 1000)
-  
-  updateRealtimeStats()
-  statsInterval = setInterval(updateRealtimeStats, 5000)
-  
-  initTrendChart()
-  initHotNewsChart()
-  initChannelChart()
-  initFunnelChart()
-  initRegionChart()
-  
-  window.addEventListener('resize', handleResize)
-})
-
-onUnmounted(() => {
-  if (statsInterval) clearInterval(statsInterval)
-  if (timeInterval) clearInterval(timeInterval)
-  
-  trendChart?.dispose()
-  hotNewsChart?.dispose()
-  channelChart?.dispose()
-  funnelChart?.dispose()
-  regionChart?.dispose()
-  
-  window.removeEventListener('resize', handleResize)
-})
+let statsInterval = null, timeInterval = null
+const initCharts = async () => { await nextTick(); initTrendChart(); initHotNewsChart(); initChannelChart(); initFunnelChart(); initRegionChart() }
+watch(activeTab, async (val) => { if (val === 'overview') { await nextTick(); initCharts() } })
+onMounted(() => { updateTime(); timeInterval = setInterval(updateTime, 1000); updateRealtimeStats(); statsInterval = setInterval(updateRealtimeStats, 10000); initCharts(); loadChannels(); window.addEventListener('resize', handleResize) })
+onUnmounted(() => { if (statsInterval) clearInterval(statsInterval); if (timeInterval) clearInterval(timeInterval); trendChart?.dispose(); hotNewsChart?.dispose(); channelChart?.dispose(); funnelChart?.dispose(); regionChart?.dispose(); window.removeEventListener('resize', handleResize) })
 </script>
 
 <style scoped>
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Noto+Sans+SC:wght@400;500;600;700&display=swap');
+
 .dashboard {
   width: 100vw;
   height: 100vh;
-  background: linear-gradient(135deg, #0a1628 0%, #0f2744 50%, #0a1628 100%);
-  padding: 20px;
+  background: #F8FAFC;
   display: flex;
   flex-direction: column;
-  gap: 15px;
   overflow: hidden;
+  font-family: 'DM Sans', 'Noto Sans SC', -apple-system, BlinkMacSystemFont, sans-serif;
+  color: #1E293B;
 }
 
-.header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 15px 30px;
-  background: linear-gradient(90deg, rgba(0, 212, 255, 0.1) 0%, rgba(124, 58, 237, 0.1) 100%);
-  border: 1px solid rgba(0, 212, 255, 0.3);
-  border-radius: 10px;
+.top-bar {
+  background: #fff;
+  border-bottom: 1px solid #E2E8F0;
   flex-shrink: 0;
-}
-
-.title {
-  font-size: 28px;
-  font-weight: bold;
-  background: linear-gradient(90deg, #00d4ff, #7c3aed);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  text-shadow: 0 0 30px rgba(0, 212, 255, 0.5);
-}
-
-.header-right {
+  height: 56px;
   display: flex;
   align-items: center;
-  gap: 30px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+  position: relative;
+  z-index: 10;
 }
 
-.live-indicator {
+.bar-inner {
+  width: 100%;
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: 0 28px;
+  display: flex;
+  align-items: center;
+  gap: 32px;
+}
+
+.brand {
   display: flex;
   align-items: center;
   gap: 8px;
-}
-
-.live-dot {
-  width: 12px;
-  height: 12px;
-  background: #ef4444;
-  border-radius: 50%;
-  animation: pulse 1.5s ease-in-out infinite;
-}
-
-@keyframes pulse {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
-  50% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
-}
-
-.live-text {
-  color: #ef4444;
-  font-size: 16px;
-  font-weight: bold;
-}
-
-.time {
-  color: #a0aec0;
-  font-size: 16px;
-  font-family: 'Courier New', monospace;
-}
-
-.stats-row {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 15px;
   flex-shrink: 0;
 }
 
-.stat-card {
-  background: linear-gradient(135deg, rgba(30, 58, 95, 0.6) 0%, rgba(15, 39, 68, 0.8) 100%);
-  border: 1px solid rgba(0, 212, 255, 0.2);
-  border-radius: 12px;
-  padding: 20px;
+.brand-icon {
+  color: #2F6BFF;
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.brand-name {
+  font-size: 17px;
+  font-weight: 700;
+  color: #0F172A;
+  letter-spacing: -0.3px;
+}
+
+.brand-sub {
+  font-size: 11px;
+  color: #94A3B8;
+  background: #F1F5F9;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-weight: 500;
+}
+
+.main-nav {
+  display: flex;
+  gap: 4px;
+  flex: 1;
+}
+
+.nav-link {
+  padding: 8px 18px;
+  border: none;
+  background: transparent;
+  color: #64748B;
+  font-size: 13.5px;
+  font-weight: 500;
+  cursor: pointer;
+  border-radius: 8px;
+  transition: all 0.2s;
   display: flex;
   align-items: center;
-  gap: 15px;
-  transition: all 0.3s ease;
+  gap: 6px;
 }
 
-.stat-card:hover {
-  border-color: rgba(0, 212, 255, 0.5);
-  box-shadow: 0 0 20px rgba(0, 212, 255, 0.2);
+.nav-link:hover { background: #F1F5F9; color: #334155; }
+.nav-link.active { background: #EFF6FF; color: #2F6BFF; font-weight: 600; }
+.nav-icon { font-size: 14px; }
+
+.bar-right {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-shrink: 0;
 }
 
-.stat-icon {
-  font-size: 36px;
-  opacity: 0.9;
+.live-tag {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #EF4444;
+  letter-spacing: 0.5px;
 }
 
-.stat-content {
-  flex: 1;
+.dot {
+  width: 7px;
+  height: 7px;
+  background: #EF4444;
+  border-radius: 50%;
+  animation: blink 1.5s ease-in-out infinite;
 }
 
-.stat-value {
-  font-size: 28px;
-  font-weight: bold;
-  color: #fff;
-  line-height: 1.2;
-}
+@keyframes blink { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
 
-.stat-label {
-  font-size: 14px;
-  color: #a0aec0;
-  margin: 5px 0;
-}
-
-.stat-trend {
+.clock {
   font-size: 12px;
-  font-weight: bold;
+  color: #94A3B8;
+  font-family: 'DM Sans', monospace;
+  font-weight: 500;
 }
 
-.stat-trend.up {
-  color: #10b981;
-}
-
-.stat-trend.down {
-  color: #ef4444;
-}
-
-.charts-row {
-  display: grid;
-  gap: 15px;
+.page-body {
   flex: 1;
   min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
 }
 
-.charts-row:first-of-type {
-  grid-template-columns: 1fr 1fr;
-}
+.page-body::-webkit-scrollbar { width: 6px; }
+.page-body::-webkit-scrollbar-track { background: transparent; }
+.page-body::-webkit-scrollbar-thumb { background: #CBD5E1; border-radius: 3px; }
 
-.charts-row:nth-of-type(2) {
-  grid-template-columns: 1fr 1fr 1fr;
-}
-
-.chart-card {
-  background: linear-gradient(135deg, rgba(30, 58, 95, 0.5) 0%, rgba(15, 39, 68, 0.7) 100%);
-  border: 1px solid rgba(0, 212, 255, 0.15);
-  border-radius: 12px;
-  padding: 15px;
+.overview-page {
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: 24px 28px;
   display: flex;
   flex-direction: column;
-  min-height: 0;
+  gap: 20px;
 }
 
-.chart-title {
-  color: #e0e6ed;
-  font-size: 16px;
-  font-weight: 600;
-  margin-bottom: 10px;
-  padding-left: 10px;
-  border-left: 3px solid #00d4ff;
-  flex-shrink: 0;
+.kpi-banner {
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  gap: 12px;
 }
 
-.chart-container {
-  flex: 1;
-  min-height: 0;
+.kpi-item {
+  background: #fff;
+  border: 1px solid #E2E8F0;
+  border-radius: 12px;
+  padding: 18px 14px;
+  text-align: center;
+  transition: all 0.2s;
 }
 
-.news-ticker {
+.kpi-item:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.06); transform: translateY(-1px); }
+
+.kpi-num {
+  font-size: 24px;
+  font-weight: 700;
+  line-height: 1.1;
+  letter-spacing: -0.5px;
+}
+
+.kpi-label {
+  font-size: 11.5px;
+  color: #94A3B8;
+  margin-top: 6px;
+  font-weight: 500;
+}
+
+.overview-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: auto auto;
+  gap: 16px;
+}
+
+.panel {
+  background: #fff;
+  border: 1px solid #E2E8F0;
+  border-radius: 12px;
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+}
+
+.panel-trend, .panel-hot { height: 280px; }
+.panel-channel { height: 280px; }
+.panel-funnel { height: 280px; }
+.panel-event { height: 280px; }
+
+.panel-head {
   display: flex;
   align-items: center;
-  gap: 20px;
-  padding: 15px 30px;
-  background: linear-gradient(90deg, rgba(124, 58, 237, 0.2) 0%, rgba(0, 212, 255, 0.2) 100%);
-  border: 1px solid rgba(124, 58, 237, 0.3);
-  border-radius: 8px;
-  overflow: hidden;
+  justify-content: space-between;
+  margin-bottom: 12px;
   flex-shrink: 0;
 }
 
-.ticker-label {
-  color: #00d4ff;
+.panel-head h2 {
   font-size: 14px;
-  font-weight: bold;
-  white-space: nowrap;
+  font-weight: 600;
+  color: #0F172A;
+  margin: 0;
 }
 
-.ticker-content {
+.panel-tag {
+  font-size: 10px;
+  font-weight: 600;
+  color: #2F6BFF;
+  background: #EFF6FF;
+  padding: 3px 10px;
+  border-radius: 10px;
+  letter-spacing: 0.3px;
+}
+
+.panel-chart { flex: 1; min-height: 0; }
+
+.manage-page {
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: 24px 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.search-bar {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.search-input {
   flex: 1;
+  max-width: 380px;
+  padding: 9px 16px;
+  border: 1px solid #E2E8F0;
+  border-radius: 8px;
+  font-size: 13px;
+  outline: none;
+  background: #fff;
+  color: #1E293B;
+  transition: border-color 0.2s;
+}
+
+.search-input:focus { border-color: #2F6BFF; box-shadow: 0 0 0 3px rgba(47,107,255,0.1); }
+.search-input::placeholder { color: #94A3B8; }
+
+.search-select {
+  padding: 9px 16px;
+  border: 1px solid #E2E8F0;
+  border-radius: 8px;
+  font-size: 13px;
+  background: #fff;
+  color: #1E293B;
+  outline: none;
+  cursor: pointer;
+}
+
+.search-select option { background: #fff; }
+
+.btn-primary {
+  padding: 9px 22px;
+  background: #2F6BFF;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-primary:hover { background: #1E5AE0; box-shadow: 0 2px 8px rgba(47,107,255,0.3); }
+
+.btn-ghost {
+  padding: 9px 22px;
+  background: transparent;
+  color: #64748B;
+  border: 1px solid #E2E8F0;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.btn-ghost:hover { border-color: #CBD5E1; background: #F8FAFC; }
+
+.result-count { font-size: 13px; color: #64748B; font-weight: 500; }
+
+.table-card {
+  background: #fff;
+  border: 1px solid #E2E8F0;
+  border-radius: 12px;
   overflow: hidden;
-  mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent);
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
 }
 
-.ticker-text {
+.table-card::-webkit-scrollbar { width: 6px; }
+.table-card::-webkit-scrollbar-track { background: transparent; }
+.table-card::-webkit-scrollbar-thumb { background: #CBD5E1; border-radius: 3px; }
+
+.news-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.news-table th {
+  background: #F8FAFC;
+  color: #64748B;
+  padding: 11px 16px;
+  text-align: left;
+  font-weight: 600;
+  font-size: 11.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-bottom: 1px solid #E2E8F0;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+.news-table td {
+  padding: 12px 16px;
+  color: #334155;
+  border-bottom: 1px solid #F1F5F9;
+}
+
+.news-table tr:hover td { background: #FAFBFE; }
+
+.col-id { width: 55px; }
+.col-title { max-width: 340px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.col-ch { width: 80px; }
+.col-src { width: 100px; }
+.col-num { width: 65px; text-align: right; }
+.col-time { width: 120px; }
+.col-act { width: 120px; white-space: nowrap; }
+
+.ch-tag {
   display: inline-block;
-  white-space: nowrap;
-  color: #e0e6ed;
-  font-size: 14px;
-  animation: ticker linear infinite;
+  padding: 2px 10px;
+  background: #EFF6FF;
+  border-radius: 10px;
+  color: #2F6BFF;
+  font-size: 11px;
+  font-weight: 600;
 }
 
-@keyframes ticker {
-  0% { transform: translateX(100%); }
-  100% { transform: translateX(-100%); }
+.user-cell { display: flex; align-items: center; gap: 8px; }
+
+.avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #2F6BFF, #7C3AED);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.btn-edit {
+  padding: 5px 14px;
+  background: #EFF6FF;
+  color: #2F6BFF;
+  border: none;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  margin-right: 6px;
+  transition: all 0.15s;
+}
+
+.btn-edit:hover { background: #DBEAFE; }
+
+.btn-del {
+  padding: 5px 14px;
+  background: #FEF2F2;
+  color: #EF4444;
+  border: none;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.btn-del:hover { background: #FEE2E2; }
+
+.empty-row { text-align: center; color: #94A3B8; padding: 60px 0 !important; font-size: 14px; }
+
+.pager {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  padding: 14px 0;
+  font-size: 13px;
+  color: #64748B;
+}
+
+.pager button {
+  padding: 7px 18px;
+  background: #fff;
+  border: 1px solid #E2E8F0;
+  border-radius: 8px;
+  color: #334155;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.pager button:hover:not(:disabled) { border-color: #2F6BFF; color: #2F6BFF; }
+.pager button:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15,23,42,0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  backdrop-filter: blur(4px);
+}
+
+.edit-modal {
+  background: #fff;
+  border-radius: 16px;
+  padding: 28px;
+  width: 520px;
+  max-height: 80vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.15);
+}
+
+.edit-modal h3 {
+  font-size: 17px;
+  font-weight: 700;
+  color: #0F172A;
+  margin: 0 0 20px 0;
+}
+
+.field { margin-bottom: 14px; }
+.field label { display: block; font-size: 12px; color: #64748B; margin-bottom: 5px; font-weight: 600; }
+
+.field input, .field textarea {
+  width: 100%;
+  padding: 9px 12px;
+  border: 1px solid #E2E8F0;
+  border-radius: 8px;
+  font-size: 13px;
+  outline: none;
+  color: #1E293B;
+  transition: border-color 0.2s;
+  box-sizing: border-box;
+  font-family: inherit;
+}
+
+.field input:focus, .field textarea:focus { border-color: #2F6BFF; box-shadow: 0 0 0 3px rgba(47,107,255,0.08); }
+.field textarea { resize: vertical; }
+
+.field-row { display: flex; gap: 14px; }
+.field-row .field { flex: 1; }
+
+.check-label {
+  display: flex !important;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  color: #334155 !important;
+  font-size: 13px !important;
+}
+
+.check-label input[type="checkbox"] { width: 16px; height: 16px; accent-color: #2F6BFF; cursor: pointer; }
+
+.modal-foot { display: flex; gap: 10px; margin-top: 20px; justify-content: flex-end; }
+
+@media (max-width: 1200px) {
+  .kpi-banner { grid-template-columns: repeat(4, 1fr); }
+}
+
+@media (max-width: 900px) {
+  .kpi-banner { grid-template-columns: repeat(2, 1fr); }
+  .overview-grid { grid-template-columns: 1fr; }
 }
 </style>

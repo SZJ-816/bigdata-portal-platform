@@ -3,6 +3,7 @@ package com.bigdata.portal.mapper;
 import com.bigdata.portal.entity.News;
 import org.apache.ibatis.annotations.*;
 import java.util.List;
+import java.util.Map;
 
 @Mapper
 public interface NewsMapper {
@@ -61,4 +62,22 @@ public interface NewsMapper {
 
     @Update("UPDATE news SET summary = #{summary}, image_url = #{imageUrl}, updated_at = NOW() WHERE id = #{id}")
     void update(News news);
+
+    @Select("SELECT channel, COUNT(*) as cnt FROM news GROUP BY channel ORDER BY cnt DESC")
+    List<Map<String, Object>> countByChannelGroup();
+
+    @Select("SELECT id, title, view_count as viewCount FROM news ORDER BY view_count DESC LIMIT #{limit}")
+    List<Map<String, Object>> findTopByViews(@Param("limit") int limit);
+
+    @Select("SELECT COUNT(*) FROM news WHERE DATE(publish_time) = CURDATE()")
+    long countToday();
+
+    @Select("SELECT SUM(view_count) FROM news")
+    Long sumViewCount();
+
+    @Delete("DELETE FROM news WHERE id = #{id}")
+    void deleteById(@Param("id") Long id);
+
+    @Update("UPDATE news SET title = #{title}, summary = #{summary}, channel = #{channel}, source = #{source}, image_url = #{imageUrl}, is_breaking = #{isBreaking}, updated_at = NOW() WHERE id = #{id}")
+    void updateFull(News news);
 }

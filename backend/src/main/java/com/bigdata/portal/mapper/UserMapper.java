@@ -2,6 +2,7 @@ package com.bigdata.portal.mapper;
 
 import com.bigdata.portal.entity.User;
 import org.apache.ibatis.annotations.*;
+import java.util.List;
 
 @Mapper
 public interface UserMapper {
@@ -21,4 +22,16 @@ public interface UserMapper {
 
     @Update("UPDATE user SET password = #{password} WHERE username = #{username}")
     void updatePassword(@Param("username") String username, @Param("password") String password);
+
+    @Select("SELECT COUNT(*) FROM user")
+    long count();
+
+    @Select("SELECT id, username, email, created_at FROM user ORDER BY created_at DESC LIMIT #{offset}, #{limit}")
+    List<User> findPage(@Param("offset") int offset, @Param("limit") int limit);
+
+    @Select("SELECT COUNT(*) FROM user WHERE DATE(created_at) = CURDATE()")
+    long countToday();
+
+    @Delete("DELETE FROM user WHERE id = #{id}")
+    void deleteById(@Param("id") Long id);
 }
