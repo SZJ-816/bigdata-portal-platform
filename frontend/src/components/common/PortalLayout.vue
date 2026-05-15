@@ -17,9 +17,10 @@
           <div v-if="isLoggedIn" class="user-info">
             <span class="username">{{ username }}</span>
             <router-link to="/profile" class="btn btn-outline btn-sm">个人中心</router-link>
+            <button class="btn btn-outline btn-sm btn-logout" @click="handleLogout">退出</button>
           </div>
           <div v-else class="auth-btns">
-            <router-link to="/login" class="btn btn-primary btn-sm">登录</router-link>
+            <button class="btn btn-primary btn-sm btn-login" @click="goLogin">登录</button>
           </div>
           <button class="menu-toggle" @click="menuOpen = !menuOpen">
             <span :class="['hamburger', { active: menuOpen }]">
@@ -50,9 +51,13 @@
         <span class="nav-icon">🔍</span>
         <span class="nav-label">搜索</span>
       </a>
-      <a :class="['nav-item', { active: currentPath === '/profile' }]" @click="$router.push('/profile')">
+      <a v-if="isLoggedIn" :class="['nav-item', { active: currentPath === '/profile' }]" @click="$router.push('/profile')">
         <span class="nav-icon">👤</span>
         <span class="nav-label">我的</span>
+      </a>
+      <a v-else :class="['nav-item', { active: currentPath === '/login' }]" @click="goLogin">
+        <span class="nav-icon">👤</span>
+        <span class="nav-label">登录</span>
       </a>
     </nav>
   </div>
@@ -76,6 +81,19 @@ const currentPath = computed(() => route.path)
 function updateAuth() {
   token.value = localStorage.getItem('token')
   username.value = localStorage.getItem('username')
+}
+
+function goLogin() {
+  router.push('/login')
+}
+
+function handleLogout() {
+  localStorage.removeItem('token')
+  localStorage.removeItem('userId')
+  localStorage.removeItem('username')
+  token.value = null
+  username.value = null
+  router.push('/')
 }
 
 function handleAuthUpdate() {
@@ -178,9 +196,27 @@ onUnmounted(() => {
   font-size: 14px;
   color: rgba(255,255,255,0.85);
 }
+.auth-btns {
+  position: relative;
+  z-index: 10;
+}
+.btn-login {
+  appearance: none;
+  -webkit-appearance: none;
+  min-height: 32px;
+  min-width: 56px;
+  pointer-events: auto;
+  cursor: pointer;
+}
+.btn-logout {
+  appearance: none;
+  -webkit-appearance: none;
+  cursor: pointer;
+}
 .btn-sm {
-  padding: 4px 14px;
+  padding: 6px 16px;
   font-size: 13px;
+  min-height: 32px;
 }
 .btn-primary {
   background: #c41230;

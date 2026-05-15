@@ -79,6 +79,11 @@ a:hover {
   cursor: pointer;
   border: 1px solid transparent;
   transition: all 0.2s;
+  appearance: none;
+  -webkit-appearance: none;
+  background: transparent;
+  font-family: inherit;
+  text-decoration: none;
 }
 
 .btn-primary {
