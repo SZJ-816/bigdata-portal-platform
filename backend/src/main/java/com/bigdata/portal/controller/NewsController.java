@@ -73,6 +73,14 @@ public class NewsController {
         return result;
     }
 
+    @GetMapping("/hot")
+    public Map<String, Object> getHot() {
+        Map<String, Object> result = new HashMap<>();
+        List<News> hotNews = newsService.getHot(10);
+        result.put("data", hotNews);
+        return result;
+    }
+
     @PostMapping("/{id}/comment")
     public Map<String, Object> addComment(@PathVariable Long id,
                                           @RequestBody Map<String, Object> params,

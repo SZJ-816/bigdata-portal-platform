@@ -69,6 +69,9 @@ public interface NewsMapper {
     @Select("SELECT id, title, view_count as viewCount FROM news ORDER BY view_count DESC LIMIT #{limit}")
     List<Map<String, Object>> findTopByViews(@Param("limit") int limit);
 
+    @Select("SELECT id, title, summary, channel, source, image_url, view_count, comment_count, is_breaking, publish_time, created_at FROM news ORDER BY view_count DESC LIMIT #{limit}")
+    List<News> findTopByViewsAsNews(@Param("limit") int limit);
+
     @Select("SELECT COUNT(*) FROM news WHERE DATE(publish_time) = CURDATE()")
     long countToday();
 

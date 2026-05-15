@@ -103,6 +103,10 @@ public class NewsService {
         return newsMapper.findBreaking();
     }
 
+    public List<News> getHot(int limit) {
+        return newsMapper.findTopByViewsAsNews(limit);
+    }
+
     public List<News> getByChannelAll(String channel) {
         String decodedChannel = channel;
         try {
