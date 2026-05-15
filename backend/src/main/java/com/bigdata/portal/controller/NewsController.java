@@ -53,6 +53,14 @@ public class NewsController {
         return result;
     }
 
+    @GetMapping("/hot")
+    public Map<String, Object> getHot() {
+        Map<String, Object> result = new HashMap<>();
+        List<News> hotNews = newsService.getHot(10);
+        result.put("data", hotNews);
+        return result;
+    }
+
     @GetMapping("/{id}")
     public Map<String, Object> getById(@PathVariable Long id, HttpServletRequest request) {
         Map<String, Object> result = new HashMap<>();
@@ -70,14 +78,6 @@ public class NewsController {
             result.put("data", news);
             result.put("success", true);
         }
-        return result;
-    }
-
-    @GetMapping("/hot")
-    public Map<String, Object> getHot() {
-        Map<String, Object> result = new HashMap<>();
-        List<News> hotNews = newsService.getHot(10);
-        result.put("data", hotNews);
         return result;
     }
 
