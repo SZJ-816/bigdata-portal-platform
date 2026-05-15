@@ -3,7 +3,7 @@
     <div class="search-hero">
       <h1 class="search-title">搜索新闻</h1>
       <div class="search-bar">
-        <input v-model="keyword" class="search-input" placeholder="输入关键词搜索科技资讯..." @keyup.enter="doSearch" />
+        <input v-model="keyword" class="search-input" placeholder="输入关键词搜索科技资讯..." @keyup.enter="doSearch" @input="debouncedSearch" />
         <button class="btn btn-primary search-btn" @click="doSearch">搜索</button>
         <button class="btn btn-ai search-btn" @click="doAiSearch" :disabled="aiLoading">
           <span v-if="aiLoading" class="ai-loading"></span>
@@ -66,7 +66,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { hotSearchWords, formatRelativeTime } from '../../mock/newsData'
 import { behaviorApi, newsApi } from '../../api'
 import request from '../../api'
-import { cleanText, formatViewCount, CHANNEL_LABEL_MAP } from '../../utils'
+import { cleanText, formatViewCount, CHANNEL_LABEL_MAP, renderMarkdown } from '../../utils'
 
 const route = useRoute()
 const router = useRouter()
@@ -204,21 +204,6 @@ function searchHotWord(word) {
 function goNews(id) {
   behaviorApi.report({ eventType: 'click', targetId: String(id), targetType: 'news' })
   router.push(`/news/${id}`)
-}
-
-function renderMarkdown(text) {
-  if (!text) return ''
-  let html = text
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-  html = html.replace(/```(\w*)\n([\s\S]*?)```/g, '<pre><code>$2</code></pre>')
-  html = html.replace(/`([^`]+)`/g, '<code>$1</code>')
-  html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-  html = html.replace(/\n\n/g, '</p><p>')
-  html = html.replace(/\n/g, '<br>')
-  html = '<p>' + html + '</p>'
-  return html
 }
 
 onMounted(() => {

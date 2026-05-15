@@ -28,6 +28,11 @@
         <div v-if="!channelNews.length" class="empty-state">
           <p>该频道暂无新闻</p>
         </div>
+        <div v-if="hasMore" class="load-more-wrap">
+          <button class="btn btn-outline load-more-btn" @click="loadMoreNews" :disabled="loadingMore">
+            {{ loadingMore ? '加载中...' : '加载更多' }}
+          </button>
+        </div>
       </div>
       <div class="content-sidebar">
         <div class="card hot-section">
@@ -67,6 +72,9 @@ const channelInfo = computed(() => {
   return info
 })
 const channelNews = ref([])
+const currentPage = ref(1)
+const hasMore = ref(true)
+const loadingMore = ref(false)
 const channelHotNews = computed(() => {
   return [...channelNews.value]
     .sort((a, b) => (b.viewCount || 0) - (a.viewCount || 0))
@@ -97,6 +105,28 @@ async function loadChannelNews() {
   } catch (err) {
     console.error('Failed to load channel news:', err)
   }
+}
+
+async function loadMoreNews() {
+  if (loadingMore.value || !hasMore.value) return
+  loadingMore.value = true
+  currentPage.value++
+  try {
+    const actualChannelName = channelNameMap[channelName.value] || channelName.value
+    const res = await newsApi.getByChannel(actualChannelName, currentPage.value)
+    if (res.data.data && res.data.data.length > 0) {
+      channelNews.value = [...channelNews.value, ...res.data.data.map(item => ({
+        ...item,
+        title: cleanText(item.title),
+        summary: cleanText(item.summary)
+      }))]
+    } else {
+      hasMore.value = false
+    }
+  } catch (err) {
+    currentPage.value--
+  }
+  loadingMore.value = false
 }
 
 const channelDescs = {
@@ -130,6 +160,8 @@ onUnmounted(() => {
 
 watch(() => route.params.name, async () => {
   if (route.params.name) {
+    currentPage.value = 1
+    hasMore.value = true
     await loadChannelNews()
     behaviorApi.report({ eventType: 'page_view', targetId: channelName.value, targetType: 'channel' })
   }
@@ -309,6 +341,13 @@ watch(() => route.params.name, async () => {
   padding: 60px 20px;
   color: var(--color-text-light);
   font-size: 15px;
+}
+.load-more-wrap {
+  text-align: center;
+  padding: 20px 0;
+}
+.load-more-btn {
+  min-width: 160px;
 }
 @media (max-width: 768px) {
   .channel-header {

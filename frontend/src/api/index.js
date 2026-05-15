@@ -74,7 +74,7 @@ export const newsApi = {
     return cachedGet('/news', p, useCache)
   },
   getById: (id, useCache = true) => cachedGet(`/news/${id}`, {}, useCache),
-  getByChannel: (channel, useCache = true) => cachedGet('/news', { channel, page: 1, size: 20 }, useCache),
+  getByChannel: (channel, page = 1, size = 20, useCache = true) => cachedGet('/news', { channel, page, size }, useCache),
   search: (keyword) => request.get('/news', { params: { keyword, page: 1, size: 20 } }),
   getHot: (useCache = true) => cachedGet('/news/hot', {}, useCache),
   getRelated: (id) => request.get(`/news/${id}/related`),

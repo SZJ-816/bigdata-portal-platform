@@ -1,6 +1,7 @@
 package com.bigdata.portal.config;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.HandlerInterceptor;
 
@@ -49,6 +50,15 @@ public class RateLimitInterceptor implements HandlerInterceptor {
         if (uri.startsWith("/api/ai/")) return AI_LIMIT;
         if (uri.equals("/api/users/send-code")) return CODE_LIMIT;
         return -1;
+    }
+
+    @Scheduled(fixedRate = 60000)
+    public void cleanup() {
+        long now = System.currentTimeMillis();
+        buckets.entrySet().removeIf(entry -> {
+            RateBucket bucket = entry.getValue();
+            return now - bucket.windowStart > WINDOW_SECONDS * 1000;
+        });
     }
 
     private static class RateBucket {

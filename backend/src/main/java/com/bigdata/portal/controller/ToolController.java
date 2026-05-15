@@ -1,5 +1,6 @@
 package com.bigdata.portal.controller;
 
+import com.bigdata.portal.config.JwtConfig;
 import com.bigdata.portal.entity.User;
 import com.bigdata.portal.mapper.UserMapper;
 import com.bigdata.portal.service.RssService;
@@ -8,6 +9,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
+import javax.servlet.http.HttpServletRequest;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -23,6 +25,9 @@ public class ToolController {
 
     @Autowired
     private UserMapper userMapper;
+
+    @Autowired
+    private JwtConfig jwtConfig;
 
     @PostMapping("/fetch-news")
     public Map<String, Object> fetchNews() {
@@ -55,11 +60,19 @@ public class ToolController {
     }
 
     @PostMapping("/reset-password")
-    public Map<String, Object> resetPassword(@RequestBody Map<String, String> params) {
+    public Map<String, Object> resetPassword(@RequestBody Map<String, String> params, HttpServletRequest request) {
         Map<String, Object> result = new HashMap<>();
         try {
             String username = params.get("username");
             String password = params.get("password");
+
+            String authHeader = request.getHeader("Authorization");
+            String token = jwtConfig.extractToken(authHeader);
+            if (token == null || !"admin".equals(jwtConfig.getRoleFromToken(token))) {
+                result.put("success", false);
+                result.put("error", "权限不足");
+                return result;
+            }
             
             if (username == null || password == null) {
                 result.put("success", false);

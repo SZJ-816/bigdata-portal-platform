@@ -300,3 +300,38 @@ input:focus, textarea:focus {
   color: #e2e8f0;
   border-color: #334155;
 }
+[data-theme="dark"] .btn-primary {
+  background: #3b82f6;
+  color: #fff;
+}
+[data-theme="dark"] .btn-primary:hover {
+  background: #2563eb;
+}
+[data-theme="dark"] .btn-outline {
+  background: #1e293b;
+  color: #94a3b8;
+  border-color: #475569;
+}
+[data-theme="dark"] .headline-overlay {
+  background: linear-gradient(transparent, rgba(15, 23, 42, 0.95));
+}
+[data-theme="dark"] .search-page,
+[data-theme="dark"] .channel-page,
+[data-theme="dark"] .login-page,
+[data-theme="dark"] .not-found-page {
+  background: #0f172a;
+}
+[data-theme="dark"] .search-bar input,
+[data-theme="dark"] .channel-header {
+  background: #1e293b;
+  border-color: #334155;
+  color: #e2e8f0;
+}
+[data-theme="dark"] .hot-summary-card {
+  background: #1e293b;
+  border-color: #334155;
+}
+[data-theme="dark"] .comment-item {
+  background: #1e293b;
+  border-color: #334155;
+}

@@ -18,11 +18,14 @@ public class JwtConfig {
 
     private SecretKey secretKey;
 
-    @Value("${jwt.secret:BigDataPortalSecretKey2024ForJWTTokenGeneration32Bytes}")
+    @Value("${jwt.secret:}")
     private String secret;
 
     @PostConstruct
     public void init() {
+        if (secret == null || secret.isEmpty() || secret.length() < 32) {
+            throw new IllegalStateException("JWT_SECRET must be configured and at least 32 characters long");
+        }
         byte[] keyBytes = Base64.getEncoder().encode(secret.getBytes());
         this.secretKey = Keys.hmacShaKeyFor(keyBytes);
     }

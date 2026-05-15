@@ -24,29 +24,44 @@ public class AuthInterceptor implements HandlerInterceptor {
 
         String authHeader = request.getHeader("Authorization");
         String token = jwtConfig.extractToken(authHeader);
-
-        if (token == null || !jwtConfig.validateToken(token)) {
-            sendError(response, 401, "未登录或token无效");
-            return false;
-        }
-
-        Long userId = jwtConfig.getUserIdFromToken(token);
-        if (userId == null) {
-            sendError(response, 401, "Invalid token");
-            return false;
-        }
-
-        request.setAttribute("userId", userId);
-
         String uri = request.getRequestURI();
-        if (uri.startsWith("/api/admin/")) {
+
+        if (uri.startsWith("/api/analytics/")) {
+            if (token == null || !jwtConfig.validateToken(token)) {
+                sendError(response, 401, "未登录或token无效");
+                return false;
+            }
+            Long userId = jwtConfig.getUserIdFromToken(token);
+            request.setAttribute("userId", userId);
             String role = jwtConfig.getRoleFromToken(token);
             if (!"admin".equals(role)) {
                 sendError(response, 403, "权限不足");
                 return false;
             }
+            return true;
         }
 
+        if (uri.startsWith("/api/admin/")) {
+            if (token == null || !jwtConfig.validateToken(token)) {
+                sendError(response, 401, "未登录或token无效");
+                return false;
+            }
+            Long userId = jwtConfig.getUserIdFromToken(token);
+            request.setAttribute("userId", userId);
+            String role = jwtConfig.getRoleFromToken(token);
+            if (!"admin".equals(role)) {
+                sendError(response, 403, "权限不足");
+                return false;
+            }
+            return true;
+        }
+
+        if (token == null || !jwtConfig.validateToken(token)) {
+            sendError(response, 401, "未登录或token无效");
+            return false;
+        }
+        Long userId = jwtConfig.getUserIdFromToken(token);
+        request.setAttribute("userId", userId);
         return true;
     }
 

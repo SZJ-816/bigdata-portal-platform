@@ -26,6 +26,6 @@ public class WebMvcConfig implements WebMvcConfigurer {
                 .addPathPatterns("/api/ai/**", "/api/users/send-code");
 
         registry.addInterceptor(authInterceptor)
-                .addPathPatterns("/api/admin/**", "/api/tools/**");
+                .addPathPatterns("/api/admin/**", "/api/tools/**", "/api/ai/**", "/api/analytics/**", "/api/behaviors/**");
     }
 }

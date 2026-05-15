@@ -257,7 +257,7 @@ const formatDate = (d) => {
 
 const updateRealtimeStats = async () => {
   try {
-    const res = await analyticsApi.getRealtimeStats()
+    const res = await analyticsApi.getRealtimeStats(timeRange.value)
     const d = res.data || res
     statsData.value = [
       { label: '今日UV', value: formatNumber(d.todayUV), color: '#2F6BFF' },
@@ -284,7 +284,7 @@ const initTrendChart = async () => {
   if (trendChart) trendChart.dispose()
   trendChart = echarts.init(trendChartRef.value)
   try {
-    const res = await analyticsApi.getTrend()
+    const res = await analyticsApi.getTrend(timeRange.value)
     const data = res.data || res
     trendChart.setOption({
       backgroundColor: 'transparent',
@@ -306,7 +306,7 @@ const initHotNewsChart = async () => {
   if (hotNewsChart) hotNewsChart.dispose()
   hotNewsChart = echarts.init(hotNewsChartRef.value)
   try {
-    const res = await analyticsApi.getHotNews()
+    const res = await analyticsApi.getHotNews(timeRange.value)
     const data = res.data || res
     hotNewsChart.setOption({
       backgroundColor: 'transparent',
@@ -324,7 +324,7 @@ const initChannelChart = async () => {
   if (channelChart) channelChart.dispose()
   channelChart = echarts.init(channelChartRef.value)
   try {
-    const res = await analyticsApi.getChannelDist()
+    const res = await analyticsApi.getChannelDist(timeRange.value)
     const data = res.data || res
     const colors = ['#2F6BFF', '#7C3AED', '#10B981', '#F59E0B', '#EF4444', '#EC4899', '#06B6D4', '#8B5CF6']
     channelChart.setOption({
@@ -341,7 +341,7 @@ const initFunnelChart = async () => {
   if (funnelChart) funnelChart.dispose()
   funnelChart = echarts.init(funnelChartRef.value)
   try {
-    const res = await analyticsApi.getFunnel()
+    const res = await analyticsApi.getFunnel(timeRange.value)
     const data = res.data || res
     const colors = ['#2F6BFF', '#7C3AED', '#10B981', '#F59E0B', '#EF4444', '#EC4899']
     funnelChart.setOption({
@@ -357,7 +357,7 @@ const initRegionChart = async () => {
   if (regionChart) regionChart.dispose()
   regionChart = echarts.init(regionChartRef.value)
   try {
-    const res = await analyticsApi.getRegionDist()
+    const res = await analyticsApi.getRegionDist(timeRange.value)
     const data = res.data || res
     regionChart.setOption({
       backgroundColor: 'transparent',

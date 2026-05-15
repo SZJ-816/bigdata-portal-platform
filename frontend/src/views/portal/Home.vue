@@ -45,6 +45,12 @@
       </div>
     </section>
 
+    <div v-if="newsLoading" class="loading-state">加载中...</div>
+    <div v-else-if="newsError" class="error-state">
+      <p>加载失败</p>
+      <button class="btn btn-outline" @click="fetchNews">重试</button>
+    </div>
+    <template v-else>
     <section class="main-content">
       <div class="content-left">
         <h2 class="section-title">最新资讯</h2>
@@ -127,6 +133,7 @@
     <div class="load-more-wrap">
       <button class="btn btn-outline load-more-btn" @click="loadMore">更多新闻</button>
     </div>
+    </template>
   </div>
 </template>
 
@@ -135,7 +142,7 @@ import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { newsApi, behaviorApi } from '../../api'
 import { channels, formatRelativeTime } from '../../mock/newsData'
-import { cleanText, formatViewCount, CHANNEL_LABEL_MAP } from '../../utils'
+import { cleanText, formatViewCount, CHANNEL_LABEL_MAP, renderMarkdown } from '../../utils'
 
 const channelLabelMap = CHANNEL_LABEL_MAP
 
@@ -144,6 +151,8 @@ const allNews = ref([])
 const hotSummary = ref('')
 const hotSummaryLoading = ref(false)
 const hotInstruction = ref('')
+const newsLoading = ref(true)
+const newsError = ref(false)
 let abortController = null
 
 const headline = computed(() => {
@@ -197,7 +206,7 @@ function goChannel(name) {
 }
 
 function loadMore() {
-  router.push('/channel/AI')
+  router.push('/channel/互联网')
 }
 
 async function fetchHotSummary() {
@@ -246,20 +255,9 @@ async function fetchHotSummary() {
   hotSummaryLoading.value = false
 }
 
-function renderMarkdown(text) {
-  if (!text) return ''
-  let html = text
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-  html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-  html = html.replace(/\n\n/g, '</p><p>')
-  html = html.replace(/\n/g, '<br>')
-  html = '<p>' + html + '</p>'
-  return html
-}
-
-onMounted(async () => {
+async function fetchNews() {
+  newsLoading.value = true
+  newsError.value = false
   try {
     const res = await newsApi.getList()
     if (res.data.data) {
@@ -271,7 +269,13 @@ onMounted(async () => {
     }
   } catch (err) {
     console.error('Failed to load news:', err)
+    newsError.value = true
   }
+  newsLoading.value = false
+}
+
+onMounted(async () => {
+  await fetchNews()
   behaviorApi.report({ eventType: 'page_view', targetId: 'home', targetType: 'page' })
 })
 
@@ -281,6 +285,21 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
+.loading-state {
+  text-align: center;
+  padding: 60px 20px;
+  color: var(--color-text-secondary);
+  font-size: 16px;
+}
+.error-state {
+  text-align: center;
+  padding: 60px 20px;
+  color: var(--color-text-secondary);
+}
+.error-state p {
+  font-size: 16px;
+  margin-bottom: 16px;
+}
 .headline-section {
   display: flex;
   gap: 16px;

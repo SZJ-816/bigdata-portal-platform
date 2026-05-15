@@ -44,11 +44,12 @@
 
 <script setup>
 import { ref, onUnmounted } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 import { userApi } from '../../api'
 import request from '../../api'
 
 const router = useRouter()
+const route = useRoute()
 const isLogin = ref(true)
 const form = ref({ username: '', password: '', email: '', code: '' })
 const errorMsg = ref('')
@@ -126,7 +127,7 @@ async function handleSubmit() {
     const res = await api(form.value)
     if (res.data.success) {
       window.dispatchEvent(new CustomEvent('auth-updated'))
-      router.push('/')
+      router.push(route.query.redirect || '/')
     } else {
       errorMsg.value = res.data.error || '操作失败'
     }

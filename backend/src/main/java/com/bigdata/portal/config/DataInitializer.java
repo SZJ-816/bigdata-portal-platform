@@ -22,20 +22,22 @@ public class DataInitializer implements CommandLineRunner {
     @Override
     public void run(String... args) {
         if (userMapper.findByUsername("admin") == null) {
+            String adminPwd = "Admin@2024!";
             User admin = new User();
             admin.setUsername("admin");
-            admin.setPassword(passwordEncoder.encode("admin123"));
-            admin.setEmail("admin@bigdata.com");
+            admin.setPassword(passwordEncoder.encode(adminPwd));
+            admin.setEmail("admin@bigdata-portal.local");
             userMapper.insert(admin);
-            logger.info("Created default admin user");
+            logger.warn("Default admin account created - username: admin, password: {} - CHANGE IMMEDIATELY!", adminPwd);
         }
         if (userMapper.findByUsername("test") == null) {
+            String testPwd = "Test@2024!";
             User test = new User();
             test.setUsername("test");
-            test.setPassword(passwordEncoder.encode("test123"));
-            test.setEmail("test@bigdata.com");
+            test.setPassword(passwordEncoder.encode(testPwd));
+            test.setEmail("test@bigdata-portal.local");
             userMapper.insert(test);
-            logger.info("Created default test user");
+            logger.warn("Default test account created - username: test, password: {} - CHANGE IMMEDIATELY!", testPwd);
         }
     }
 }

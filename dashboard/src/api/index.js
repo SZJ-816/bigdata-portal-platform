@@ -26,27 +26,13 @@ request.interceptors.response.use(
 )
 
 export const analyticsApi = {
-  getRealtimeStats() {
-    return request.get('/analytics/realtime')
-  },
-  getTrend() {
-    return request.get('/analytics/trend')
-  },
-  getHotNews() {
-    return request.get('/analytics/hot-news')
-  },
-  getChannelDist() {
-    return request.get('/analytics/channel-dist')
-  },
-  getRegionDist() {
-    return request.get('/analytics/region-dist')
-  },
-  getFunnel() {
-    return request.get('/analytics/funnel')
-  },
-  getOverview() {
-    return request.get('/analytics/overview')
-  }
+  getRealtimeStats: (range) => request.get('/analytics/realtime', { params: { range } }),
+  getTrend: (range) => request.get('/analytics/trend', { params: { range } }),
+  getHotNews: (range) => request.get('/analytics/hot-news', { params: { range } }),
+  getChannelDist: (range) => request.get('/analytics/channel-dist', { params: { range } }),
+  getRegionDist: (range) => request.get('/analytics/region-dist', { params: { range } }),
+  getFunnel: (range) => request.get('/analytics/funnel', { params: { range } }),
+  getOverview: (range) => request.get('/analytics/overview', { params: { range } })
 }
 
 export const adminApi = {
