@@ -241,7 +241,14 @@ ai:
 
 | 首页 | 频道分类 | 新闻详情 |
 |:---:|:---:|:---:|
-| ![首页](https://picsum.photos/seed/home/200/150) | ![频道](https://picsum.photos/seed/channel/200/150) | ![详情](https://picsum.photos/seed/detail/200/150) |
+| ![首页](docs/screenshots/screenshot-home.png) | ![频道分类](docs/screenshots/screenshot-channel.png) | ![新闻详情](docs/screenshots/screenshot-detail.png) |
+
+<details>
+<summary>📱 查看移动端截图</summary>
+
+![移动端](docs/screenshots/screenshot-mobile.png)
+
+</details>
 
 ## License
 
