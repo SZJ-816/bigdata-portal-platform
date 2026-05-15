@@ -314,6 +314,12 @@ public class AiService {
     }
 
     public String searchNews(String keyword) throws Exception {
+        if (keyword == null || keyword.trim().isEmpty()) {
+            throw new IllegalArgumentException("搜索关键词不能为空");
+        }
+        if (keyword.length() > MAX_KEYWORD_LENGTH) {
+            keyword = keyword.substring(0, MAX_KEYWORD_LENGTH);
+        }
         String prompt = buildSearchPrompt(keyword);
         ObjectNode requestBody = buildRequestBody(SYSTEM_PROMPT_SEARCH, prompt, false, 800, 0.5);
         String jsonBody = objectMapper.writeValueAsString(requestBody);
@@ -365,6 +371,12 @@ public class AiService {
     }
 
     public void searchNewsStream(String keyword, StreamCallback callback) throws Exception {
+        if (keyword == null || keyword.trim().isEmpty()) {
+            throw new IllegalArgumentException("搜索关键词不能为空");
+        }
+        if (keyword.length() > MAX_KEYWORD_LENGTH) {
+            keyword = keyword.substring(0, MAX_KEYWORD_LENGTH);
+        }
         String prompt = buildSearchPrompt(keyword);
         ObjectNode requestBody = buildRequestBody(SYSTEM_PROMPT_SEARCH, prompt, true, 800, 0.5);
         String jsonBody = objectMapper.writeValueAsString(requestBody);

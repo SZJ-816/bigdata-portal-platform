@@ -50,40 +50,56 @@ public class AnalyticsController {
     public Map<String, Object> getTrend(@RequestParam(defaultValue = "today") String range) {
         String r = normalizeRange(range);
         Map<String, Object> result = new HashMap<>();
-        List<Map<String, Object>> raw = behaviorMapper.trendByHourByRange(r);
-        List<Map<String, Object>> list = new ArrayList<>();
-        Set<Integer> existingHours = new HashSet<>();
-        for (Map<String, Object> r2 : raw) {
-            Map<String, Object> item = new HashMap<>();
-            int hour = ((Number) r2.get("hour")).intValue();
-            existingHours.add(hour);
-            item.put("hour", hour + ":00");
-            item.put("uv", r2.get("uv"));
-            item.put("pv", r2.get("pv"));
-            list.add(item);
-        }
-        for (int i = 0; i < 24; i++) {
-            if (!existingHours.contains(i)) {
+        List<Map<String, Object>> raw;
+        if ("today".equals(r)) {
+            raw = behaviorMapper.trendByHourByRange(r);
+            List<Map<String, Object>> list = new ArrayList<>();
+            Set<Integer> existingHours = new HashSet<>();
+            for (Map<String, Object> r2 : raw) {
                 Map<String, Object> item = new HashMap<>();
-                item.put("hour", i + ":00");
-                item.put("uv", 0);
-                item.put("pv", 0);
-                list.add(i, item);
+                int hour = ((Number) r2.get("hour")).intValue();
+                existingHours.add(hour);
+                item.put("hour", hour + ":00");
+                item.put("uv", r2.get("uv"));
+                item.put("pv", r2.get("pv"));
+                list.add(item);
             }
+            for (int i = 0; i < 24; i++) {
+                if (!existingHours.contains(i)) {
+                    Map<String, Object> item = new HashMap<>();
+                    item.put("hour", i + ":00");
+                    item.put("uv", 0);
+                    item.put("pv", 0);
+                    list.add(i, item);
+                }
+            }
+            result.put("data", list);
+        } else {
+            raw = behaviorMapper.trendByDayByRange(r);
+            List<Map<String, Object>> list = new ArrayList<>();
+            for (Map<String, Object> r2 : raw) {
+                Map<String, Object> item = new HashMap<>();
+                Object dateVal = r2.get("date");
+                item.put("date", dateVal != null ? dateVal.toString() : "");
+                item.put("uv", r2.get("uv"));
+                item.put("pv", r2.get("pv"));
+                list.add(item);
+            }
+            result.put("data", list);
         }
-        result.put("data", list);
         return result;
     }
 
     @GetMapping("/hot-news")
-    public Map<String, Object> getHotNews() {
+    public Map<String, Object> getHotNews(@RequestParam(defaultValue = "today") String range) {
         Map<String, Object> result = new HashMap<>();
+        String r = normalizeRange(range);
         List<Map<String, Object>> raw = newsMapper.findTopByViews(10);
         List<Map<String, Object>> list = new ArrayList<>();
-        for (Map<String, Object> r : raw) {
+        for (Map<String, Object> r2 : raw) {
             Map<String, Object> item = new HashMap<>();
-            item.put("name", r.get("title"));
-            item.put("value", r.get("viewCount"));
+            item.put("name", r2.get("title"));
+            item.put("value", r2.get("viewCount"));
             list.add(item);
         }
         result.put("data", list);
@@ -91,14 +107,14 @@ public class AnalyticsController {
     }
 
     @GetMapping("/channel-dist")
-    public Map<String, Object> getChannelDist() {
+    public Map<String, Object> getChannelDist(@RequestParam(defaultValue = "today") String range) {
         Map<String, Object> result = new HashMap<>();
         List<Map<String, Object>> raw = newsMapper.countByChannelGroup();
         List<Map<String, Object>> list = new ArrayList<>();
-        for (Map<String, Object> r : raw) {
+        for (Map<String, Object> r2 : raw) {
             Map<String, Object> item = new HashMap<>();
-            item.put("name", r.get("channel"));
-            item.put("value", r.get("cnt"));
+            item.put("name", r2.get("channel"));
+            item.put("value", r2.get("cnt"));
             list.add(item);
         }
         result.put("data", list);

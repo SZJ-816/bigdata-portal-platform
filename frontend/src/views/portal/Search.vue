@@ -261,7 +261,7 @@ watch(() => route.query.q, (newQ) => {
   transition: border-color 0.2s;
 }
 .search-input:focus {
-  border-color: #1a2a4a;
+  border-color: var(--color-primary);
   outline: none;
 }
 .search-btn {
@@ -362,9 +362,9 @@ watch(() => route.query.q, (newQ) => {
 }
 .result-item {
   padding: 18px 20px;
-  background: #fff;
+  background: var(--color-bg-white);
   border-radius: 4px;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+  box-shadow: 0 1px 3px var(--color-card-shadow);
   cursor: pointer;
   transition: box-shadow 0.2s;
 }
@@ -399,8 +399,8 @@ watch(() => route.query.q, (newQ) => {
   color: var(--color-text-light);
 }
 .channel-tag-sm {
-  background: #1a2a4a;
-  color: #fff;
+  background: var(--color-tag-bg);
+  color: var(--color-tag-text);
   padding: 1px 8px;
   border-radius: 2px;
   font-size: 11px;
@@ -451,7 +451,7 @@ watch(() => route.query.q, (newQ) => {
   padding: 24px;
   font-size: 15px;
   line-height: 1.8;
-  color: #1a2a4a;
+  color: var(--color-text);
 }
 .ai-answer-content :deep(p) {
   margin-bottom: 12px;
@@ -596,6 +596,7 @@ watch(() => route.query.q, (newQ) => {
     font-size: 15.5px;
     font-weight: 600;
     line-height: 1.45;
+    color: var(--color-text);
   }
   .result-summary {
     font-size: 13px;

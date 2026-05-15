@@ -250,14 +250,14 @@ async function fetchHotSummary() {
   }
   if (!streamSuccess) {
     try {
-      const params = hotInstruction.value.trim() ? `?instruction=${encodeURIComponent(hotInstruction.value.trim())}` : ''
-      const res = await newsApi.getList({ instruction: hotInstruction.value.trim() }, false)
-      if (res.data.success) {
-        hotSummary.value = res.data.data
+      const res = await newsApi.getHot(false)
+      if (res.data && res.data.length > 0) {
+        const top = res.data.slice(0, 5)
+        hotSummary.value = '【今日热点】\n\n' + top.map((n, i) => `${i + 1}. ${n.title}`).join('\n')
         streamSuccess = true
       }
     } catch (err2) {
-      console.error('Hot summary failed:', err2)
+      console.error('Hot summary fallback failed:', err2)
       hotSummary.value = 'AI 热点总结暂时不可用，请稍后再试。'
     }
   }
@@ -333,7 +333,7 @@ onUnmounted(() => {
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
-  background-color: #1a2a4a;
+  background-color: var(--color-primary);
 }
 .headline-img, .side-img, .thumb-img {
   width: 100%;
@@ -401,7 +401,7 @@ onUnmounted(() => {
   font-size: 12px;
 }
 .channel-tag {
-  background: rgba(59, 130, 246, 0.8);
+  background: var(--color-tag-bg);
   padding: 2px 8px;
   border-radius: 4px;
 }
@@ -433,7 +433,7 @@ onUnmounted(() => {
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
-  background-color: #dee2e6;
+  background-color: var(--color-bg-secondary);
   border-radius: 4px;
   flex-shrink: 0;
 }
@@ -461,8 +461,8 @@ onUnmounted(() => {
   color: #666;
 }
 .channel-tag-sm {
-  background: #e3f2fd;
-  color: #1976d2;
+  background: var(--color-tag-bg);
+  color: var(--color-tag-text);
   padding: 1px 6px;
   border-radius: 3px;
   font-size: 11px;
@@ -508,7 +508,7 @@ onUnmounted(() => {
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
-  background-color: #dee2e6;
+  background-color: var(--color-bg-secondary);
   border-radius: 4px;
   flex-shrink: 0;
 }
@@ -533,7 +533,7 @@ onUnmounted(() => {
 }
 .news-summary {
   font-size: 13px;
-  color: #666;
+  color: var(--color-text-secondary);
   margin: 4px 0 8px 0;
   line-height: 1.5;
   display: -webkit-box;
@@ -546,7 +546,7 @@ onUnmounted(() => {
   align-items: center;
   gap: 12px;
   font-size: 12px;
-  color: #999;
+  color: var(--color-text-light);
 }
 .news-stream {
   display: flex;
@@ -584,10 +584,10 @@ onUnmounted(() => {
   align-items: center;
   gap: 8px;
   font-size: 11px;
-  color: #999;
+  color: var(--color-text-light);
 }
 .card {
-  background: white;
+  background: var(--color-bg-white);
   border-radius: 8px;
   padding: 16px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
@@ -613,7 +613,7 @@ onUnmounted(() => {
   transition: all 0.2s;
 }
 .ranking-item:hover {
-  background: #f0f0f0;
+  background: var(--color-bg-hover);
 }
 .rank-num {
   width: 20px;
@@ -621,7 +621,7 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #e0e0e0;
+  background: var(--color-bg-secondary);
   border-radius: 4px;
   font-size: 12px;
   font-weight: 600;
@@ -665,12 +665,12 @@ onUnmounted(() => {
   padding: 10px 32px;
 }
 .ai-hot-card {
-  background: linear-gradient(135deg, #f8f7ff, #f0efff);
-  border: 1px solid #e8e5f0;
+  background: var(--color-bg-white);
+  border: 1px solid var(--color-border);
 }
 .ai-hot-card .sidebar-title {
-  border-bottom-color: #6366f1;
-  color: #4338ca;
+  border-bottom-color: var(--color-primary);
+  color: var(--color-text);
 }
 .ai-hot-prompt {
   display: flex;
@@ -680,13 +680,13 @@ onUnmounted(() => {
 .ai-hot-input {
   flex: 1;
   padding: 6px 10px;
-  border: 1px solid #d4d0e8;
+  border: 1px solid var(--color-border);
   border-radius: 4px;
   font-size: 12px;
   outline: none;
 }
 .ai-hot-input:focus {
-  border-color: #6366f1;
+  border-color: var(--color-primary);
 }
 .btn-ai-sm {
   padding: 6px 12px;
@@ -729,7 +729,7 @@ onUnmounted(() => {
 .ai-hot-content {
   font-size: 13px;
   line-height: 1.7;
-  color: #1a2a4a;
+  color: var(--color-text);
   padding: 8px 0;
 }
 .ai-hot-content :deep(strong) {
@@ -743,18 +743,20 @@ onUnmounted(() => {
   gap: 6px;
   margin-top: 8px;
   padding-top: 8px;
-  border-top: 1px solid #e8e5f0;
+  border-top: 1px solid var(--color-border);
 }
 .ai-hot-input-sm {
   flex: 1;
   padding: 4px 8px;
-  border: 1px solid #d4d0e8;
+  border: 1px solid var(--color-border);
   border-radius: 4px;
   font-size: 11px;
   outline: none;
+  background: var(--color-bg-white);
+  color: var(--color-text);
 }
 .ai-hot-input-sm:focus {
-  border-color: #6366f1;
+  border-color: var(--color-primary);
 }
 @media (max-width: 1024px) {
   .main-content {
@@ -887,9 +889,9 @@ onUnmounted(() => {
   }
   .news-item {
     padding: 12px;
-    background: #fff;
+    background: var(--color-bg-white);
     border-radius: var(--radius-md);
-    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+    box-shadow: 0 1px 4px var(--color-card-shadow);
     gap: 12px;
     transition: box-shadow 0.15s;
   }
@@ -936,8 +938,8 @@ onUnmounted(() => {
   .stream-item {
     padding: 12px;
     border-radius: var(--radius-md);
-    background: #fff;
-    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+    background: var(--color-bg-white);
+    box-shadow: 0 1px 4px var(--color-card-shadow);
   }
   .stream-item:active {
     transform: scale(0.99);
@@ -960,7 +962,7 @@ onUnmounted(() => {
     padding: 16px;
     border-radius: var(--radius-lg);
     margin-bottom: 14px;
-    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+    box-shadow: 0 1px 4px var(--color-card-shadow);
   }
   .sidebar-title {
     font-size: 16px;
@@ -1022,7 +1024,7 @@ onUnmounted(() => {
     transition: background 0.15s;
   }
   .ranking-item:active {
-    background: #f5f5f5;
+    background: var(--color-bg-hover);
   }
   .rank-num {
     width: 20px;

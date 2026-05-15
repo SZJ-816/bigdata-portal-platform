@@ -213,16 +213,19 @@ const regionChartRef = ref(null)
 let trendChart = null, hotNewsChart = null, channelChart = null, funnelChart = null, regionChart = null
 const currentTime = ref('')
 
-const statsData = ref([
-  { label: '今日UV', value: '-', icon: '', color: '#2F6BFF' },
-  { label: '今日PV', value: '-', icon: '', color: '#7C3AED' },
-  { label: '实时在线', value: '-', icon: '', color: '#10B981' },
-  { label: '平均阅读时长', value: '-', icon: '', color: '#F59E0B' },
-  { label: '总用户数', value: '-', icon: '', color: '#EC4899' },
-  { label: '总新闻数', value: '-', icon: '', color: '#06B6D4' },
-  { label: '今日新增', value: '-', icon: '', color: '#8B5CF6' },
-  { label: '总浏览量', value: '-', icon: '', color: '#F97316' }
-])
+const statsData = computed(() => {
+  const prefix = timeRange.value === 'today' ? '今日' : timeRange.value === 'week' ? '近7天' : '近30天'
+  return [
+    { label: prefix + 'UV', value: '-', icon: '', color: '#2F6BFF' },
+    { label: prefix + 'PV', value: '-', icon: '', color: '#7C3AED' },
+    { label: '实时在线', value: '-', icon: '', color: '#10B981' },
+    { label: '平均阅读时长', value: '-', icon: '', color: '#F59E0B' },
+    { label: '总用户数', value: '-', icon: '', color: '#EC4899' },
+    { label: '总新闻数', value: '-', icon: '', color: '#06B6D4' },
+    { label: '今日新增', value: '-', icon: '', color: '#8B5CF6' },
+    { label: '总浏览量', value: '-', icon: '', color: '#F97316' }
+  ]
+})
 
 const newsList = ref([])
 const newsPage = ref(1)
@@ -245,7 +248,8 @@ const switchTab = (tab) => {
   if (tab === 'users') loadUsers(1)
 }
 
-const emit = defineEmits(['logout'])
+const toast = ref({ show: false, message: '', type: 'success' })
+const showToast = (msg, type = 'success') => { toast.value = { show: true, message: msg, type }; setTimeout(() => { toast.value.show = false }, 3000) }
 
 const handleLogout = () => {
   localStorage.removeItem('dashboard_token')
@@ -279,9 +283,10 @@ const updateRealtimeStats = async () => {
   try {
     const res = await analyticsApi.getRealtimeStats(timeRange.value)
     const d = res.data || res
+    const prefix = timeRange.value === 'today' ? '今日' : timeRange.value === 'week' ? '近7天' : '近30天'
     statsData.value = [
-      { label: '今日UV', value: formatNumber(d.todayUV), color: '#2F6BFF' },
-      { label: '今日PV', value: formatNumber(d.todayPV), color: '#7C3AED' },
+      { label: prefix + 'UV', value: formatNumber(d.todayUV), color: '#2F6BFF' },
+      { label: prefix + 'PV', value: formatNumber(d.todayPV), color: '#7C3AED' },
       { label: '实时在线', value: formatNumber(d.onlineUsers), color: '#10B981' },
       { label: '平均阅读时长', value: formatDuration(d.avgDuration), color: '#F59E0B' },
       { label: '总用户数', value: formatNumber(d.totalUsers), color: '#EC4899' },
@@ -403,20 +408,17 @@ const loadUsers = async (page) => {
   if (page) usersPage.value = page
   try { const res = await adminApi.listUsers(usersPage.value, 20); usersList.value = res.data || []; usersTotal.value = res.total || 0 } catch (e) { console.error(e) }
 }
-const deleteUser = async (id, username) => { if (!confirm(`确定删除用户 "${username}"？`)) return; try { await adminApi.deleteUser(id); loadUsers() } catch (e) { console.error(e) } }
+const deleteUser = async (id, username) => { if (!confirm(`确定删除用户 "${username}"？`)) return; try { await adminApi.deleteUser(id); loadUsers(); showToast('删除成功') } catch (e) { showToast('删除失败', 'error') } }
 
 const toggleRole = async (user) => {
   const newRole = user.role === 'admin' ? 'user' : 'admin'
   if (!confirm(`确定将用户 "${user.username}" 角色改为 ${newRole}？`)) return
-  try { await adminApi.updateUserRole(user.id, newRole); loadUsers() } catch (e) { console.error(e) }
-}
-
+  try { await adminApi.updateUserRole(user.id, newRole); loadUsers(); showToast('角色已更新') } catch (e) { showToast('更新失败', 'error') } }
 const toggleActive = async (user) => {
   const newActive = user.isActive === false ? true : false
   const action = newActive ? '启用' : '禁用'
   if (!confirm(`确定${action}用户 "${user.username}"？`)) return
-  try { await adminApi.updateUserActive(user.id, newActive); loadUsers() } catch (e) { console.error(e) }
-}
+  try { await adminApi.updateUserActive(user.id, newActive); loadUsers(); showToast(action + '成功') } catch (e) { showToast(action + '失败', 'error') } }
 const loadChannels = async () => { try { const res = await adminApi.listChannels(); channels.value = (res.data || []).map(d => d.channel) } catch (e) { console.error(e) } }
 
 const loadOverviewData = async () => {
@@ -915,6 +917,23 @@ onUnmounted(() => { if (statsInterval) clearInterval(statsInterval); if (timeInt
   border-color: #EF4444;
   color: #EF4444;
 }
+
+.toast {
+  position: fixed;
+  top: 64px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 8px 20px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  z-index: 9999;
+  pointer-events: none;
+  animation: fadeInDown 0.2s ease;
+}
+.toast.success { background: #10B981; color: #fff; }
+.toast.error { background: #EF4444; color: #fff; }
+@keyframes fadeInDown { from { opacity: 0; transform: translateX(-50%) translateY(-8px); } to { opacity: 1; transform: translateX(-50%) translateY(0); } }
 
 .empty-row { text-align: center; color: #94A3B8; padding: 60px 0 !important; font-size: 14px; }
 

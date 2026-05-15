@@ -30,6 +30,8 @@ public class AdminController {
             @RequestParam(required = false) String channel,
             @RequestParam(required = false) String keyword) {
         Map<String, Object> result = new HashMap<>();
+        if (page < 1) page = 1;
+        if (size < 1 || size > 100) size = 20;
         int offset = (page - 1) * size;
         List<News> list;
         long total;
@@ -100,6 +102,8 @@ public class AdminController {
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "20") int size) {
         Map<String, Object> result = new HashMap<>();
+        if (page < 1) page = 1;
+        if (size < 1 || size > 100) size = 20;
         int offset = (page - 1) * size;
         List<User> list = userMapper.findPage(offset, size);
         long total = userMapper.count();

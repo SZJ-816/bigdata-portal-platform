@@ -171,13 +171,13 @@ watch(() => route.params.name, async () => {
 <style scoped>
 .channel-header {
   padding: 24px 0 20px;
-  border-bottom: 3px solid #1a2a4a;
+  border-bottom: 3px solid var(--color-primary);
   margin-bottom: 24px;
 }
 .channel-title {
   font-size: 28px;
   font-weight: 800;
-  color: #1a2a4a;
+  color: var(--color-text);
   font-family: Georgia, 'Noto Serif SC', serif;
 }
 .channel-desc {
@@ -206,9 +206,9 @@ watch(() => route.params.name, async () => {
   display: flex;
   gap: 16px;
   padding: 16px;
-  background: #fff;
+  background: var(--color-bg-white);
   border-radius: 4px;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+  box-shadow: 0 1px 3px var(--color-card-shadow);
   cursor: pointer;
   transition: box-shadow 0.2s;
 }
@@ -254,7 +254,7 @@ watch(() => route.params.name, async () => {
 }
 .breaking-tag-sm {
   display: inline-block;
-  background: #c41230;
+  background: var(--color-accent);
   color: #fff;
   padding: 1px 8px;
   font-size: 10px;
@@ -363,7 +363,7 @@ watch(() => route.params.name, async () => {
   .channel-desc {
     font-size: 13px;
     margin-top: 6px;
-    color: #666;
+    color: var(--color-text-secondary);
     display: -webkit-box;
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
@@ -388,8 +388,8 @@ watch(() => route.params.name, async () => {
     gap: 12px;
     padding: 12px;
     border-radius: var(--radius-lg);
-    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
-    background: #fff;
+    box-shadow: 0 1px 4px var(--color-card-shadow);
+    background: var(--color-bg-white);
     transition: box-shadow 0.15s;
   }
   .news-item:active {
@@ -447,8 +447,8 @@ watch(() => route.params.name, async () => {
   .card {
     padding: 16px;
     border-radius: var(--radius-lg);
-    background: #fff;
-    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+    background: var(--color-bg-white);
+    box-shadow: 0 1px 4px var(--color-card-shadow);
   }
   .sidebar-title {
     font-size: 16px;
@@ -485,7 +485,7 @@ watch(() => route.params.name, async () => {
   }
   .hot-meta {
     font-size: 11.5px;
-    color: #999;
+    color: var(--color-text-light);
     margin-top: 2px;
   }
   .empty-state {

@@ -195,6 +195,7 @@ async function removeFavorite(newsId) {
 
 function handleLogout() {
   userApi.logout()
+  window.dispatchEvent(new CustomEvent('auth-updated'))
   user.value = null
   favorites.value = []
   history.value = []
@@ -238,14 +239,14 @@ watch(activeTab, async (val) => {
 .prompt-content {
   text-align: center;
   padding: 40px;
-  background: #fff;
+  background: var(--color-bg-white);
   border-radius: 4px;
-  box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+  box-shadow: 0 2px 12px var(--color-card-shadow);
 }
 .prompt-content h3 {
   font-size: 20px;
   margin-bottom: 8px;
-  color: #1a2a4a;
+  color: var(--color-text);
 }
 .prompt-content p {
   color: var(--color-text-secondary);
@@ -285,7 +286,7 @@ watch(activeTab, async (val) => {
   margin-top: 2px;
 }
 .logout-btn {
-  color: #c41230;
+  color: var(--color-accent);
 }
 .profile-tabs {
   display: flex;
@@ -316,7 +317,7 @@ watch(activeTab, async (val) => {
   font-weight: 700;
   margin-bottom: 16px;
   padding-bottom: 8px;
-  border-bottom: 2px solid #1a2a4a;
+  border-bottom: 2px solid var(--color-primary);
 }
 .loading-state {
   text-align: center;
@@ -412,7 +413,7 @@ watch(activeTab, async (val) => {
 }
 .progress-bar {
   height: 8px;
-  background: #e8e8e8;
+  background: var(--color-bg-secondary);
   border-radius: 4px;
   overflow: hidden;
 }

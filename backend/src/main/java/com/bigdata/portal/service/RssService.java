@@ -100,6 +100,8 @@ public class RssService {
         ));
     }
 
+    private static final Set<String> ALLOWED_PROTOCOLS = new HashSet<>(Arrays.asList("http", "https"));
+
     private static final int MAX_CONTENT_LENGTH = 3000;
 
     public int fetchAndSave() {
@@ -517,6 +519,17 @@ public class RssService {
             return true;
         }
         return false;
+    }
+
+    private boolean isAllowedUrl(String url) {
+        if (url == null || url.isEmpty()) return false;
+        try {
+            URL parsedUrl = new URL(url);
+            String protocol = parsedUrl.getProtocol().toLowerCase();
+            return ALLOWED_PROTOCOLS.contains(protocol);
+        } catch (Exception e) {
+            return false;
+        }
     }
 
     private String extractImageFromHtml(String html) {

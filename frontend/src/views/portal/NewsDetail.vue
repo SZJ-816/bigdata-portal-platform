@@ -58,7 +58,7 @@
           </div>
           <div class="comment-list">
             <div v-for="c in comments" :key="c.id" class="comment-item">
-              <div class="comment-avatar">{{ c.username[0] }}</div>
+              <div class="comment-avatar">{{ (c.username || 'U')[0].toUpperCase() }}</div>
               <div class="comment-body">
                 <div class="comment-header">
                   <span class="comment-user">{{ c.username }}</span>
@@ -337,7 +337,7 @@ watch(() => route.params.id, () => {
   top: 0;
   left: 0;
   height: 3px;
-  background: linear-gradient(90deg, #1a2a4a, #3a7bd5);
+  background: linear-gradient(90deg, var(--color-primary), #3a7bd5);
   z-index: 9999;
   transition: width 0.1s linear;
 }
@@ -367,7 +367,7 @@ watch(() => route.params.id, () => {
   width: 44px;
   height: 44px;
   border-radius: 50%;
-  background: #1a2a4a;
+  background: var(--color-primary);
   color: #fff;
   border: none;
   font-size: 20px;
@@ -377,7 +377,8 @@ watch(() => route.params.id, () => {
   transition: background 0.2s;
 }
 .back-top-btn:hover {
-  background: #243656;
+  background: var(--color-primary);
+  filter: brightness(1.1);
 }
 .detail-layout {
   display: flex;
@@ -429,7 +430,7 @@ watch(() => route.params.id, () => {
   font-size: 28px;
   font-weight: 800;
   line-height: 1.35;
-  color: #1a2a4a;
+  color: var(--color-text);
   font-family: Georgia, 'Noto Serif SC', serif;
   margin-bottom: 16px;
 }
@@ -446,7 +447,7 @@ watch(() => route.params.id, () => {
 }
 .breaking-tag {
   display: inline-block;
-  background: #c41230;
+  background: var(--color-accent);
   color: #fff;
   padding: 2px 10px;
   font-size: 11px;
@@ -455,15 +456,15 @@ watch(() => route.params.id, () => {
   border-radius: 2px;
 }
 .channel-tag {
-  background: #1a2a4a;
-  color: #fff;
+  background: var(--color-tag-bg);
+  color: var(--color-tag-text);
   padding: 2px 10px;
   border-radius: 2px;
   font-size: 12px;
   cursor: pointer;
 }
 .channel-tag:hover {
-  background: #243656;
+  background: var(--color-primary);
 }
 .translate-btn {
   display: inline-flex;
@@ -547,19 +548,19 @@ watch(() => route.params.id, () => {
   padding: 6px 16px;
   border: 1px solid var(--color-border);
   border-radius: 4px;
-  background: #fff;
+  background: var(--color-bg-white);
   font-size: 13px;
   cursor: pointer;
   transition: all 0.2s;
   color: var(--color-text-secondary);
 }
 .action-btn:hover {
-  border-color: #1a2a4a;
-  color: #1a2a4a;
+  border-color: var(--color-primary);
+  color: var(--color-primary);
 }
 .action-btn.active {
-  border-color: #c41230;
-  color: #c41230;
+  border-color: var(--color-accent);
+  color: var(--color-accent);
 }
 .action-icon {
   font-size: 14px;
@@ -569,7 +570,7 @@ watch(() => route.params.id, () => {
   font-weight: 700;
   margin-bottom: 16px;
   padding-bottom: 8px;
-  border-bottom: 2px solid #1a2a4a;
+  border-bottom: 2px solid var(--color-primary);
 }
 .comment-section {
   margin-top: 24px;
@@ -608,7 +609,7 @@ watch(() => route.params.id, () => {
   display: flex;
   gap: 12px;
   padding: 12px 0;
-  border-bottom: 1px solid #f0f0f0;
+  border-bottom: 1px solid var(--color-border);
 }
 .comment-avatar {
   width: 36px;
@@ -652,7 +653,7 @@ watch(() => route.params.id, () => {
   font-weight: 700;
   margin-bottom: 14px;
   padding-bottom: 8px;
-  border-bottom: 2px solid #1a2a4a;
+  border-bottom: 2px solid var(--color-primary);
 }
 .related-section {
   margin-bottom: 16px;
@@ -730,7 +731,7 @@ watch(() => route.params.id, () => {
 .not-found a {
   display: inline-block;
   margin-top: 12px;
-  color: #1a2a4a;
+  color: var(--color-primary);
   font-weight: 600;
 }
 @media (max-width: 768px) {
@@ -762,8 +763,8 @@ watch(() => route.params.id, () => {
     max-width: calc(50% - 6px);
     padding: 14px;
     border-radius: var(--radius-lg);
-    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
-    background: #fff;
+    box-shadow: 0 1px 4px var(--color-card-shadow);
+    background: var(--color-bg-white);
     margin-bottom: 0;
     overflow: hidden;
   }
@@ -829,7 +830,7 @@ watch(() => route.params.id, () => {
   .article-content {
     font-size: 15px;
     line-height: 1.85;
-    color: #333;
+    color: var(--color-text-secondary);
     padding: 0 12px;
     max-width: 100%;
     overflow-x: hidden;
@@ -964,7 +965,7 @@ watch(() => route.params.id, () => {
     border-radius: 8px;
     font-size: 13px;
     text-align: center;
-    background: #f8f8f8;
+    background: var(--color-bg-secondary);
   }
   .login-prompt a {
     font-weight: 600;
@@ -1032,7 +1033,7 @@ watch(() => route.params.id, () => {
     cursor: pointer;
   }
   .hot-item:active {
-    background: #f5f5f5;
+    background: var(--color-bg-hover);
   }
   .rank-num {
     width: 18px;

@@ -17,9 +17,9 @@ export function useAuth() {
 }
 
 export function emitUserUpdate() {
-  window.dispatchEvent(new CustomEvent('user-updated'))
+  window.dispatchEvent(new CustomEvent('auth-updated'))
 }
 
 export function onUserUpdate(callback) {
-  window.addEventListener('user-updated', callback)
+  window.addEventListener('auth-updated', callback)
 }

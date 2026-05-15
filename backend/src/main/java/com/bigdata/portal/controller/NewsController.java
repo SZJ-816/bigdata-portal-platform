@@ -75,13 +75,19 @@ public class NewsController {
 
     @PostMapping("/{id}/comment")
     public Map<String, Object> addComment(@PathVariable Long id,
-                                          @RequestBody Map<String, Object> params) {
+                                          @RequestBody Map<String, Object> params,
+                                          HttpServletRequest request) {
         Map<String, Object> result = new HashMap<>();
-        Object userIdObj = params.get("userId");
-        Object contentObj = params.get("content");
-        if (userIdObj == null || contentObj == null || contentObj.toString().trim().isEmpty()) {
+        Object userIdObj = request.getAttribute("userId");
+        if (userIdObj == null) {
             result.put("success", false);
-            result.put("message", "参数不完整");
+            result.put("message", "请先登录");
+            return result;
+        }
+        Object contentObj = params.get("content");
+        if (contentObj == null || contentObj.toString().trim().isEmpty()) {
+            result.put("success", false);
+            result.put("message", "评论内容不能为空");
             return result;
         }
         String content = contentObj.toString();
@@ -90,7 +96,7 @@ public class NewsController {
             result.put("success", false);
             return result;
         }
-        Long userId = Long.valueOf(userIdObj.toString());
+        Long userId = ((Number) userIdObj).longValue();
         newsService.addComment(id, userId, content);
         result.put("success", true);
         return result;

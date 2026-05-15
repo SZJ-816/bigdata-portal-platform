@@ -6,6 +6,7 @@ import com.bigdata.portal.mapper.CommentMapper;
 import com.bigdata.portal.mapper.NewsMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
@@ -116,6 +117,7 @@ public class NewsService {
         return newsMapper.findByChannel(null);
     }
 
+    @Transactional
     public void addComment(Long newsId, Long userId, String content) {
         if (content != null) {
             content = org.jsoup.Jsoup.clean(content, org.jsoup.safety.Safelist.basic());
@@ -133,6 +135,7 @@ public class NewsService {
         return commentMapper.findByNewsId(newsId);
     }
 
+    @Transactional
     public void update(News news) {
         newsMapper.update(news);
     }

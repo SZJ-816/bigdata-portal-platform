@@ -72,9 +72,6 @@ CREATE TABLE IF NOT EXISTS user_behavior (
     INDEX idx_created_at (created_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
-INSERT INTO `user` (username, password, email) VALUES ('admin', '$2a$10$Ec7Cmc6ZCm3PN736c2uST.BPoxHfp8gy5aTbuYdyvR3C2wYDmv/bO', 'admin@bigdata.com');
-INSERT INTO `user` (username, password, email) VALUES ('test', '$2a$10$Ec7Cmc6ZCm3PN736c2uST.BPoxHfp8gy5aTbuYdyvR3C2wYDmv/bO', 'test@bigdata.com');
-
 INSERT INTO news (title, summary, channel, source, image_url, view_count, comment_count, is_breaking, publish_time, content) VALUES
 ('GPT-5正式发布：多模态推理能力实现质的飞跃', 'OpenAI今日正式发布GPT-5模型，在多模态推理、长文本理解和代码生成方面实现重大突破，引发行业广泛关注', 'AI', '科技日报', 'https://images.unsplash.com/photo-1677442136019-21780ecad995?w=800&h=400&fit=crop', 5842, 328, 1, '2026-05-12 09:00:00', '<h2>革命性的多模态推理</h2><p>OpenAI在今日的全球直播发布会上正式推出了GPT-5模型。新模型在多模态推理方面实现了质的飞跃，能够同时处理文本、图像、音频和视频输入，并在跨模态推理任务中展现出前所未有的能力。据OpenAI CEO Sam Altman介绍，GPT-5在复杂推理基准测试中的表现比GPT-4提升了47%。</p><h2>长文本理解突破</h2><p>GPT-5的上下文窗口扩展至200万token，能够完整理解并分析超长文档。在法律合同审查、学术论文分析等专业场景中，GPT-5的准确率达到了专家水平的92%。这一突破使得AI在专业领域的应用前景更加广阔。</p><h2>代码生成能力升级</h2><p>在代码生成方面，GPT-5不仅能够生成更高质量的代码，还能理解整个代码库的架构，进行跨文件的代码重构和优化。在SWE-bench测试中，GPT-5的通过率从GPT-4的33%提升至61%，接近高级开发者的水平。</p><h2>行业影响与展望</h2><p>业内专家普遍认为，GPT-5的发布将加速AI在各行业的落地应用。从医疗诊断到金融分析，从教育辅导到科研辅助，多模态AI正在重新定义人机协作的边界。不过，也有学者呼吁关注AI安全与伦理问题，确保技术进步惠及全社会。</p>'),
 ('谷歌DeepMind发布AlphaFold 4：蛋白质结构预测进入新纪元', 'DeepMind最新发布的AlphaFold 4将蛋白质结构预测精度提升至原子级别，有望加速新药研发进程', 'AI', 'Nature科技', 'https://images.unsplash.com/photo-1620712943543-bcc4688e7485?w=800&h=400&fit=crop', 3215, 186, 0, '2026-05-11 14:30:00', '<h2>原子级精度预测</h2><p>谷歌DeepMind团队发布了AlphaFold 4，将蛋白质结构预测的精度提升到了原子级别。新模型不仅能预测蛋白质的静态结构，还能模拟蛋白质的动态折叠过程，这对理解蛋白质功能和药物设计具有重大意义。</p><h2>加速新药研发</h2><p>AlphaFold 4的发布受到制药行业的极大关注。传统新药研发周期长达10-15年，而AlphaFold 4有望将靶点发现和先导化合物优化阶段缩短60%以上。多家跨国药企已宣布与DeepMind建立合作关系。</p><h2>开源与可及性</h2><p>DeepMind宣布AlphaFold 4的核心模型将继续开源，并通过Google Cloud提供算力支持。这一举措将使全球科研人员，尤其是发展中国家的研究者，能够平等地获取最前沿的蛋白质结构预测工具。</p>'),

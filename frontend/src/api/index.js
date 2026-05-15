@@ -119,7 +119,7 @@ export const userApi = {
 
 export const commentApi = {
   getList: (newsId) => request.get(`/news/${newsId}/comments`),
-  add: (newsId, data) => request.post(`/news/${newsId}/comment`, data),
+  add: (newsId, data = {}) => request.post(`/news/${newsId}/comment`, data),
 }
 
 const behaviorQueue = []
