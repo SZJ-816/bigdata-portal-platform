@@ -36,38 +36,65 @@ public class AiService {
 
     private final ObjectMapper objectMapper = new ObjectMapper();
 
+    private static final String SYSTEM_PROMPT_SEARCH = "你是「TechNews AI」科技资讯智能助手，专注于科技行业分析和解读。\n" +
+            "你的职责：\n" +
+            "1. 基于平台新闻数据，为用户提供专业、深度的科技资讯分析\n" +
+            "2. 结合多源新闻进行综合分析，发现趋势和关联\n" +
+            "3. 用清晰的结构化格式回答，善用标题、列表和加粗\n" +
+            "4. 回答必须基于提供的新闻内容，不编造不存在的信息\n" +
+            "5. 如果新闻数据不足以回答，诚实说明并给出你的专业见解\n" +
+            "回答风格：专业但不晦涩，简洁但信息量充足，善用数据支撑观点。";
+
+    private static final String SYSTEM_PROMPT_HOT_SUMMARY = "你是「TechNews AI」科技资讯主编，负责每日热点总结。\n" +
+            "你的职责：\n" +
+            "1. 从今日新闻中提炼最重要的科技热点\n" +
+            "2. 按领域分类（AI、硬件、互联网、创业等）\n" +
+            "3. 每个热点用1-2句话概括核心信息\n" +
+            "4. 最后给出今日科技趋势一句话总结\n" +
+            "格式要求：使用**加粗**标记关键词，用编号列表组织内容。";
+
     public interface StreamCallback {
         void onToken(String token);
         void onComplete();
         void onError(Exception e);
     }
 
-    private String buildContext(String keyword) {
+    private String buildSearchContext(String keyword) {
         List<News> searchResults = newsMapper.search(keyword);
         List<News> channelResults = newsMapper.findByChannelTop20(keyword);
-        if (searchResults.size() < 3 && channelResults != null) {
+        if (channelResults != null) {
             for (News n : channelResults) {
                 if (searchResults.stream().noneMatch(s -> s.getId().equals(n.getId()))) {
                     searchResults.add(n);
                 }
-                if (searchResults.size() >= 3) break;
             }
         }
         if (searchResults.isEmpty()) {
-            return "无相关新闻";
+            List<News> topNews = newsMapper.findTop20();
+            if (topNews != null && !topNews.isEmpty()) {
+                searchResults.addAll(topNews.subList(0, Math.min(5, topNews.size())));
+            }
+        }
+        if (searchResults.isEmpty()) {
+            return "暂无相关新闻数据";
         }
         StringBuilder sb = new StringBuilder();
         int count = 0;
         for (News news : searchResults) {
-            if (count >= 3) break;
-            sb.append(count + 1).append(".");
+            if (count >= 10) break;
+            sb.append(count + 1).append(". 【");
+            sb.append(news.getChannel() != null ? news.getChannel() : "综合");
+            sb.append("】");
             sb.append(news.getTitle());
             if (news.getSummary() != null && !news.getSummary().isEmpty()) {
                 String summary = news.getSummary();
-                if (summary.length() > 80) {
-                    summary = summary.substring(0, 80);
+                if (summary.length() > 150) {
+                    summary = summary.substring(0, 150) + "...";
                 }
-                sb.append(" - ").append(summary);
+                sb.append("\n   摘要：").append(summary);
+            }
+            if (news.getSource() != null && !news.getSource().isEmpty()) {
+                sb.append("（来源：").append(news.getSource()).append("）");
             }
             sb.append("\n");
             count++;
@@ -75,8 +102,14 @@ public class AiService {
         return sb.toString();
     }
 
-    private String buildPrompt(String keyword, String context) {
-        return "你是科技资讯助手。根据以下新闻简要回答用户问题，200字以内，中文。\n新闻：" + context + "\n问题：" + keyword;
+    private String buildSearchPrompt(String keyword) {
+        String context = buildSearchContext(keyword);
+        return "以下是平台中与「" + keyword + "」相关的最新科技新闻：\n\n" + context +
+                "\n请根据以上新闻，对「" + keyword + "」进行深度分析，包括：\n" +
+                "1. 核心动态：最近发生了什么重要事件？\n" +
+                "2. 行业影响：这对科技行业意味着什么？\n" +
+                "3. 趋势判断：未来可能如何发展？\n\n" +
+                "请用中文回答，800字以内。";
     }
 
     private String buildHotSummaryContext() {
@@ -87,17 +120,18 @@ public class AiService {
         StringBuilder sb = new StringBuilder();
         int count = 0;
         for (News news : allNews) {
-            if (count >= 10) break;
-            sb.append(count + 1).append(".");
+            if (count >= 15) break;
+            sb.append(count + 1).append(". 【");
+            sb.append(news.getChannel() != null ? news.getChannel() : "综合");
+            sb.append("】");
             sb.append(news.getTitle());
             if (news.getSummary() != null && !news.getSummary().isEmpty()) {
                 String summary = news.getSummary();
-                if (summary.length() > 60) {
-                    summary = summary.substring(0, 60);
+                if (summary.length() > 100) {
+                    summary = summary.substring(0, 100) + "...";
                 }
                 sb.append(" - ").append(summary);
             }
-            sb.append(" [").append(news.getChannel() != null ? news.getChannel() : "").append("]");
             sb.append("\n");
             count++;
         }
@@ -106,11 +140,16 @@ public class AiService {
 
     private String buildHotSummaryPrompt(String instruction) {
         String context = buildHotSummaryContext();
-        String basePrompt = "你是科技资讯编辑。根据以下今日新闻，生成今日热点总结，中文，300字以内。\n今日新闻：\n" + context;
+        String prompt = "以下是今日平台收录的最新科技新闻：\n\n" + context +
+                "\n请根据以上新闻生成今日科技热点总结，要求：\n" +
+                "1. 按领域分类归纳（如AI、硬件、互联网、创业等）\n" +
+                "2. 每个热点用1-2句话概括核心\n" +
+                "3. 最后用一句话总结今日科技趋势\n" +
+                "4. 中文，500字以内";
         if (instruction != null && !instruction.trim().isEmpty()) {
-            basePrompt += "\n额外要求：" + instruction;
+            prompt += "\n\n额外要求：" + instruction;
         }
-        return basePrompt;
+        return prompt;
     }
 
     public String translateText(String text) throws Exception {
@@ -160,6 +199,9 @@ public class AiService {
         ObjectNode requestBody = objectMapper.createObjectNode();
         requestBody.put("model", model);
         ArrayNode messages = requestBody.putArray("messages");
+        ObjectNode sysMsg = messages.addObject();
+        sysMsg.put("role", "system");
+        sysMsg.put("content", SYSTEM_PROMPT_SEARCH);
         ObjectNode userMsg = messages.addObject();
         userMsg.put("role", "user");
         userMsg.put("content", prompt);
@@ -204,15 +246,18 @@ public class AiService {
         }
     }
 
-    private ObjectNode buildRequestBody(String prompt, boolean stream) {
+    private ObjectNode buildRequestBody(String systemPrompt, String userPrompt, boolean stream, int maxTokens, double temperature) {
         ObjectNode requestBody = objectMapper.createObjectNode();
         requestBody.put("model", model);
         ArrayNode messages = requestBody.putArray("messages");
+        ObjectNode sysMsg = messages.addObject();
+        sysMsg.put("role", "system");
+        sysMsg.put("content", systemPrompt);
         ObjectNode userMsg = messages.addObject();
         userMsg.put("role", "user");
-        userMsg.put("content", prompt);
-        requestBody.put("temperature", 0.6);
-        requestBody.put("max_tokens", 512);
+        userMsg.put("content", userPrompt);
+        requestBody.put("temperature", temperature);
+        requestBody.put("max_tokens", maxTokens);
         if (stream) {
             requestBody.put("stream", true);
         }
@@ -228,9 +273,8 @@ public class AiService {
     }
 
     public String searchNews(String keyword) throws Exception {
-        String context = buildContext(keyword);
-        String prompt = buildPrompt(keyword, context);
-        ObjectNode requestBody = buildRequestBody(prompt, false);
+        String prompt = buildSearchPrompt(keyword);
+        ObjectNode requestBody = buildRequestBody(SYSTEM_PROMPT_SEARCH, prompt, false, 800, 0.5);
         String jsonBody = objectMapper.writeValueAsString(requestBody);
         Path tempFile = writeTempJson(jsonBody);
         try {
@@ -240,7 +284,7 @@ public class AiService {
                     "-H", "Content-Type: application/json",
                     "-H", "Authorization: Bearer " + apiKey,
                     "--connect-timeout", "15",
-                    "--max-time", "30",
+                    "--max-time", "60",
                     "-d", "@" + tempFile.toString()
             );
             pb.redirectErrorStream(true);
@@ -272,12 +316,49 @@ public class AiService {
 
     public String hotSummary(String instruction) throws Exception {
         String prompt = buildHotSummaryPrompt(instruction);
-        return callAi(prompt, 512);
+        ObjectNode requestBody = buildRequestBody(SYSTEM_PROMPT_HOT_SUMMARY, prompt, false, 800, 0.5);
+        String jsonBody = objectMapper.writeValueAsString(requestBody);
+        Path tempFile = writeTempJson(jsonBody);
+        try {
+            String apiUrl = baseUrl + "/chat/completions";
+            ProcessBuilder pb = new ProcessBuilder(
+                    "curl", "-s", "-X", "POST", apiUrl,
+                    "-H", "Content-Type: application/json",
+                    "-H", "Authorization: Bearer " + apiKey,
+                    "--connect-timeout", "15",
+                    "--max-time", "60",
+                    "-d", "@" + tempFile.toString()
+            );
+            pb.redirectErrorStream(true);
+            Process process = pb.start();
+            StringBuilder response = new StringBuilder();
+            try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream(), StandardCharsets.UTF_8))) {
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    response.append(line);
+                }
+            }
+            int exitCode = process.waitFor();
+            if (exitCode != 0) {
+                throw new RuntimeException("curl exited with code " + exitCode);
+            }
+            JsonNode root = objectMapper.readTree(response.toString());
+            if (root.has("error")) {
+                throw new RuntimeException("NVIDIA API error: " + root.get("error").toString());
+            }
+            JsonNode choices = root.get("choices");
+            if (choices != null && choices.size() > 0) {
+                return choices.get(0).get("message").get("content").asText().trim();
+            }
+            return null;
+        } finally {
+            Files.deleteIfExists(tempFile);
+        }
     }
 
     public void hotSummaryStream(String instruction, StreamCallback callback) throws Exception {
         String prompt = buildHotSummaryPrompt(instruction);
-        ObjectNode requestBody = buildRequestBody(prompt, true);
+        ObjectNode requestBody = buildRequestBody(SYSTEM_PROMPT_HOT_SUMMARY, prompt, true, 800, 0.5);
         String jsonBody = objectMapper.writeValueAsString(requestBody);
         Path tempFile = writeTempJson(jsonBody);
         try {
@@ -287,7 +368,7 @@ public class AiService {
                     "-H", "Content-Type: application/json",
                     "-H", "Authorization: Bearer " + apiKey,
                     "--connect-timeout", "15",
-                    "--max-time", "60",
+                    "--max-time", "90",
                     "-d", "@" + tempFile.toString()
             );
             pb.redirectErrorStream(true);
@@ -326,9 +407,8 @@ public class AiService {
     }
 
     public void searchNewsStream(String keyword, StreamCallback callback) throws Exception {
-        String context = buildContext(keyword);
-        String prompt = buildPrompt(keyword, context);
-        ObjectNode requestBody = buildRequestBody(prompt, true);
+        String prompt = buildSearchPrompt(keyword);
+        ObjectNode requestBody = buildRequestBody(SYSTEM_PROMPT_SEARCH, prompt, true, 800, 0.5);
         String jsonBody = objectMapper.writeValueAsString(requestBody);
         Path tempFile = writeTempJson(jsonBody);
         try {
@@ -338,7 +418,7 @@ public class AiService {
                     "-H", "Content-Type: application/json",
                     "-H", "Authorization: Bearer " + apiKey,
                     "--connect-timeout", "15",
-                    "--max-time", "30",
+                    "--max-time", "90",
                     "-d", "@" + tempFile.toString()
             );
             pb.redirectErrorStream(true);

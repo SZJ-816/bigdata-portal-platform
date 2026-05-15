@@ -46,7 +46,7 @@
         <div class="ai-answer-header">
           <span class="ai-icon">✦</span>
           <span class="ai-label">AI 智能分析</span>
-          <span v-if="aiLoading" class="ai-typing">正在思考中...</span>
+          <span v-if="aiLoading" class="ai-typing">正在深度分析中...</span>
         </div>
         <div class="ai-answer-content" v-html="renderMarkdown(aiAnswer)"></div>
         <div v-if="aiLoading" class="ai-cursor">▊</div>
@@ -66,6 +66,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { hotSearchWords, formatRelativeTime } from '../../mock/newsData'
 import { behaviorApi, newsApi } from '../../api'
 import request from '../../api'
+import { cleanText, formatViewCount, CHANNEL_LABEL_MAP } from '../../utils'
 
 const route = useRoute()
 const router = useRouter()
@@ -79,36 +80,10 @@ const activeTab = ref('news')
 const aiAnswer = ref('')
 const aiLoading = ref(false)
 
-const channelLabelMap = {
-  'AI': '人工智能',
-  '大数据': '大数据',
-  '云计算': '云计算',
-  '互联网': '互联网',
-  '硬件': '硬件',
-  '创业': '创业',
-  '人工智能': '人工智能'
-}
+const channelLabelMap = CHANNEL_LABEL_MAP
 
 const processedResults = ref([])
 let searchTimer = null
-
-function cleanText(text) {
-  if (!text) return ''
-  let cleaned = text
-  cleaned = cleaned.replace(/<[^>]*>/g, '')
-  cleaned = cleaned.replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&').replace(/&nbsp;/g, ' ').replace(/&quot;/g, '"').replace(/&#39;/g, "'")
-  cleaned = cleaned.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F]/g, '')
-  cleaned = cleaned.replace(/[\uFFFD\u00EF\u00BF\u00BD]/g, '')
-  if (/[\xc0-\xc1][\x80-\xbf]/.test(cleaned)) {
-    try {
-      const decoded = decodeURIComponent(escape(cleaned))
-      if (!/[\xc0-\xc1][\x80-\xbf]/.test(decoded)) {
-        cleaned = decoded
-      }
-    } catch (e) {}
-  }
-  return cleaned.trim()
-}
 
 function updateProcessedResults() {
   processedResults.value = results.value.map(item => ({
@@ -117,12 +92,6 @@ function updateProcessedResults() {
     summary: cleanText(item.summary),
     channelLabel: channelLabelMap[item.channel] || item.channel
   }))
-}
-
-function formatViewCount(count) {
-  if (!count) return 0
-  if (count >= 10000) return (count / 10000).toFixed(1) + '万'
-  return count
 }
 
 async function doSearch() {
@@ -162,7 +131,12 @@ async function doAiSearch() {
 
   let streamSuccess = false
   try {
-    const response = await fetch(`/api/ai/search/stream?keyword=${encodeURIComponent(keyword.value)}`)
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), 120000)
+    const response = await fetch(`/api/ai/search/stream?keyword=${encodeURIComponent(keyword.value)}`, {
+      signal: controller.signal
+    })
+    clearTimeout(timeoutId)
     if (!response.ok) throw new Error('Stream response not ok')
 
     const reader = response.body.getReader()
@@ -198,13 +172,15 @@ async function doAiSearch() {
       }
     }
   } catch (err) {
-    console.warn('AI stream failed, trying non-stream:', err.message)
+    if (err.name !== 'AbortError') {
+      console.warn('AI stream failed, trying non-stream:', err.message)
+    }
   }
 
   if (!streamSuccess) {
     aiAnswer.value = ''
     try {
-      const res = await request.get('/ai/search', { params: { keyword: keyword.value }, timeout: 90000 })
+      const res = await request.get('/ai/search', { params: { keyword: keyword.value }, timeout: 120000 })
       if (res.data.success) {
         aiAnswer.value = res.data.data
       } else {
