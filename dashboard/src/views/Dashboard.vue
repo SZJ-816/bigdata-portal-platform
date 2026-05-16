@@ -196,6 +196,10 @@
         </div>
       </div>
     </main>
+
+    <div v-if="toast.show" :class="['toast', toast.type]">
+      {{ toast.message }}
+    </div>
   </div>
 </template>
 
@@ -203,6 +207,8 @@
 import { ref, onMounted, onUnmounted, computed, nextTick, watch } from 'vue'
 import * as echarts from 'echarts'
 import { analyticsApi, adminApi } from '../api/index.js'
+
+const emit = defineEmits(['logout'])
 
 const activeTab = ref('overview')
 const trendChartRef = ref(null)
@@ -696,6 +702,7 @@ onUnmounted(() => { if (statsInterval) clearInterval(statsInterval); if (timeInt
   display: flex;
   gap: 10px;
   align-items: center;
+  flex-wrap: wrap;
 }
 
 .search-input {
@@ -945,6 +952,7 @@ onUnmounted(() => { if (statsInterval) clearInterval(statsInterval); if (timeInt
   padding: 14px 0;
   font-size: 13px;
   color: #64748B;
+  flex-wrap: wrap;
 }
 
 .pager button {
@@ -971,13 +979,15 @@ onUnmounted(() => { if (statsInterval) clearInterval(statsInterval); if (timeInt
   justify-content: center;
   z-index: 1000;
   backdrop-filter: blur(4px);
+  padding: 16px;
 }
 
 .edit-modal {
   background: #fff;
   border-radius: 16px;
   padding: 28px;
-  width: 520px;
+  width: 100%;
+  max-width: 520px;
   max-height: 80vh;
   overflow-y: auto;
   box-shadow: 0 20px 60px rgba(0,0,0,0.15);
@@ -1027,10 +1037,32 @@ onUnmounted(() => { if (statsInterval) clearInterval(statsInterval); if (timeInt
 
 @media (max-width: 1200px) {
   .kpi-banner { grid-template-columns: repeat(4, 1fr); }
+  .bar-inner { padding: 0 16px; }
 }
 
 @media (max-width: 900px) {
   .kpi-banner { grid-template-columns: repeat(2, 1fr); }
   .overview-grid { grid-template-columns: 1fr; }
+  .bar-inner { padding: 0 12px; gap: 16px; }
+  .brand-sub { display: none; }
+  .live-tag { display: none; }
+}
+
+@media (max-width: 600px) {
+  .top-bar { height: auto; min-height: 56px; padding: 8px 0; }
+  .bar-inner { flex-wrap: wrap; }
+  .brand { order: 1; }
+  .bar-right { order: 2; margin-left: auto; }
+  .main-nav { order: 3; width: 100%; justify-content: space-between; }
+  .nav-link { padding: 8px 12px; font-size: 12px; }
+  .overview-page { padding: 16px 12px; }
+  .manage-page { padding: 16px 12px; }
+  .search-bar { flex-direction: column; align-items: stretch; }
+  .search-input { max-width: 100%; }
+  .search-select { width: 100%; }
+  .news-table th, .news-table td { padding: 10px 8px; font-size: 12px; }
+  .col-title { max-width: 150px; }
+  .col-src, .col-time { display: none; }
+  .field-row { flex-direction: column; gap: 0; }
 }
 </style>

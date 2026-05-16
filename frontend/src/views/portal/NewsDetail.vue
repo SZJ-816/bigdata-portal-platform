@@ -4,7 +4,7 @@
     <transition name="toast-fade">
       <div v-if="toastMsg" class="toast-msg">{{ toastMsg }}</div>
     </transition>
-    <button v-if="showBackTop" class="back-top-btn" @click="scrollToTop">↑</button>
+    <button v-if="showBackTop" class="back-top-btn" @click="scrollToTop" aria-label="返回顶部">↑</button>
     <div class="detail-layout">
       <div class="detail-main">
         <nav class="breadcrumb">
@@ -48,23 +48,29 @@
         </div>
 
         <div class="comment-section">
-          <h3 class="section-title">评论 ({{ comments.length }})</h3>
-          <div v-if="isLoggedIn" class="comment-form">
-            <textarea v-model="commentText" placeholder="发表你的看法..." rows="3"></textarea>
-            <button class="btn btn-primary" @click="submitComment">发表评论</button>
-          </div>
-          <div v-else class="login-prompt">
-            <router-link to="/login">登录</router-link> 后即可发表评论
-          </div>
-          <div class="comment-list">
-            <div v-for="c in comments" :key="c.id" class="comment-item">
-              <div class="comment-avatar">{{ (c.username || 'U')[0].toUpperCase() }}</div>
-              <div class="comment-body">
-                <div class="comment-header">
-                  <span class="comment-user">{{ c.username }}</span>
-                  <span class="comment-time">{{ formatRelativeTime(c.time) }}</span>
+          <div class="comment-section-inner">
+            <h3 class="section-title">评论 ({{ comments.length }})</h3>
+            <div v-if="isLoggedIn" class="comment-form">
+              <textarea v-model="commentText" placeholder="发表你的看法..." rows="3"></textarea>
+              <button class="btn btn-primary" @click="submitComment">发表评论</button>
+            </div>
+            <div v-else class="login-prompt">
+              <router-link :to="`/login?redirect=${encodeURIComponent($route.fullPath)}`">登录</router-link> 后即可发表评论
+            </div>
+            <div v-if="comments.length === 0" class="comment-empty">
+              <div class="empty-icon">💬</div>
+              <p>暂无评论，快来发表第一条吧</p>
+            </div>
+            <div v-else class="comment-list">
+              <div v-for="c in comments" :key="c.id" class="comment-item">
+                <div class="comment-avatar">{{ (c.username || 'U')[0].toUpperCase() }}</div>
+                <div class="comment-body">
+                  <div class="comment-header">
+                    <span class="comment-user">{{ c.username }}</span>
+                    <span class="comment-time">{{ formatRelativeTime(c.time) }}</span>
+                  </div>
+                  <p class="comment-text">{{ c.content }}</p>
                 </div>
-                <p class="comment-text">{{ c.content }}</p>
               </div>
             </div>
           </div>
@@ -93,9 +99,30 @@
       </div>
     </div>
   </div>
+  <div v-else-if="loading" class="loading-skeleton">
+    <div class="skeleton-breadcrumb"></div>
+    <div class="skeleton-article">
+      <div class="skeleton-title"></div>
+      <div class="skeleton-meta">
+        <span></span><span></span><span></span><span></span>
+      </div>
+      <div class="skeleton-cover"></div>
+      <div class="skeleton-content">
+        <div class="skeleton-line"></div><div class="skeleton-line"></div><div class="skeleton-line"></div><div class="skeleton-line"></div><div class="skeleton-line"></div><div class="skeleton-line"></div>
+      </div>
+    </div>
+  </div>
   <div v-else class="not-found">
-    <p>新闻不存在</p>
-    <router-link to="/">返回首页</router-link>
+    <div v-if="errorMsg" class="error-state">
+      <div class="error-icon">⚠️</div>
+      <p>{{ errorMsg }}</p>
+      <button class="btn btn-primary" @click="loadNews">重新加载</button>
+    </div>
+    <div v-else>
+      <div class="empty-icon">📰</div>
+      <p>新闻不存在</p>
+      <router-link to="/">返回首页</router-link>
+    </div>
   </div>
 </template>
 
@@ -120,6 +147,7 @@ const loading = ref(true)
 const translating = ref(false)
 const translated = ref(false)
 const toastMsg = ref('')
+const errorMsg = ref('')
 const showBackTop = ref(false)
 const readingProgress = ref(0)
 let viewStartTime = Date.now()
@@ -163,6 +191,7 @@ async function translateNews() {
     }
   } catch (err) {
     console.error('Translation failed:', err)
+    showToast('翻译失败，请稍后重试')
   }
   translating.value = false
 }
@@ -227,7 +256,7 @@ async function checkFavorite() {
 
 function handleFavorite() {
   if (!isLoggedIn.value) {
-    router.push('/login')
+    router.push(`/login?redirect=${encodeURIComponent(route.fullPath)}`)
     return
   }
   isFavorited.value = !isFavorited.value
@@ -257,7 +286,7 @@ async function loadComments() {
 async function submitComment() {
   if (!commentText.value.trim()) return
   if (!isLoggedIn.value) {
-    router.push('/login')
+    router.push(`/login?redirect=${encodeURIComponent(route.fullPath)}`)
     return
   }
   try {
@@ -266,15 +295,18 @@ async function submitComment() {
     if (res.data.success) {
       commentText.value = ''
       await loadComments()
+      showToast('评论发送成功')
       behaviorApi.report({ eventType: 'comment', targetId: String(news.value.id), targetType: 'news' })
     }
   } catch (err) {
     console.error('Failed to submit comment:', err)
+    showToast('评论发送失败，请稍后重试')
   }
 }
 
 async function loadNews() {
   loading.value = true
+  errorMsg.value = ''
   if (newsAbortController) newsAbortController.abort()
   newsAbortController = new AbortController()
   const id = route.params.id
@@ -296,6 +328,7 @@ async function loadNews() {
     }
   } catch (err) {
     console.error('Failed to load news:', err)
+    errorMsg.value = '加载失败，请检查网络连接'
     news.value = null
   }
   loading.value = false
@@ -343,7 +376,7 @@ watch(() => route.params.id, () => {
 }
 .toast-msg {
   position: fixed;
-  top: 20px;
+  top: 70px;
   left: 50%;
   transform: translateX(-50%);
   background: var(--color-overlay-light);
@@ -362,8 +395,8 @@ watch(() => route.params.id, () => {
 }
 .back-top-btn {
   position: fixed;
-  bottom: 32px;
-  right: 32px;
+  bottom: 90px;
+  right: 20px;
   width: 44px;
   height: 44px;
   border-radius: 50%;
@@ -574,6 +607,12 @@ watch(() => route.params.id, () => {
 }
 .comment-section {
   margin-top: 24px;
+  background: transparent;
+  padding: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+.comment-section-inner {
   background: var(--color-bg-white);
   padding: 24px;
   border-radius: 4px;
@@ -599,6 +638,15 @@ watch(() => route.params.id, () => {
 .login-prompt a {
   color: var(--color-text);
   font-weight: 600;
+}
+.comment-empty {
+  text-align: center;
+  padding: 40px 20px;
+  color: var(--color-text-secondary);
+}
+.comment-empty .empty-icon {
+  font-size: 48px;
+  margin-bottom: 12px;
 }
 .comment-list {
   display: flex;
@@ -722,17 +770,97 @@ watch(() => route.params.id, () => {
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
+.loading-skeleton {
+  padding: 0;
+}
+.skeleton-breadcrumb {
+  height: 16px;
+  width: 200px;
+  background: var(--color-skeleton);
+  border-radius: 4px;
+  margin-bottom: 20px;
+  animation: skeleton-shine 1.5s ease-in-out infinite;
+}
+.skeleton-article {
+  background: var(--color-bg-white);
+  padding: 32px;
+  border-radius: 4px;
+  box-shadow: 0 1px 4px var(--color-shadow-sm);
+}
+.skeleton-title {
+  height: 36px;
+  width: 80%;
+  background: var(--color-skeleton);
+  border-radius: 4px;
+  margin-bottom: 16px;
+  animation: skeleton-shine 1.5s ease-in-out infinite;
+}
+.skeleton-meta {
+  display: flex;
+  gap: 12px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--color-border);
+  margin-bottom: 24px;
+}
+.skeleton-meta span {
+  height: 14px;
+  width: 60px;
+  background: var(--color-skeleton);
+  border-radius: 4px;
+  animation: skeleton-shine 1.5s ease-in-out infinite;
+}
+.skeleton-cover {
+  width: 100%;
+  height: 300px;
+  background: var(--color-skeleton);
+  border-radius: 4px;
+  margin-bottom: 24px;
+  animation: skeleton-shine 1.5s ease-in-out infinite;
+}
+.skeleton-content {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.skeleton-line {
+  height: 16px;
+  background: var(--color-skeleton);
+  border-radius: 4px;
+  animation: skeleton-shine 1.5s ease-in-out infinite;
+}
+.skeleton-line:nth-child(1) { width: 100%; }
+.skeleton-line:nth-child(2) { width: 95%; }
+.skeleton-line:nth-child(3) { width: 90%; }
+.skeleton-line:nth-child(4) { width: 85%; }
+.skeleton-line:nth-child(5) { width: 92%; }
+.skeleton-line:nth-child(6) { width: 88%; }
+@keyframes skeleton-shine {
+  0% { background: var(--color-skeleton); }
+  50% { background: var(--color-skeleton-shine); }
+  100% { background: var(--color-skeleton); }
+}
 .not-found {
   text-align: center;
   padding: 80px 20px;
   font-size: 16px;
   color: var(--color-text-secondary);
 }
+.not-found .empty-icon {
+  font-size: 64px;
+  margin-bottom: 16px;
+}
 .not-found a {
   display: inline-block;
   margin-top: 12px;
   color: var(--color-primary);
   font-weight: 600;
+}
+.error-state .error-icon {
+  font-size: 64px;
+  margin-bottom: 16px;
+}
+.error-state button {
+  margin-top: 12px;
 }
 @media (max-width: 768px) {
   .news-detail-page {
@@ -926,10 +1054,10 @@ watch(() => route.params.id, () => {
     padding-bottom: 8px;
     font-weight: 600;
     border-bottom-width: 2px;
-    padding-left: 8px;
+    padding-left: 0;
   }
   .comment-section {
-    padding: 12px;
+    padding: 0 8px;
     border-radius: 0;
     box-shadow: none;
     background: transparent;
@@ -1052,6 +1180,30 @@ watch(() => route.params.id, () => {
     font-size: 14px;
     text-align: center;
   }
+  .loading-skeleton {
+    padding: 0 8px;
+  }
+  .skeleton-article {
+    padding: 12px 0;
+    background: transparent;
+    box-shadow: none;
+  }
+  .skeleton-title {
+    padding: 0 12px;
+    height: 30px;
+    width: 90%;
+  }
+  .skeleton-meta {
+    padding: 0 12px 12px;
+  }
+  .skeleton-cover {
+    width: 100vw;
+    margin-left: calc(-50vw + 50%);
+    max-height: 220px;
+  }
+  .skeleton-content {
+    padding: 0 12px;
+  }
 }
 
 @media (max-width: 480px) {
@@ -1087,7 +1239,7 @@ watch(() => route.params.id, () => {
     min-height: 34px;
   }
   .comment-section {
-    padding: 10px;
+    padding: 0 10px;
   }
   .detail-sidebar .card {
     min-width: 100%;

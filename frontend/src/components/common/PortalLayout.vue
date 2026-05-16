@@ -7,14 +7,14 @@
             <span class="logo-mark">TECH</span>
             <span class="logo-text">科技资讯</span>
           </h1>
-          <nav :class="['nav-menu', { open: menuOpen }]">
+          <nav :class="['nav-menu', { open: menuOpen }]" :aria-expanded="menuOpen" role="navigation" aria-label="主导航">
             <router-link to="/" @click="menuOpen = false">首页</router-link>
             <router-link v-for="ch in navChannels" :key="ch.name" :to="`/channel/${ch.name}`" @click="menuOpen = false">{{ ch.label }}</router-link>
             <router-link to="/search" @click="menuOpen = false">搜索</router-link>
           </nav>
         </div>
         <div class="header-right">
-          <button class="theme-toggle" @click="handleToggleTheme" :title="themeLabel" :class="{ animating: isAnimating }">
+          <button class="theme-toggle" @click="handleToggleTheme" :title="themeLabel" :class="{ animating: isAnimating }" aria-label="切换主题">
             <span class="theme-icon">{{ themeIcon }}</span>
           </button>
           <div v-if="isLoggedIn" class="user-info">
@@ -25,15 +25,15 @@
           <div v-else class="auth-btns">
             <button class="btn btn-primary btn-sm btn-login" @click="goLogin">登录</button>
           </div>
-          <button class="menu-toggle" @click="menuOpen = !menuOpen">
-            <span :class="['hamburger', { active: menuOpen }]">
+          <button class="menu-toggle" @click="menuOpen = !menuOpen" :aria-label="menuOpen ? '关闭菜单' : '打开菜单'" :aria-expanded="menuOpen">
+            <span :class="['hamburger', { active: menuOpen }]" aria-hidden="true">
               <span></span><span></span><span></span>
             </span>
           </button>
         </div>
       </div>
     </header>
-    <main class="portal-main">
+    <main class="portal-main" id="main-content">
       <router-view />
     </main>
     <footer class="portal-footer">
@@ -41,7 +41,7 @@
         <p>科技资讯平台 © 2026 | 基于大数据实时分析技术构建</p>
       </div>
     </footer>
-    <nav class="mobile-nav">
+    <nav class="mobile-nav" role="navigation" aria-label="移动端导航">
       <a :class="['nav-item', { active: currentPath === '/' }]" @click="$router.push('/')">
         <span class="nav-icon">🏠</span>
         <span class="nav-label">首页</span>
@@ -67,7 +67,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted, nextTick, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { channels } from '../../utils'
 import { useTheme, THEMES, toggleTheme } from '../../composables/useTheme'
@@ -129,15 +129,39 @@ function handleStorageUpdate(e) {
   }
 }
 
+function handleClickOutside(e) {
+  if (menuOpen.value && !e.target.closest('.nav-menu') && !e.target.closest('.menu-toggle')) {
+    menuOpen.value = false
+  }
+}
+
+function handleEscKey(e) {
+  if (e.key === 'Escape' && menuOpen.value) {
+    menuOpen.value = false
+  }
+}
+
+watch(menuOpen, (newVal) => {
+  if (newVal) {
+    document.body.style.overflow = 'hidden'
+  } else {
+    document.body.style.overflow = ''
+  }
+})
+
 onMounted(() => {
   updateAuth()
   window.addEventListener('storage', handleStorageUpdate)
   window.addEventListener('auth-updated', handleAuthUpdate)
+  document.addEventListener('click', handleClickOutside)
+  document.addEventListener('keydown', handleEscKey)
 })
 
 onUnmounted(() => {
   window.removeEventListener('storage', handleStorageUpdate)
   window.removeEventListener('auth-updated', handleAuthUpdate)
+  document.removeEventListener('click', handleClickOutside)
+  document.removeEventListener('keydown', handleEscKey)
 })
 </script>
 

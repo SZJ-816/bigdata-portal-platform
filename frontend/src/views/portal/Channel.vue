@@ -6,32 +6,50 @@
     </div>
     <div class="channel-content">
       <div class="content-main">
-        <div class="news-list">
-          <div v-for="item in channelNews" :key="item.id" class="news-item" @click="goNews(item.id)">
-            <img v-if="item.imageUrl" v-lazy="item.imageUrl" :alt="item.title" :data-channel="item.channel" class="news-thumb" />
-            <div v-else class="news-thumb-placeholder"></div>
-            <div class="news-body">
-              <div class="news-header">
-                <h3 class="news-title">{{ item.title }}</h3>
-                <span v-if="item.isBreaking" class="breaking-tag-sm">BREAKING</span>
-              </div>
-              <p class="news-summary">{{ item.summary }}</p>
-              <div class="news-meta">
-                <span>{{ item.source }}</span>
-                <span>{{ formatRelativeTime(item.publishTime) }}</span>
-                <span>{{ formatViewCount(item.viewCount) }} 阅读</span>
-                <span>{{ item.commentCount }} 评论</span>
-              </div>
+        <div v-if="loading" class="loading-skeleton">
+          <div v-for="i in 5" :key="i" class="skeleton-item">
+            <div class="skeleton-thumb"></div>
+            <div class="skeleton-content">
+              <div class="skeleton-title"></div>
+              <div class="skeleton-meta"></div>
             </div>
           </div>
         </div>
-        <div v-if="!channelNews.length" class="empty-state">
-          <p>该频道暂无新闻</p>
+        <div v-else-if="error" class="error-state">
+          <div class="error-icon">⚠️</div>
+          <p>{{ error }}</p>
+          <button class="btn btn-primary" @click="loadChannelNews">重试</button>
         </div>
-        <div v-if="hasMore" class="load-more-wrap">
-          <button class="btn btn-outline load-more-btn" @click="loadMoreNews" :disabled="loadingMore">
-            {{ loadingMore ? '加载中...' : '加载更多' }}
-          </button>
+        <div v-else>
+          <div class="news-list">
+            <div v-for="item in channelNews" :key="item.id" class="news-item" @click="goNews(item.id)" role="button" tabindex="0" @keydown.enter="goNews(item.id)">
+              <img v-if="item.imageUrl" v-lazy="item.imageUrl" :alt="item.title" :data-channel="item.channel" class="news-thumb" />
+              <div v-else class="news-thumb-placeholder"></div>
+              <div class="news-body">
+                <div class="news-header">
+                  <h3 class="news-title">{{ item.title }}</h3>
+                  <span v-if="item.isBreaking" class="breaking-tag-sm">BREAKING</span>
+                </div>
+                <p class="news-summary">{{ item.summary }}</p>
+                <div class="news-meta">
+                  <span>{{ item.source }}</span>
+                  <span>{{ formatRelativeTime(item.publishTime) }}</span>
+                  <span>{{ formatViewCount(item.viewCount) }} 阅读</span>
+                  <span>{{ item.commentCount }} 评论</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div v-if="!channelNews.length" class="empty-state">
+            <div class="empty-icon">📰</div>
+            <p>该频道暂无新闻，去看看其他频道吧</p>
+          </div>
+          <div v-if="hasMore" class="load-more-wrap">
+            <button class="btn btn-outline load-more-btn" @click="loadMoreNews" :disabled="loadingMore">
+              {{ loadingMore ? '加载中...' : '加载更多' }}
+            </button>
+            <p v-if="loadMoreError" class="load-more-error">{{ loadMoreError }}</p>
+          </div>
         </div>
       </div>
       <div class="content-sidebar">
@@ -74,7 +92,10 @@ const channelInfo = computed(() => {
 const channelNews = ref([])
 const currentPage = ref(1)
 const hasMore = ref(true)
+const loading = ref(false)
 const loadingMore = ref(false)
+const error = ref('')
+const loadMoreError = ref('')
 const channelHotNews = computed(() => {
   return [...channelNews.value]
     .sort((a, b) => (b.viewCount || 0) - (a.viewCount || 0))
@@ -92,6 +113,8 @@ const channelNameMap = {
 }
 
 async function loadChannelNews() {
+  loading.value = true
+  error.value = ''
   try {
     const actualChannelName = channelNameMap[channelName.value] || channelName.value
     const res = await newsApi.getByChannel(actualChannelName)
@@ -104,12 +127,15 @@ async function loadChannelNews() {
     }
   } catch (err) {
     console.error('Failed to load channel news:', err)
+    error.value = '加载失败，请检查网络连接'
   }
+  loading.value = false
 }
 
 async function loadMoreNews() {
   if (loadingMore.value || !hasMore.value) return
   loadingMore.value = true
+  loadMoreError.value = ''
   currentPage.value++
   try {
     const actualChannelName = channelNameMap[channelName.value] || channelName.value
@@ -125,6 +151,7 @@ async function loadMoreNews() {
     }
   } catch (err) {
     currentPage.value--
+    loadMoreError.value = '加载失败，请稍后重试'
   }
   loadingMore.value = false
 }
@@ -232,7 +259,13 @@ watch(() => route.params.name, async () => {
   height: 110px;
   border-radius: 3px;
   flex-shrink: 0;
-  background: var(--color-gradient-header);
+  background: var(--color-skeleton);
+  animation: skeleton-shine 1.5s ease-in-out infinite;
+}
+@keyframes skeleton-shine {
+  0% { background: var(--color-skeleton); }
+  50% { background: var(--color-skeleton-shine); }
+  100% { background: var(--color-skeleton); }
 }
 .news-body {
   flex: 1;
@@ -342,12 +375,73 @@ watch(() => route.params.name, async () => {
   color: var(--color-text-light);
   font-size: 15px;
 }
+.empty-icon {
+  font-size: 48px;
+  margin-bottom: 12px;
+}
+.error-state {
+  text-align: center;
+  padding: 60px 20px;
+  color: var(--color-text-secondary);
+  font-size: 15px;
+}
+.error-icon {
+  font-size: 48px;
+  margin-bottom: 12px;
+}
+.loading-skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.skeleton-item {
+  display: flex;
+  gap: 16px;
+  padding: 16px;
+  background: var(--color-bg-white);
+  border-radius: 4px;
+  box-shadow: 0 1px 3px var(--color-card-shadow);
+}
+.skeleton-thumb {
+  width: 180px;
+  height: 110px;
+  border-radius: 3px;
+  flex-shrink: 0;
+  background: var(--color-skeleton);
+  animation: skeleton-shine 1.5s ease-in-out infinite;
+}
+.skeleton-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.skeleton-title {
+  height: 24px;
+  width: 80%;
+  background: var(--color-skeleton);
+  border-radius: 2px;
+  animation: skeleton-shine 1.5s ease-in-out infinite;
+}
+.skeleton-meta {
+  height: 12px;
+  width: 40%;
+  background: var(--color-skeleton);
+  border-radius: 2px;
+  animation: skeleton-shine 1.5s ease-in-out infinite;
+  margin-top: auto;
+}
 .load-more-wrap {
   text-align: center;
   padding: 20px 0;
 }
 .load-more-btn {
   min-width: 160px;
+}
+.load-more-error {
+  margin-top: 8px;
+  color: var(--color-accent);
+  font-size: 13px;
 }
 @media (max-width: 768px) {
   .channel-header {
@@ -492,6 +586,19 @@ watch(() => route.params.name, async () => {
     padding: 40px 20px;
     font-size: 14px;
   }
+  .loading-skeleton {
+    gap: 10px;
+  }
+  .skeleton-item {
+    gap: 12px;
+    padding: 12px;
+    border-radius: var(--radius-lg);
+  }
+  .skeleton-thumb {
+    width: 110px;
+    height: 80px;
+    border-radius: var(--radius-md);
+  }
 }
 
 @media (max-width: 480px) {
@@ -511,6 +618,10 @@ watch(() => route.params.name, async () => {
   }
   .news-meta {
     font-size: 10.5px;
+  }
+  .skeleton-thumb {
+    width: 90px;
+    height: 68px;
   }
 }
 </style>
