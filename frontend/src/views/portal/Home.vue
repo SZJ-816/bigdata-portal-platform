@@ -45,10 +45,29 @@
       </div>
     </section>
 
-    <div v-if="newsLoading" class="loading-state">加载中...</div>
+    <div v-if="newsLoading" class="loading-skeleton">
+      <div class="skeleton-hero">
+        <div class="skeleton-main-img"></div>
+        <div class="skeleton-side">
+          <div class="skeleton-side-item"></div>
+          <div class="skeleton-side-item"></div>
+          <div class="skeleton-side-item"></div>
+        </div>
+      </div>
+      <div class="skeleton-list">
+        <div v-for="i in 5" :key="i" class="skeleton-news-item">
+          <div class="skeleton-thumb"></div>
+          <div class="skeleton-body">
+            <div class="skeleton-line-title"></div>
+            <div class="skeleton-line-meta"></div>
+          </div>
+        </div>
+      </div>
+    </div>
     <div v-else-if="newsError" class="error-state">
+      <div class="error-icon">⚠️</div>
       <p>加载失败</p>
-      <button class="btn btn-outline" @click="fetchNews">重试</button>
+      <button class="btn btn-primary" @click="fetchNews">重新加载</button>
     </div>
     <template v-else>
     <section class="main-content">
@@ -295,16 +314,89 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
-.loading-state {
-  text-align: center;
-  padding: 60px 20px;
-  color: var(--color-text-secondary);
-  font-size: 16px;
+.loading-skeleton {
+  margin-bottom: 24px;
+}
+.skeleton-hero {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+.skeleton-main-img {
+  flex: 2;
+  aspect-ratio: 16 / 9;
+  max-height: 400px;
+  border-radius: 4px;
+  background: var(--color-skeleton);
+  animation: skeleton-shine 1.5s ease-in-out infinite;
+}
+.skeleton-side {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.skeleton-side-item {
+  flex: 1;
+  border-radius: 8px;
+  background: var(--color-skeleton);
+  animation: skeleton-shine 1.5s ease-in-out infinite;
+}
+.skeleton-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.skeleton-news-item {
+  display: flex;
+  gap: 12px;
+  padding: 12px;
+  background: var(--color-bg-white);
+  border-radius: 8px;
+  box-shadow: 0 1px 3px var(--color-card-shadow);
+}
+.skeleton-thumb {
+  width: 120px;
+  height: 80px;
+  border-radius: 4px;
+  flex-shrink: 0;
+  background: var(--color-skeleton);
+  animation: skeleton-shine 1.5s ease-in-out infinite;
+}
+.skeleton-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  justify-content: center;
+}
+.skeleton-line-title {
+  height: 20px;
+  width: 80%;
+  border-radius: 2px;
+  background: var(--color-skeleton);
+  animation: skeleton-shine 1.5s ease-in-out infinite;
+}
+.skeleton-line-meta {
+  height: 14px;
+  width: 40%;
+  border-radius: 2px;
+  background: var(--color-skeleton);
+  animation: skeleton-shine 1.5s ease-in-out infinite;
+}
+@keyframes skeleton-shine {
+  0% { background: var(--color-skeleton); }
+  50% { background: var(--color-skeleton-shine); }
+  100% { background: var(--color-skeleton); }
 }
 .error-state {
   text-align: center;
   padding: 60px 20px;
   color: var(--color-text-secondary);
+}
+.error-icon {
+  font-size: 48px;
+  margin-bottom: 12px;
 }
 .error-state p {
   font-size: 16px;
@@ -1071,6 +1163,36 @@ onUnmounted(() => {
     font-size: 10px;
     font-weight: 700;
   }
+  .skeleton-hero {
+    flex-direction: column;
+    gap: 12px;
+  }
+  .skeleton-main-img {
+    aspect-ratio: 16 / 9;
+    max-height: 280px;
+    flex: none;
+    border-radius: var(--radius-lg);
+  }
+  .skeleton-side {
+    flex-direction: row;
+    gap: 10px;
+  }
+  .skeleton-side-item {
+    min-width: 170px;
+    border-radius: var(--radius-md);
+    flex: none;
+    width: 33%;
+  }
+  .skeleton-news-item {
+    padding: 12px;
+    border-radius: var(--radius-md);
+    gap: 12px;
+  }
+  .skeleton-thumb {
+    width: 85px;
+    height: 65px;
+    border-radius: var(--radius-sm);
+  }
 }
 
 @media (max-width: 480px) {
@@ -1109,6 +1231,16 @@ onUnmounted(() => {
     height: 55px;
   }
   .thumb-wrap {
+    width: 75px;
+    height: 55px;
+  }
+  .skeleton-main-img {
+    max-height: 190px;
+  }
+  .skeleton-side-item {
+    min-width: 155px;
+  }
+  .skeleton-thumb {
     width: 75px;
     height: 55px;
   }

@@ -21,7 +21,15 @@
     </div>
 
     <div v-if="activeTab === 'news'" class="search-results">
-      <div v-if="processedResults.length" class="result-section">
+      <div v-if="searchLoading" class="loading-skeleton">
+        <div v-for="i in 5" :key="i" class="skeleton-item">
+          <div class="skeleton-content">
+            <div class="skeleton-title"></div>
+            <div class="skeleton-meta"></div>
+          </div>
+        </div>
+      </div>
+      <div v-else-if="processedResults.length" class="result-section">
         <p class="result-count">找到 {{ processedResults.length }} 条相关新闻</p>
         <div class="result-list">
           <div v-for="item in processedResults" :key="item.id" class="result-item" @click="goNews(item.id)">
@@ -37,7 +45,9 @@
         </div>
       </div>
       <div v-else-if="searched" class="empty-state">
+        <div class="empty-icon">🔍</div>
         <p>未找到与"{{ searchedKeyword }}"相关的新闻</p>
+        <p class="empty-hint">试试其他关键词吧</p>
       </div>
     </div>
 
@@ -75,6 +85,7 @@ const keyword = ref('')
 const results = ref([])
 const searched = ref(false)
 const searchedKeyword = ref('')
+const searchLoading = ref(false)
 const activeTab = ref('news')
 
 const aiAnswer = ref('')
@@ -104,6 +115,7 @@ async function doSearch() {
   searched.value = true
   searchedKeyword.value = keyword.value
   activeTab.value = 'news'
+  searchLoading.value = true
   try {
     const res = await newsApi.search(keyword.value)
     if (res.data.data) {
@@ -116,6 +128,7 @@ async function doSearch() {
     results.value = []
   }
   updateProcessedResults()
+  searchLoading.value = false
   behaviorApi.report({ eventType: 'search', targetId: keyword.value, targetType: 'keyword' })
 }
 
@@ -350,6 +363,44 @@ watch(() => route.query.q, (newQ) => {
   background: var(--color-primary);
   color: var(--color-text-white);
 }
+.loading-skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.skeleton-item {
+  display: flex;
+  gap: 14px;
+  padding: 18px 20px;
+  background: var(--color-bg-white);
+  border-radius: 4px;
+  box-shadow: 0 1px 3px var(--color-card-shadow);
+}
+.skeleton-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.skeleton-title {
+  height: 22px;
+  width: 60%;
+  border-radius: 2px;
+  background: var(--color-skeleton);
+  animation: skeleton-shine 1.5s ease-in-out infinite;
+}
+.skeleton-meta {
+  height: 14px;
+  width: 30%;
+  border-radius: 2px;
+  background: var(--color-skeleton);
+  animation: skeleton-shine 1.5s ease-in-out infinite;
+}
+@keyframes skeleton-shine {
+  0% { background: var(--color-skeleton); }
+  50% { background: var(--color-skeleton-shine); }
+  100% { background: var(--color-skeleton); }
+}
 .result-count {
   font-size: 14px;
   color: var(--color-text-light);
@@ -410,6 +461,17 @@ watch(() => route.query.q, (newQ) => {
   padding: 60px 20px;
   color: var(--color-text-light);
   font-size: 15px;
+}
+.empty-icon {
+  font-size: 48px;
+  margin-bottom: 12px;
+}
+.empty-state p {
+  margin-bottom: 8px;
+}
+.empty-hint {
+  font-size: 13px !important;
+  color: var(--color-text-light) !important;
 }
 
 .ai-results {
@@ -574,6 +636,14 @@ watch(() => route.query.q, (newQ) => {
   }
   .hot-word:active {
     transform: scale(0.95);
+  }
+  .loading-skeleton {
+    gap: 10px;
+  }
+  .skeleton-item {
+    padding: 14px;
+    border-radius: var(--radius-lg);
+    box-shadow: 0 1px 4px var(--color-shadow-sm);
   }
   .result-count {
     font-size: 13px;
