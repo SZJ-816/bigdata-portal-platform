@@ -67,10 +67,10 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { channels } from '../../utils'
-import { useTheme, THEMES, getEffectiveTheme, setTheme, toggleTheme } from '../../composables/useTheme'
+import { useTheme, THEMES, toggleTheme } from '../../composables/useTheme'
 
 const router = useRouter()
 const route = useRoute()
@@ -78,16 +78,8 @@ const navChannels = channels.slice(0, 4)
 const token = ref(localStorage.getItem('token'))
 const username = ref(localStorage.getItem('username'))
 const menuOpen = ref(false)
-const { currentTheme, effectiveTheme } = useTheme()
+const { currentTheme, isDark } = useTheme()
 const isAnimating = ref(false)
-
-const isDark = computed(() => {
-  const stored = localStorage.getItem('theme')
-  if (stored && stored !== THEMES.SYSTEM) {
-    return stored === THEMES.DARK
-  }
-  return getEffectiveTheme() === THEMES.DARK
-})
 
 const themeIcon = computed(() => {
   if (currentTheme.value === THEMES.SYSTEM) return '◐'

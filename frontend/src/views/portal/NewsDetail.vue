@@ -510,7 +510,7 @@ watch(() => route.params.id, () => {
 .article-content {
   font-size: 16px;
   line-height: 1.85;
-  color: var(--color-text);
+  color: var(--color-text-article);
 }
 .article-content :deep(p) {
   margin-bottom: 18px;
