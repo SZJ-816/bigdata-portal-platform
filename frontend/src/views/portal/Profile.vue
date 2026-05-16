@@ -423,4 +423,140 @@ watch(activeTab, async (val) => {
   border-radius: 4px;
   transition: width 0.3s ease;
 }
+@media (max-width: 768px) {
+  .profile-page {
+    padding: 0;
+  }
+  .profile-header {
+    margin-bottom: 14px;
+    border-radius: 0;
+  }
+  .profile-info {
+    padding: 16px 14px;
+    gap: 12px;
+  }
+  .avatar {
+    width: 48px;
+    height: 48px;
+    font-size: 20px;
+  }
+  .username {
+    font-size: 18px;
+  }
+  .email {
+    font-size: 12px;
+  }
+  .logout-btn {
+    font-size: 13px;
+    padding: 8px 14px;
+  }
+  .profile-tabs {
+    padding: 0 8px;
+    gap: 0;
+    border-bottom-width: 2px;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .profile-tabs::-webkit-scrollbar {
+    display: none;
+  }
+  .tab-item {
+    padding: 10px 18px;
+    font-size: 13px;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  .section-title {
+    font-size: 16px;
+    margin-bottom: 12px;
+    padding: 0 8px 8px;
+  }
+  .tab-content {
+    padding: 0 8px;
+  }
+  .news-list {
+    gap: 8px;
+  }
+  .news-item {
+    padding: 12px;
+    gap: 10px;
+    border-radius: 10px;
+  }
+  .news-item:active {
+    transform: scale(0.99);
+  }
+  .news-image {
+    width: 70px;
+    height: 50px;
+    border-radius: 6px;
+  }
+  .news-title {
+    font-size: 14px;
+    line-height: 1.35;
+  }
+  .news-meta {
+    font-size: 11px;
+    gap: 8px;
+  }
+  .remove-btn {
+    font-size: 12px;
+    padding: 6px 10px;
+    min-height: 36px;
+  }
+  .empty-state {
+    padding: 40px 20px;
+    font-size: 13px;
+  }
+  .preference-list {
+    gap: 12px;
+  }
+  .preference-item {
+    padding: 14px;
+    border-radius: 8px;
+  }
+  .login-prompt {
+    min-height: 300px;
+    padding: 0 12px;
+  }
+  .prompt-content {
+    padding: 32px 20px;
+    border-radius: 10px;
+  }
+  .prompt-content h3 {
+    font-size: 18px;
+  }
+  .prompt-content p {
+    font-size: 13px;
+  }
+  .prompt-content .btn {
+    width: 100%;
+    min-height: 44px;
+    border-radius: 8px;
+  }
+}
+@media (max-width: 480px) {
+  .avatar {
+    width: 40px;
+    height: 40px;
+    font-size: 18px;
+  }
+  .username {
+    font-size: 16px;
+  }
+  .tab-item {
+    padding: 8px 14px;
+    font-size: 12.5px;
+  }
+  .news-item {
+    padding: 10px;
+    gap: 8px;
+  }
+  .news-image {
+    width: 60px;
+    height: 44px;
+  }
+  .news-title {
+    font-size: 13px;
+  }
+}
 </style>

@@ -139,11 +139,11 @@ export default {
     el._lazyLoaded = false
 
     if (el.tagName === 'IMG') {
-      el.style.backgroundColor = '#f0f0f0'
+      el.style.backgroundColor = 'var(--color-skeleton)'
       el.style.opacity = '0'
       el.style.transition = 'opacity 0.3s ease-in-out'
     } else {
-      el.style.backgroundColor = '#f0f0f0'
+      el.style.backgroundColor = 'var(--color-skeleton)'
     }
 
     sharedObserver.observe(el)

@@ -31,4 +31,30 @@ const router = useRouter()
   color: var(--color-text-secondary);
   margin-bottom: 24px;
 }
+@media (max-width: 768px) {
+  .not-found-page {
+    min-height: 50vh;
+    padding: 20px;
+  }
+  .not-found-content h1 {
+    font-size: 72px;
+  }
+  .not-found-content p {
+    font-size: 16px;
+  }
+  .not-found-content .btn {
+    min-height: 44px;
+    padding: 10px 28px;
+    font-size: 15px;
+  }
+}
+@media (max-width: 480px) {
+  .not-found-content h1 {
+    font-size: 56px;
+  }
+  .not-found-content p {
+    font-size: 14px;
+    margin-bottom: 20px;
+  }
+}
 </style>

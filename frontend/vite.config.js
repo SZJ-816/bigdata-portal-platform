@@ -37,6 +37,8 @@ export default defineConfig({
     target: 'es2015',
     cssTarget: 'chrome80',
     minify: 'esbuild',
+    cssMinify: 'esbuild',
+    cssCodeSplit: true,
     esbuild: {
       drop: ['console', 'debugger']
     },
@@ -54,6 +56,10 @@ export default defineConfig({
               return undefined
             }
             return 'vendor'
+          }
+          if (id.includes('/views/')) {
+            const match = id.match(/\/views\/(?:portal|dashboard)\/(\w+)\.vue$/)
+            if (match) return `page-${match[1].toLowerCase()}`
           }
         },
         chunkFileNames: 'assets/js/[name]-[hash].js',

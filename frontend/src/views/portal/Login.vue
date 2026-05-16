@@ -302,23 +302,62 @@ onUnmounted(() => {
   box-sizing: border-box;
 }
 @media (max-width: 480px) {
+  .login-page {
+    align-items: flex-start;
+    min-height: auto;
+    padding: 0;
+  }
   .login-card {
     max-width: 100%;
     border-radius: 0;
     box-shadow: none;
   }
   .login-header {
-    padding: 24px 20px;
+    padding: 28px 20px;
   }
   .login-header h2 {
-    font-size: 20px;
+    font-size: 22px;
   }
   .login-form {
     padding: 24px 20px;
   }
+  .form-group {
+    margin-bottom: 16px;
+  }
+  .form-group label {
+    font-size: 14px;
+    margin-bottom: 6px;
+  }
+  .form-group input {
+    padding: 12px 14px;
+    font-size: 16px;
+    min-height: 48px;
+    border-radius: 8px;
+  }
+  .code-row {
+    gap: 8px;
+  }
+  .code-input {
+    padding: 12px 14px;
+    font-size: 16px;
+    min-height: 48px;
+    border-radius: 8px;
+  }
   .send-code-btn {
-    padding: 10px 12px;
-    font-size: 12px;
+    padding: 12px 14px;
+    font-size: 13px;
+    min-height: 48px;
+    border-radius: 8px;
+  }
+  .login-btn {
+    padding: 14px;
+    font-size: 16px;
+    min-height: 48px;
+    border-radius: 8px;
+  }
+  .switch-text {
+    margin-top: 20px;
+    font-size: 14px;
   }
 }
 </style>
