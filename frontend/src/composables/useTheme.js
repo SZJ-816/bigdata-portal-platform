@@ -77,4 +77,4 @@ export function useTheme() {
   }
 }
 
-export { THEMES, getEffectiveTheme, setTheme, toggleTheme }
+export { THEMES, getEffectiveTheme, setTheme, toggleTheme, initTheme }
