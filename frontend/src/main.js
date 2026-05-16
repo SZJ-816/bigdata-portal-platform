@@ -4,9 +4,11 @@ import router from './router'
 import './styles/global.css'
 import lazyLoadDirective from './directives/lazyLoad'
 import { initTheme } from './composables/useTheme'
+import { setVueRouter } from './api'
 
 const app = createApp(App)
 app.use(router)
+setVueRouter(router)
 app.directive('lazy', lazyLoadDirective)
 
 initTheme()

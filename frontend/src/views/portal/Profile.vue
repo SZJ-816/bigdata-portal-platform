@@ -26,7 +26,20 @@
 
       <div v-if="activeTab === 'favorites'" class="tab-content">
         <h3 class="section-title">我的收藏</h3>
-        <div v-if="loading" class="loading-state">加载中...</div>
+        <div v-if="loading" class="loading-skeleton">
+          <div v-for="i in 3" :key="i" class="skeleton-item">
+            <div class="skeleton-thumb"></div>
+            <div class="skeleton-body">
+              <div class="skeleton-line"></div>
+              <div class="skeleton-line-sm"></div>
+            </div>
+          </div>
+        </div>
+        <div v-else-if="favoritesError" class="error-state">
+          <div class="error-icon">⚠️</div>
+          <p>{{ favoritesError }}</p>
+          <button class="btn btn-primary" @click="loadFavorites">重新加载</button>
+        </div>
         <div v-else-if="favorites.length" class="news-list">
           <div v-for="item in favorites" :key="item.id" class="news-item" @click="goNews(item.newsId)">
             <div v-if="item.imageUrl" class="news-image">
@@ -38,15 +51,35 @@
                 <span>{{ formatDate(item.createdAt) }}</span>
               </div>
             </div>
-            <button class="btn btn-text remove-btn" @click.stop="removeFavorite(item.newsId)">取消收藏</button>
+            <button class="btn btn-text remove-btn" @click.stop="removeFavorite(item.newsId)" :disabled="removingId === item.newsId">
+              <span v-if="removingId === item.newsId">移除中...</span>
+              <span v-else>取消收藏</span>
+            </button>
           </div>
         </div>
-        <div v-else class="empty-state">暂无收藏</div>
+        <div v-else class="empty-state">
+          <div class="empty-icon">❤️</div>
+          <p>暂无收藏内容</p>
+          <p class="empty-hint">浏览新闻时点击收藏按钮添加</p>
+        </div>
       </div>
 
       <div v-if="activeTab === 'history'" class="tab-content">
           <h3 class="section-title">浏览历史</h3>
-          <div v-if="loading" class="loading-state">加载中...</div>
+          <div v-if="loading" class="loading-skeleton">
+            <div v-for="i in 3" :key="i" class="skeleton-item">
+              <div class="skeleton-thumb"></div>
+              <div class="skeleton-body">
+                <div class="skeleton-line"></div>
+                <div class="skeleton-line-sm"></div>
+              </div>
+            </div>
+          </div>
+          <div v-else-if="historyError" class="error-state">
+            <div class="error-icon">⚠️</div>
+            <p>{{ historyError }}</p>
+            <button class="btn btn-primary" @click="loadHistory">重新加载</button>
+          </div>
           <div v-else-if="history.length" class="news-list">
             <div v-for="item in history" :key="item.id" class="news-item" @click="goNews(item.newsId)">
               <div v-if="item.imageUrl" class="news-image">
@@ -61,7 +94,11 @@
               </div>
             </div>
           </div>
-          <div v-else class="empty-state">暂无浏览记录</div>
+          <div v-else class="empty-state">
+            <div class="empty-icon">📖</div>
+            <p>暂无浏览记录</p>
+            <p class="empty-hint">开始浏览新闻吧</p>
+          </div>
         </div>
 
       <div v-if="activeTab === 'preference'" class="tab-content">
@@ -77,14 +114,20 @@
             </div>
           </div>
         </div>
-        <div v-else class="empty-state">暂无偏好数据</div>
+        <div v-else class="empty-state">
+          <div class="empty-icon">📊</div>
+          <p>暂无偏好数据</p>
+          <p class="empty-hint">浏览更多新闻后将自动分析</p>
+        </div>
       </div>
     </template>
+
+    <div v-if="toast.show" :class="['toast', toast.type]">{{ toast.message }}</div>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted, watch, nextTick, computed } from 'vue'
+import { ref, onMounted, watch, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { userApi } from '../../api'
 
@@ -95,6 +138,15 @@ const history = ref([])
 const activeTab = ref('favorites')
 const loading = ref(false)
 const channelPreference = ref([])
+const favoritesError = ref('')
+const historyError = ref('')
+const removingId = ref(null)
+
+const toast = ref({ show: false, message: '', type: 'success' })
+const showToast = (msg, type = 'success') => {
+  toast.value = { show: true, message: msg, type }
+  setTimeout(() => { toast.value.show = false }, 3000)
+}
 
 const isLoggedIn = computed(() => userApi.isLoggedIn())
 
@@ -105,7 +157,7 @@ const tabs = [
 ]
 
 function goLogin() {
-  router.push('/login')
+  router.push({ path: '/login', query: { redirect: router.currentRoute.value.fullPath } })
 }
 
 function goNews(newsId) {
@@ -126,11 +178,13 @@ async function loadProfile() {
     }
   } catch (err) {
     console.error('加载用户信息失败', err)
+    showToast('加载用户信息失败', 'error')
   }
 }
 
 async function loadFavorites() {
   loading.value = true
+  favoritesError.value = ''
   try {
     const res = await userApi.getFavorites()
     if (res.data.success) {
@@ -138,6 +192,8 @@ async function loadFavorites() {
     }
   } catch (err) {
     console.error('加载收藏失败', err)
+    favoritesError.value = '加载收藏失败，请检查网络连接'
+    showToast('加载收藏失败', 'error')
   } finally {
     loading.value = false
   }
@@ -145,6 +201,7 @@ async function loadFavorites() {
 
 async function loadHistory() {
   loading.value = true
+  historyError.value = ''
   try {
     const res = await userApi.getHistory()
     if (res.data.success) {
@@ -153,6 +210,8 @@ async function loadHistory() {
     }
   } catch (err) {
     console.error('加载历史失败', err)
+    historyError.value = '加载历史失败，请检查网络连接'
+    showToast('加载历史失败', 'error')
   } finally {
     loading.value = false
   }
@@ -185,20 +244,29 @@ async function loadChannelPreference() {
 }
 
 async function removeFavorite(newsId) {
+  if (removingId.value) return
+  if (!confirm('确定要取消收藏吗？')) return
+  removingId.value = newsId
   try {
     await userApi.removeFavorite(newsId)
     favorites.value = favorites.value.filter(f => f.newsId !== newsId)
+    showToast('已取消收藏')
   } catch (err) {
     console.error('取消收藏失败', err)
+    showToast('取消收藏失败，请重试', 'error')
+  } finally {
+    removingId.value = null
   }
 }
 
 function handleLogout() {
+  if (!confirm('确定要退出登录吗？')) return
   userApi.logout()
   window.dispatchEvent(new CustomEvent('auth-updated'))
   user.value = null
   favorites.value = []
   history.value = []
+  showToast('已退出登录')
   router.push('/')
 }
 
@@ -216,9 +284,9 @@ onMounted(async () => {
 })
 
 watch(activeTab, async (val) => {
-  if (val === 'favorites' && !favorites.value.length) {
+  if (val === 'favorites' && !favorites.value.length && !favoritesError.value) {
     await loadFavorites()
-  } else if (val === 'history' && !history.value.length) {
+  } else if (val === 'history' && !history.value.length && !historyError.value) {
     await loadHistory()
   }
 })
@@ -319,11 +387,65 @@ watch(activeTab, async (val) => {
   padding-bottom: 8px;
   border-bottom: 2px solid var(--color-primary);
 }
-.loading-state {
+.loading-skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.skeleton-item {
+  display: flex;
+  gap: 14px;
+  padding: 14px;
+  background: var(--color-bg-white);
+  border-radius: 8px;
+  box-shadow: 0 1px 3px var(--color-shadow-sm);
+}
+.skeleton-thumb {
+  width: 80px;
+  height: 60px;
+  border-radius: 4px;
+  background: var(--color-skeleton);
+  animation: skeleton-shine 1.5s ease-in-out infinite;
+  flex-shrink: 0;
+}
+.skeleton-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  justify-content: center;
+}
+.skeleton-line {
+  height: 18px;
+  width: 70%;
+  border-radius: 2px;
+  background: var(--color-skeleton);
+  animation: skeleton-shine 1.5s ease-in-out infinite;
+}
+.skeleton-line-sm {
+  height: 12px;
+  width: 40%;
+  border-radius: 2px;
+  background: var(--color-skeleton);
+  animation: skeleton-shine 1.5s ease-in-out infinite;
+}
+@keyframes skeleton-shine {
+  0% { background: var(--color-skeleton); }
+  50% { background: var(--color-skeleton-shine); }
+  100% { background: var(--color-skeleton); }
+}
+.error-state {
   text-align: center;
-  padding: 40px 20px;
-  color: var(--color-text-light);
-  font-size: 14px;
+  padding: 60px 20px;
+  color: var(--color-text-secondary);
+}
+.error-icon {
+  font-size: 48px;
+  margin-bottom: 12px;
+}
+.error-state p {
+  font-size: 15px;
+  margin-bottom: 16px;
 }
 .news-list {
   display: flex;
@@ -380,12 +502,28 @@ watch(activeTab, async (val) => {
 .remove-btn {
   color: var(--color-accent);
   font-size: 13px;
+  min-height: 36px;
+  padding: 6px 12px;
+  transition: all 0.2s;
+}
+.remove-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 .empty-state {
   text-align: center;
-  padding: 40px 20px;
+  padding: 60px 20px;
   color: var(--color-text-light);
   font-size: 14px;
+}
+.empty-icon {
+  font-size: 48px;
+  margin-bottom: 12px;
+}
+.empty-hint {
+  font-size: 13px !important;
+  color: var(--color-text-light) !important;
+  margin-top: 4px;
 }
 .preference-list {
   display: flex;
@@ -422,6 +560,30 @@ watch(activeTab, async (val) => {
   background: linear-gradient(90deg, var(--color-primary), var(--color-primary));
   border-radius: 4px;
   transition: width 0.3s ease;
+}
+.toast {
+  position: fixed;
+  top: 80px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 10px 24px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  z-index: 9999;
+  animation: toastIn 0.3s ease;
+}
+.toast.success {
+  background: var(--color-success, #10B981);
+  color: #fff;
+}
+.toast.error {
+  background: var(--color-accent, #EF4444);
+  color: #fff;
+}
+@keyframes toastIn {
+  from { opacity: 0; transform: translateX(-50%) translateY(-10px); }
+  to { opacity: 1; transform: translateX(-50%) translateY(0); }
 }
 @media (max-width: 768px) {
   .profile-page {
@@ -474,6 +636,26 @@ watch(activeTab, async (val) => {
   .tab-content {
     padding: 0 8px;
   }
+  .loading-skeleton {
+    gap: 8px;
+  }
+  .skeleton-item {
+    padding: 12px;
+    border-radius: 10px;
+    gap: 10px;
+  }
+  .skeleton-thumb {
+    width: 70px;
+    height: 50px;
+    border-radius: 6px;
+  }
+  .error-state {
+    padding: 40px 20px;
+    font-size: 14px;
+  }
+  .error-icon {
+    font-size: 40px;
+  }
   .news-list {
     gap: 8px;
   }
@@ -507,6 +689,9 @@ watch(activeTab, async (val) => {
     padding: 40px 20px;
     font-size: 13px;
   }
+  .empty-icon {
+    font-size: 40px;
+  }
   .preference-list {
     gap: 12px;
   }
@@ -533,6 +718,11 @@ watch(activeTab, async (val) => {
     min-height: 44px;
     border-radius: 8px;
   }
+  .toast {
+    top: 70px;
+    padding: 10px 20px;
+    font-size: 13px;
+  }
 }
 @media (max-width: 480px) {
   .avatar {
@@ -557,6 +747,10 @@ watch(activeTab, async (val) => {
   }
   .news-title {
     font-size: 13px;
+  }
+  .skeleton-thumb {
+    width: 60px;
+    height: 44px;
   }
 }
 </style>

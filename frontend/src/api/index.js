@@ -13,6 +13,12 @@ request.interceptors.request.use(config => {
   return config
 })
 
+let vueRouterInstance = null
+
+export function setVueRouter(router) {
+  vueRouterInstance = router
+}
+
 request.interceptors.response.use(
   response => response,
   error => {
@@ -21,7 +27,11 @@ request.interceptors.response.use(
       localStorage.removeItem('userId')
       localStorage.removeItem('username')
       if (window.location.pathname !== '/login') {
-        window.location.href = '/login'
+        if (vueRouterInstance) {
+          vueRouterInstance.push('/login')
+        } else {
+          window.location.href = '/login'
+        }
       }
     }
     return Promise.reject(error)
