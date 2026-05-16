@@ -337,7 +337,7 @@ watch(() => route.params.id, () => {
   top: 0;
   left: 0;
   height: 3px;
-  background: linear-gradient(90deg, var(--color-primary), #3a7bd5);
+  background: var(--color-gradient-reading);
   z-index: 9999;
   transition: width 0.1s linear;
 }
@@ -346,8 +346,8 @@ watch(() => route.params.id, () => {
   top: 20px;
   left: 50%;
   transform: translateX(-50%);
-  background: rgba(26, 42, 74, 0.92);
-  color: #fff;
+  background: var(--color-overlay-light);
+  color: var(--color-text-white);
   padding: 10px 28px;
   border-radius: 6px;
   font-size: 14px;
@@ -368,12 +368,12 @@ watch(() => route.params.id, () => {
   height: 44px;
   border-radius: 50%;
   background: var(--color-primary);
-  color: #fff;
+  color: var(--color-text-white);
   border: none;
   font-size: 20px;
   cursor: pointer;
   z-index: 999;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+  box-shadow: 0 2px 8px var(--color-shadow-lg);
   transition: background 0.2s;
 }
 .back-top-btn:hover {
@@ -407,7 +407,7 @@ watch(() => route.params.id, () => {
   text-decoration: none;
 }
 .breadcrumb a:hover {
-  color: #1a2a4a;
+  color: var(--color-primary);
   text-decoration: underline;
 }
 .sep {
@@ -421,10 +421,10 @@ watch(() => route.params.id, () => {
   white-space: nowrap;
 }
 .article {
-  background: #fff;
+  background: var(--color-bg-white);
   padding: 32px;
   border-radius: 4px;
-  box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+  box-shadow: 0 1px 4px var(--color-shadow-sm);
 }
 .article-title {
   font-size: 28px;
@@ -448,7 +448,7 @@ watch(() => route.params.id, () => {
 .breaking-tag {
   display: inline-block;
   background: var(--color-accent);
-  color: #fff;
+  color: var(--color-text-white);
   padding: 2px 10px;
   font-size: 11px;
   font-weight: 700;
@@ -471,8 +471,8 @@ watch(() => route.params.id, () => {
   align-items: center;
   gap: 4px;
   padding: 2px 10px;
-  background: linear-gradient(135deg, #6366f1, #8b5cf6);
-  color: #fff;
+  background: var(--color-gradient-primary);
+  color: var(--color-text-white);
   border: none;
   border-radius: 3px;
   font-size: 12px;
@@ -480,7 +480,7 @@ watch(() => route.params.id, () => {
   transition: all 0.2s;
 }
 .translate-btn:hover:not(:disabled) {
-  background: linear-gradient(135deg, #4f46e5, #7c3aed);
+  background: var(--color-gradient-primary-hover);
 }
 .translate-btn:disabled {
   opacity: 0.6;
@@ -490,8 +490,8 @@ watch(() => route.params.id, () => {
   display: inline-block;
   width: 12px;
   height: 12px;
-  border: 2px solid rgba(255,255,255,0.3);
-  border-top-color: #fff;
+  border: 2px solid var(--color-white-overlay);
+  border-top-color: var(--color-text-white);
   border-radius: 50%;
   animation: spin-sm 0.8s linear infinite;
 }
@@ -505,12 +505,12 @@ watch(() => route.params.id, () => {
   object-position: center;
   border-radius: 4px;
   margin-bottom: 24px;
-  background-color: #f0f0f0;
+  background-color: var(--color-bg-tertiary);
 }
 .article-content {
   font-size: 16px;
   line-height: 1.85;
-  color: #333;
+  color: var(--color-text);
 }
 .article-content :deep(p) {
   margin-bottom: 18px;
@@ -574,10 +574,10 @@ watch(() => route.params.id, () => {
 }
 .comment-section {
   margin-top: 24px;
-  background: #fff;
+  background: var(--color-bg-white);
   padding: 24px;
   border-radius: 4px;
-  box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+  box-shadow: 0 1px 4px var(--color-shadow-sm);
 }
 .comment-form {
   margin-bottom: 20px;
@@ -590,14 +590,14 @@ watch(() => route.params.id, () => {
 .login-prompt {
   padding: 16px;
   text-align: center;
-  background: #f5f5f5;
+  background: var(--color-bg);
   border-radius: 4px;
   margin-bottom: 20px;
   font-size: 14px;
   color: var(--color-text-secondary);
 }
 .login-prompt a {
-  color: #1a2a4a;
+  color: var(--color-text);
   font-weight: 600;
 }
 .comment-list {
@@ -615,8 +615,8 @@ watch(() => route.params.id, () => {
   width: 36px;
   height: 36px;
   border-radius: 50%;
-  background: #1a2a4a;
-  color: #fff;
+  background: var(--color-primary);
+  color: var(--color-text-white);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -637,7 +637,7 @@ watch(() => route.params.id, () => {
 .comment-user {
   font-size: 14px;
   font-weight: 600;
-  color: #1a2a4a;
+  color: var(--color-text);
 }
 .comment-time {
   font-size: 12px;
@@ -707,12 +707,12 @@ watch(() => route.params.id, () => {
   font-weight: 700;
   border-radius: 3px;
   flex-shrink: 0;
-  background: #e8e8e8;
-  color: #999;
+  background: var(--color-bg-tertiary);
+  color: var(--color-text-light);
 }
 .rank-hot {
-  background: #c41230;
-  color: #fff;
+  background: var(--color-accent);
+  color: var(--color-text-white);
 }
 .hot-title {
   font-size: 13px;
@@ -801,7 +801,7 @@ watch(() => route.params.id, () => {
     flex-wrap: wrap;
     padding: 0 12px 12px;
     margin-bottom: 14px;
-    border-bottom: 1px solid #f0f0f0;
+    border-bottom: 1px solid var(--color-bg-tertiary);
   }
   .breaking-tag {
     padding: 1.5px 6px;
@@ -882,8 +882,8 @@ watch(() => route.params.id, () => {
   .article-content :deep(blockquote) {
     margin: 12px 0;
     padding: 8px 12px;
-    border-left: 3px solid #1a2a4a;
-    background: #f8f9fa;
+    border-left: 3px solid var(--color-primary);
+    background: var(--color-bg-secondary);
     font-size: 14px;
   }
   .article-content :deep(ul), .article-content :deep(ol) {
@@ -900,7 +900,7 @@ watch(() => route.params.id, () => {
     align-items: center;
     padding: 12px;
     margin-top: 12px;
-    border-top: 1px solid #f0f0f0;
+    border-top: 1px solid var(--color-bg-tertiary);
   }
   .footer-tags {
     gap: 6px;
@@ -938,17 +938,17 @@ watch(() => route.params.id, () => {
     overflow-x: hidden;
   }
   .comment-section-inner {
-    background: #fff;
+    background: var(--color-bg-white);
     padding: 16px;
     border-radius: var(--radius-lg);
-    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+    box-shadow: 0 1px 4px var(--color-card-shadow);
   }
   .comment-form textarea {
     width: 100%;
     padding: 10px 12px;
     font-size: 14px;
     border-radius: 8px;
-    border: 1px solid #e0e0e0;
+    border: 1px solid var(--color-border);
     resize: vertical;
     min-height: 80px;
     box-sizing: border-box;
@@ -976,7 +976,7 @@ watch(() => route.params.id, () => {
   .comment-item {
     padding: 10px 0;
     gap: 10px;
-    border-bottom: 1px solid #f5f5f5;
+    border-bottom: 1px solid var(--color-bg);
   }
   .comment-avatar {
     width: 32px;
@@ -1012,7 +1012,7 @@ watch(() => route.params.id, () => {
     cursor: pointer;
   }
   .related-item:active {
-    background: #f5f5f5;
+    background: var(--color-bg);
   }
   .related-title {
     font-size: 13px;

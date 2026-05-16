@@ -155,15 +155,15 @@ onUnmounted(() => {
 .login-card {
   width: 100%;
   max-width: 420px;
-  background: #fff;
+  background: var(--color-bg-white);
   border-radius: 4px;
-  box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+  box-shadow: 0 2px 12px var(--color-shadow-md);
   overflow: hidden;
 }
 .login-header {
-  background: #1a2a4a;
+  background: var(--color-primary);
   padding: 28px 32px;
-  color: #fff;
+  color: var(--color-text-white);
   text-align: center;
 }
 .login-header h2 {
@@ -199,7 +199,7 @@ onUnmounted(() => {
 }
 .form-group input:focus {
   outline: none;
-  border-color: #1a2a4a;
+  border-color: var(--color-primary);
 }
 .code-row {
   display: flex;
@@ -218,13 +218,13 @@ onUnmounted(() => {
 }
 .code-input:focus {
   outline: none;
-  border-color: #1a2a4a;
+  border-color: var(--color-primary);
 }
 .send-code-btn {
   flex-shrink: 0;
   padding: 10px 16px;
-  background: #1a2a4a;
-  color: #fff;
+  background: var(--color-primary);
+  color: var(--color-text-white);
   border: none;
   border-radius: 4px;
   font-size: 13px;
@@ -238,7 +238,7 @@ onUnmounted(() => {
   gap: 4px;
 }
 .send-code-btn:hover:not(:disabled) {
-  background: #243656;
+  background: var(--color-primary);
 }
 .send-code-btn:disabled {
   opacity: 0.6;
@@ -248,8 +248,8 @@ onUnmounted(() => {
   display: inline-block;
   width: 14px;
   height: 14px;
-  border: 2px solid rgba(255,255,255,0.3);
-  border-top-color: #fff;
+  border: 2px solid var(--color-white-overlay);
+  border-top-color: var(--color-text-white);
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
 }
@@ -257,13 +257,13 @@ onUnmounted(() => {
   to { transform: rotate(360deg); }
 }
 .error-msg {
-  color: #c41230;
+  color: var(--color-accent);
   font-size: 13px;
   text-align: center;
   margin-bottom: 12px;
 }
 .success-msg {
-  color: #16a34a;
+  color: var(--color-success);
   font-size: 13px;
   text-align: center;
   margin-bottom: 12px;
@@ -272,16 +272,16 @@ onUnmounted(() => {
   width: 100%;
   padding: 10px;
   font-size: 15px;
-  background: #1a2a4a;
-  border-color: #1a2a4a;
-  color: #fff;
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  color: var(--color-text-white);
   border: none;
   border-radius: 4px;
   cursor: pointer;
   transition: background 0.2s;
 }
 .login-btn:hover:not(:disabled) {
-  background: #243656;
+  background: var(--color-primary);
 }
 .login-btn:disabled {
   opacity: 0.6;
@@ -294,7 +294,7 @@ onUnmounted(() => {
   color: var(--color-text-secondary);
 }
 .switch-text a {
-  color: #1a2a4a;
+  color: var(--color-text);
   font-weight: 600;
 }
 .w-full {

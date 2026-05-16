@@ -213,7 +213,7 @@ watch(() => route.params.name, async () => {
   transition: box-shadow 0.2s;
 }
 .news-item:hover {
-  box-shadow: 0 3px 10px rgba(0,0,0,0.08);
+  box-shadow: 0 3px 10px var(--color-shadow-md);
 }
 .news-item:hover .news-title {
   text-decoration: underline;
@@ -225,14 +225,14 @@ watch(() => route.params.name, async () => {
   object-position: center;
   border-radius: 3px;
   flex-shrink: 0;
-  background-color: #f0f0f0;
+  background-color: var(--color-bg-tertiary);
 }
 .news-thumb-placeholder {
   width: 180px;
   height: 110px;
   border-radius: 3px;
   flex-shrink: 0;
-  background: linear-gradient(135deg, #1a2a4a 0%, #2d4a7a 100%);
+  background: var(--color-gradient-header);
 }
 .news-body {
   flex: 1;
@@ -255,7 +255,7 @@ watch(() => route.params.name, async () => {
 .breaking-tag-sm {
   display: inline-block;
   background: var(--color-accent);
-  color: #fff;
+  color: var(--color-text-white);
   padding: 1px 8px;
   font-size: 10px;
   font-weight: 700;
@@ -286,7 +286,7 @@ watch(() => route.params.name, async () => {
   font-weight: 700;
   margin-bottom: 14px;
   padding-bottom: 8px;
-  border-bottom: 2px solid #1a2a4a;
+  border-bottom: 2px solid var(--color-primary);
 }
 .hot-list {
   display: flex;
@@ -312,12 +312,12 @@ watch(() => route.params.name, async () => {
   font-weight: 700;
   border-radius: 3px;
   flex-shrink: 0;
-  background: #e8e8e8;
-  color: #999;
+  background: var(--color-bg-tertiary);
+  color: var(--color-text-light);
 }
 .rank-hot {
-  background: #c41230;
-  color: #fff;
+  background: var(--color-accent);
+  color: var(--color-text-white);
 }
 .hot-info {
   flex: 1;
@@ -394,7 +394,7 @@ watch(() => route.params.name, async () => {
   }
   .news-item:active {
     transform: scale(0.99);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 2px 8px var(--color-shadow-lg);
   }
   .news-thumb {
     width: 110px;
@@ -423,14 +423,14 @@ watch(() => route.params.name, async () => {
     font-size: 15px;
     font-weight: 600;
     line-height: 1.45;
-    color: #1a2a4a;
+    color: var(--color-text);
     -webkit-line-clamp: 2;
   }
   .news-summary {
     font-size: 12px;
     margin-top: 4px;
     line-height: 1.5;
-    color: #888;
+    color: var(--color-text-light);
     -webkit-line-clamp: 1;
   }
   .news-meta {
@@ -438,7 +438,7 @@ watch(() => route.params.name, async () => {
     gap: 6px;
     font-size: 11px;
     margin-top: 6px;
-    color: #999;
+    color: var(--color-text-light);
   }
   .breaking-tag-sm {
     padding: 1px 6px;
@@ -468,7 +468,7 @@ watch(() => route.params.name, async () => {
     align-items: center;
   }
   .hot-item:active {
-    background: #f5f5f5;
+    background: var(--color-bg);
   }
   .rank-num {
     width: 20px;

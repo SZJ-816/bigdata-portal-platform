@@ -264,8 +264,8 @@ watch(activeTab, async (val) => {
   width: 56px;
   height: 56px;
   border-radius: 50%;
-  background: #1a2a4a;
-  color: #fff;
+  background: var(--color-primary);
+  color: var(--color-text-white);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -278,7 +278,7 @@ watch(activeTab, async (val) => {
 .username {
   font-size: 20px;
   font-weight: 700;
-  color: #1a2a4a;
+  color: var(--color-text);
 }
 .email {
   font-size: 13px;
@@ -305,11 +305,11 @@ watch(activeTab, async (val) => {
   transition: all 0.2s;
 }
 .tab-item:hover {
-  color: #1a2a4a;
+  color: var(--color-text);
 }
 .tab-item.active {
-  color: #1a2a4a;
-  border-bottom-color: #c41230;
+  color: var(--color-text);
+  border-bottom-color: var(--color-accent);
   font-weight: 600;
 }
 .section-title {
@@ -335,14 +335,14 @@ watch(activeTab, async (val) => {
   align-items: center;
   gap: 14px;
   padding: 14px;
-  background: #fff;
+  background: var(--color-bg-white);
   border-radius: 4px;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+  box-shadow: 0 1px 3px var(--color-shadow-sm);
   cursor: pointer;
   transition: box-shadow 0.2s;
 }
 .news-item:hover {
-  box-shadow: 0 3px 10px rgba(0,0,0,0.08);
+  box-shadow: 0 3px 10px var(--color-shadow-md);
 }
 .news-item:hover .news-title {
   text-decoration: underline;
@@ -353,7 +353,7 @@ watch(activeTab, async (val) => {
   flex-shrink: 0;
   overflow: hidden;
   border-radius: 4px;
-  background: #f5f5f5;
+  background: var(--color-bg);
 }
 .news-image img {
   width: 100%;
@@ -378,7 +378,7 @@ watch(activeTab, async (val) => {
   color: var(--color-text-light);
 }
 .remove-btn {
-  color: #c41230;
+  color: var(--color-accent);
   font-size: 13px;
 }
 .empty-state {
@@ -393,10 +393,10 @@ watch(activeTab, async (val) => {
   gap: 16px;
 }
 .preference-item {
-  background: #fff;
+  background: var(--color-bg-white);
   padding: 16px;
   border-radius: 4px;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+  box-shadow: 0 1px 3px var(--color-shadow-sm);
 }
 .preference-header {
   display: flex;
@@ -405,10 +405,10 @@ watch(activeTab, async (val) => {
 }
 .channel-name {
   font-weight: 600;
-  color: #1a2a4a;
+  color: var(--color-text);
 }
 .channel-percent {
-  color: #c41230;
+  color: var(--color-accent);
   font-weight: 600;
 }
 .progress-bar {
@@ -419,7 +419,7 @@ watch(activeTab, async (val) => {
 }
 .progress-fill {
   height: 100%;
-  background: linear-gradient(90deg, #1a2a4a, #3a5a8a);
+  background: linear-gradient(90deg, var(--color-primary), var(--color-primary));
   border-radius: 4px;
   transition: width 0.3s ease;
 }
