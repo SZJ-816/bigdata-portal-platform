@@ -151,6 +151,10 @@ public class RssService {
     }
 
     private int fetchFeed(String feedUrl, String sourceName) throws Exception {
+        if (!isAllowedUrl(feedUrl)) {
+            logger.warn("不允许的协议或 URL: {}", feedUrl);
+            return 0;
+        }
         HttpURLConnection connection = createConnection(feedUrl);
 
         try (InputStream rawInputStream = connection.getInputStream()) {
@@ -227,7 +231,7 @@ public class RssService {
             responseCode == HttpURLConnection.HTTP_MOVED_TEMP ||
             responseCode == HttpURLConnection.HTTP_SEE_OTHER) {
             String newUrl = connection.getHeaderField("Location");
-            if (newUrl != null) {
+            if (newUrl != null && isAllowedUrl(newUrl)) {
                 connection.disconnect();
                 connection = (HttpURLConnection) new URL(newUrl).openConnection();
                 connection.setConnectTimeout(15000);
@@ -480,7 +484,7 @@ public class RssService {
                     com.rometools.rome.feed.synd.SyndEnclosure enclosure =
                         (com.rometools.rome.feed.synd.SyndEnclosure) enc;
                     String url = enclosure.getUrl();
-                    if (url != null && !url.isEmpty() && isImageUrl(url)) {
+                    if (url != null && !url.isEmpty() && isAllowedUrl(url) && isImageUrl(url)) {
                         return url;
                     }
                 }
@@ -489,7 +493,7 @@ public class RssService {
 
         if (entry.getDescription() != null && entry.getDescription().getValue() != null) {
             String img = extractImageFromHtml(entry.getDescription().getValue());
-            if (img != null && isImageUrl(img)) {
+            if (img != null && isAllowedUrl(img) && isImageUrl(img)) {
                 return img;
             }
         }
@@ -499,7 +503,7 @@ public class RssService {
                 if (contentObj instanceof com.rometools.rome.feed.synd.SyndContent) {
                     String value = ((com.rometools.rome.feed.synd.SyndContent) contentObj).getValue();
                     String img = extractImageFromHtml(value);
-                    if (img != null && isImageUrl(img)) {
+                    if (img != null && isAllowedUrl(img) && isImageUrl(img)) {
                         return img;
                     }
                 }

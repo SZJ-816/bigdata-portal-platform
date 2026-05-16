@@ -50,6 +50,7 @@
   --touch-target-min: 44px;
   --mobile-breakpoint: 768px;
   --tablet-breakpoint: 1024px;
+  --transition-theme: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 * {
@@ -63,6 +64,7 @@ body {
   background: var(--color-bg);
   color: var(--color-text);
   line-height: 1.6;
+  transition: background-color var(--transition-theme), color var(--transition-theme);
 }
 
 a {
@@ -79,6 +81,7 @@ a:hover {
   border-radius: var(--radius);
   box-shadow: 0 1px 4px var(--color-card-shadow);
   padding: 20px;
+  transition: background-color var(--transition-theme), border-color var(--transition-theme), box-shadow var(--transition-theme);
 }
 
 .btn {

@@ -103,6 +103,12 @@ public class AiService {
             }
             sb.append("\n");
             count++;
+            if (sb.length() > MAX_SEARCH_RESULT_LENGTH) {
+                break;
+            }
+        }
+        if (sb.length() > MAX_SEARCH_RESULT_LENGTH) {
+            return sb.substring(0, MAX_SEARCH_RESULT_LENGTH);
         }
         return sb.toString();
     }
@@ -345,6 +351,9 @@ public class AiService {
         if (cachedHotSummary != null && (now - cachedHotSummaryTime) < HOT_SUMMARY_CACHE_TTL && (instruction == null || instruction.trim().isEmpty())) {
             return cachedHotSummary;
         }
+        if (instruction != null && instruction.length() > MAX_INSTRUCTION_LENGTH) {
+            instruction = instruction.substring(0, MAX_INSTRUCTION_LENGTH);
+        }
         String prompt = buildHotSummaryPrompt(instruction);
         ObjectNode requestBody = buildRequestBody(SYSTEM_PROMPT_HOT_SUMMARY, prompt, false, 800, 0.5);
         String jsonBody = objectMapper.writeValueAsString(requestBody);
@@ -367,6 +376,9 @@ public class AiService {
     }
 
     public void hotSummaryStream(String instruction, StreamCallback callback) throws Exception {
+        if (instruction != null && instruction.length() > MAX_INSTRUCTION_LENGTH) {
+            instruction = instruction.substring(0, MAX_INSTRUCTION_LENGTH);
+        }
         String prompt = buildHotSummaryPrompt(instruction);
         ObjectNode requestBody = buildRequestBody(SYSTEM_PROMPT_HOT_SUMMARY, prompt, true, 800, 0.5);
         String jsonBody = objectMapper.writeValueAsString(requestBody);

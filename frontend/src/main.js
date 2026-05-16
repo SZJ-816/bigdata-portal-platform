@@ -3,10 +3,13 @@ import App from './App.vue'
 import router from './router'
 import './styles/global.css'
 import lazyLoadDirective from './directives/lazyLoad'
+import { initTheme } from './composables/useTheme'
 
 const app = createApp(App)
 app.use(router)
 app.directive('lazy', lazyLoadDirective)
+
+initTheme()
 
 app.config.errorHandler = (err, instance, info) => {
   console.error('Vue error:', err, info)

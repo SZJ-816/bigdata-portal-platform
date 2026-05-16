@@ -14,8 +14,8 @@
           </nav>
         </div>
         <div class="header-right">
-          <button class="theme-toggle" @click="toggleTheme" :title="isDark ? '切换浅色' : '切换深色'">
-            {{ isDark ? '☀' : '☾' }}
+          <button class="theme-toggle" @click="handleToggleTheme" :title="themeLabel" :class="{ animating: isAnimating }">
+            <span class="theme-icon">{{ themeIcon }}</span>
           </button>
           <div v-if="isLoggedIn" class="user-info">
             <span class="username">{{ username }}</span>
@@ -70,6 +70,7 @@
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { channels } from '../../utils'
+import { useTheme, THEMES, getEffectiveTheme, setTheme, toggleTheme } from '../../composables/useTheme'
 
 const router = useRouter()
 const route = useRoute()
@@ -77,7 +78,26 @@ const navChannels = channels.slice(0, 4)
 const token = ref(localStorage.getItem('token'))
 const username = ref(localStorage.getItem('username'))
 const menuOpen = ref(false)
-const isDark = ref(localStorage.getItem('theme') === 'dark')
+const { currentTheme, effectiveTheme } = useTheme()
+const isAnimating = ref(false)
+
+const isDark = computed(() => {
+  const stored = localStorage.getItem('theme')
+  if (stored && stored !== THEMES.SYSTEM) {
+    return stored === THEMES.DARK
+  }
+  return getEffectiveTheme() === THEMES.DARK
+})
+
+const themeIcon = computed(() => {
+  if (currentTheme.value === THEMES.SYSTEM) return '◐'
+  return isDark.value ? '☀' : '☾'
+})
+
+const themeLabel = computed(() => {
+  if (currentTheme.value === THEMES.SYSTEM) return '跟随系统'
+  return isDark.value ? '浅色模式' : '深色模式'
+})
 
 const isLoggedIn = computed(() => !!token.value)
 const currentPath = computed(() => route.path)
@@ -91,10 +111,11 @@ function goLogin() {
   router.push({ path: '/login', query: { redirect: route.path } })
 }
 
-function toggleTheme() {
-  isDark.value = !isDark.value
-  document.documentElement.setAttribute('data-theme', isDark.value ? 'dark' : 'light')
-  localStorage.setItem('theme', isDark.value ? 'dark' : 'light')
+function handleToggleTheme() {
+  if (isAnimating.value) return
+  isAnimating.value = true
+  toggleTheme()
+  setTimeout(() => { isAnimating.value = false }, 300)
 }
 
 function handleLogout() {
@@ -118,9 +139,6 @@ function handleStorageUpdate(e) {
 
 onMounted(() => {
   updateAuth()
-  if (isDark.value) {
-    document.documentElement.setAttribute('data-theme', 'dark')
-  }
   window.addEventListener('storage', handleStorageUpdate)
   window.addEventListener('auth-updated', handleAuthUpdate)
 })
@@ -196,21 +214,43 @@ onUnmounted(() => {
   text-decoration: none;
 }
 .theme-toggle {
-  background: none;
+  background: var(--color-bg-secondary);
   border: 1px solid var(--color-border);
   border-radius: 50%;
-  width: 36px;
-  height: 36px;
-  font-size: 18px;
+  width: 38px;
+  height: 38px;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
   color: var(--color-text);
-  transition: all 0.2s;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
 }
 .theme-toggle:hover {
   background: var(--color-bg-hover);
+  border-color: var(--color-primary);
+  transform: scale(1.08);
+}
+.theme-toggle:active {
+  transform: scale(0.95);
+}
+.theme-toggle.animating {
+  animation: themePulse 0.3s ease-out;
+}
+@keyframes themePulse {
+  0% { transform: scale(1) rotate(0deg); }
+  50% { transform: scale(1.15) rotate(10deg); }
+  100% { transform: scale(1) rotate(0deg); }
+}
+.theme-icon {
+  font-size: 18px;
+  transition: transform 0.3s ease;
+  display: inline-block;
+}
+.theme-toggle:hover .theme-icon {
+  transform: rotate(15deg);
 }
 .header-right {
   display: flex;
