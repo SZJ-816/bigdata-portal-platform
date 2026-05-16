@@ -19,35 +19,36 @@ const dashboardUrl = ref(window.location.origin + ':3000')
   justify-content: center;
   align-items: center;
   min-height: 100vh;
-  background: #f0f2f5;
+  background: var(--color-bg);
 }
 .redirect-card {
-  background: #fff;
+  background: var(--color-bg-white);
   border-radius: 12px;
   padding: 48px;
   text-align: center;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 2px 12px var(--color-shadow-md);
 }
 .redirect-card h2 {
   margin: 0 0 12px;
   font-size: 24px;
-  color: #1a1a2e;
+  color: var(--color-text);
 }
 .redirect-card p {
-  color: #666;
+  color: var(--color-text-secondary);
   margin: 0 0 24px;
 }
 .redirect-btn {
   display: inline-block;
   padding: 10px 32px;
-  background: #1a1a2e;
-  color: #fff;
+  background: var(--color-primary);
+  color: var(--color-text-white);
   border-radius: 6px;
   text-decoration: none;
   font-size: 16px;
   transition: background 0.3s;
 }
 .redirect-btn:hover {
-  background: #16213e;
+  background: var(--color-primary);
+  opacity: 0.9;
 }
 </style>
