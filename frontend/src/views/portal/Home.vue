@@ -856,6 +856,13 @@ onUnmounted(() => {
   }
   .content-right {
     grid-column: span 2;
+    max-width: 100%;
+  }
+  .content-right .card {
+    max-width: 100%;
+  }
+  .ranking-list {
+    gap: 8px;
   }
 }
 @media (max-width: 768px) {
@@ -964,10 +971,28 @@ onUnmounted(() => {
   }
   .main-content {
     grid-template-columns: 1fr;
-    gap: 20px;
+    gap: 16px;
+    padding: 0 4px;
+    overflow-x: hidden;
+  }
+  .content-left {
+    padding: 0;
+    overflow-x: hidden;
   }
   .content-right {
     grid-column: span 1;
+    overflow-x: hidden;
+  }
+  .content-center {
+    padding: 0;
+    overflow-x: hidden;
+  }
+  .headline-section {
+    padding: 0 4px;
+    overflow-x: hidden;
+  }
+  .card {
+    overflow-x: hidden;
   }
   .section-title {
     font-size: 17px;
@@ -1196,6 +1221,9 @@ onUnmounted(() => {
 }
 
 @media (max-width: 480px) {
+  .headline-section {
+    padding: 0;
+  }
   .headline-main {
     aspect-ratio: 16 / 9;
     max-height: 190px;
@@ -1243,6 +1271,94 @@ onUnmounted(() => {
   .skeleton-thumb {
     width: 75px;
     height: 55px;
+  }
+  .section-title {
+    font-size: 15px;
+  }
+  .news-title {
+    font-size: 13px;
+  }
+  .thumb-wrap {
+    width: 70px;
+    height: 52px;
+  }
+  .thumb-img {
+    width: 70px;
+    height: 52px;
+  }
+  .channel-card {
+    padding: 5px 12px;
+    font-size: 12px;
+  }
+  .ai-hot-input {
+    padding: 9px 12px;
+    font-size: 13px;
+  }
+  .btn-ai-sm {
+    padding: 9px 16px;
+    font-size: 13px;
+  }
+}
+
+@media (max-width: 375px) {
+  .headline-main {
+    max-height: 170px;
+  }
+  .headline-img-wrap {
+    max-height: 170px;
+  }
+  .headline-title {
+    font-size: 16px;
+  }
+  .side-news {
+    min-width: 145px;
+    padding: 10px;
+  }
+  .side-img {
+    width: 60px;
+    height: 45px;
+  }
+  .side-img-wrap {
+    width: 60px;
+    height: 45px;
+  }
+  .side-title {
+    font-size: 12.5px;
+  }
+  .news-item {
+    padding: 10px;
+    gap: 10px;
+  }
+  .news-body {
+    flex: 1;
+    min-width: 0;
+  }
+  .thumb-wrap {
+    width: 65px;
+    height: 48px;
+  }
+  .thumb-img {
+    width: 65px;
+    height: 48px;
+  }
+  .news-title {
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 1.4;
+    -webkit-line-clamp: 2;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  .news-summary {
+    -webkit-line-clamp: 1;
+    font-size: 12px;
+  }
+  .ranking-item {
+    padding: 8px 10px;
+  }
+  .rank-title {
+    font-size: 12.5px;
   }
 }
 </style>

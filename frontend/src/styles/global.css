@@ -270,7 +270,7 @@ input:focus, textarea:focus {
 
 @media (max-width: 768px) {
   html {
-    font-size: 14px;
+    font-size: 15px;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
@@ -341,7 +341,7 @@ input:focus, textarea:focus {
 
 @media (max-width: 480px) {
   html {
-    font-size: 13px;
+    font-size: 14px;
   }
   .card {
     border-radius: var(--radius-lg);
@@ -349,12 +349,24 @@ input:focus, textarea:focus {
   }
 }
 
-@supports (padding-top: env(safe-area-inset-top)) {
-  body {
-    padding-top: env(safe-area-inset-top);
-    padding-bottom: env(safe-area-inset-bottom);
+@media (max-width: 375px) {
+  html {
+    font-size: 13px;
+  }
+  .portal-header {
+    height: 50px;
+  }
+  .mobile-nav {
+    padding: 4px 0 8px;
+  }
+  .mobile-nav .nav-label {
+    font-size: 10px;
+  }
+  .mobile-nav .nav-icon {
+    font-size: 18px;
   }
 }
+
 
 [data-theme="dark"] {
   --color-bg: #0f172a;

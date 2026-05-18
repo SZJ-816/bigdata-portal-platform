@@ -192,8 +192,9 @@ async function translateNews() {
   } catch (err) {
     console.error('Translation failed:', err)
     showToast('翻译失败，请稍后重试')
+  } finally {
+    translating.value = false
   }
-  translating.value = false
 }
 
 async function loadRelatedNews() {
@@ -270,8 +271,9 @@ function handleFavorite() {
 async function loadComments() {
   try {
     const res = await commentApi.getList(news.value.id)
-    if (res.data.data) {
-      comments.value = res.data.data.map(c => ({
+    const list = res.data || res
+    if (Array.isArray(list)) {
+      comments.value = list.map(c => ({
         id: c.id,
         username: c.username || '用户' + c.userId,
         content: c.content,
@@ -292,7 +294,7 @@ async function submitComment() {
   try {
     const userId = localStorage.getItem('userId')
     const res = await commentApi.add(news.value.id, { userId: Number(userId), content: commentText.value })
-    if (res.data.success) {
+    if (res.success || res.data?.success) {
       commentText.value = ''
       await loadComments()
       showToast('评论发送成功')
@@ -461,10 +463,11 @@ watch(() => route.params.id, () => {
 }
 .article-title {
   font-size: 28px;
-  font-weight: 800;
-  line-height: 1.35;
+  font-weight: 700;
+  line-height: 1.4;
   color: var(--color-text);
-  font-family: Georgia, 'Noto Serif SC', serif;
+  font-family: 'Noto Serif SC', 'Source Han Serif SC', 'Songti SC', Georgia, 'Times New Roman', serif;
+  letter-spacing: 0.5px;
   margin-bottom: 16px;
 }
 .article-meta {
@@ -880,15 +883,12 @@ watch(() => route.params.id, () => {
   .detail-sidebar {
     min-width: auto;
     padding: 0 8px 16px;
-    display: flex;
-    gap: 12px;
-    flex-wrap: wrap;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
     max-width: 100vw;
   }
   .detail-sidebar .card {
-    flex: 1;
-    min-width: calc(50% - 6px);
-    max-width: calc(50% - 6px);
     padding: 14px;
     border-radius: var(--radius-lg);
     box-shadow: 0 1px 4px var(--color-card-shadow);
@@ -969,6 +969,9 @@ watch(() => route.params.id, () => {
     margin: 18px 0 10px;
     word-break: break-word;
   }
+}
+
+@media (max-width: 768px) {
   .article-content :deep(h3) {
     font-size: 16px;
     margin: 14px 0 8px;
@@ -976,7 +979,7 @@ watch(() => route.params.id, () => {
   }
   .article-content :deep(p) {
     margin-bottom: 14px;
-    text-indent: 2em;
+    text-indent: 1.5em;
     word-break: break-word;
   }
   .article-content :deep(img) {
@@ -1242,8 +1245,52 @@ watch(() => route.params.id, () => {
     padding: 0 10px;
   }
   .detail-sidebar .card {
-    min-width: 100%;
+    min-width: 0;
     max-width: 100%;
+    padding: 12px;
+  }
+  .detail-sidebar {
+    gap: 8px;
+  }
+}
+
+@media (max-width: 375px) {
+  .article-title {
+    font-size: 17px;
+    padding: 0 10px;
+  }
+  .article-meta {
+    padding: 0 10px 10px;
+    font-size: 11px;
+  }
+  .article-cover {
+    max-height: 160px;
+  }
+  .article-content {
+    font-size: 13px;
+    padding: 0 10px;
+    line-height: 1.75;
+  }
+  .article-content :deep(h2) {
+    font-size: 15px;
+  }
+  .article-content :deep(h3) {
+    font-size: 14px;
+  }
+  .detail-sidebar .card {
+    padding: 10px;
+  }
+  .detail-sidebar {
+    gap: 6px;
+  }
+  .sidebar-title {
+    font-size: 13px;
+  }
+  .related-title {
+    font-size: 12px;
+  }
+  .hot-title {
+    font-size: 12px;
   }
 }
 </style>

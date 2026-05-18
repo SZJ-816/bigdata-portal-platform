@@ -17,6 +17,9 @@
           <button :class="['nav-link', { active: activeTab === 'users' }]" @click="switchTab('users')">
             <span class="nav-icon">👥</span>用户管理
           </button>
+          <button :class="['nav-link', { active: activeTab === 'ai' }]" @click="switchTab('ai')">
+            <span class="nav-icon">🤖</span>AI 控制台
+          </button>
         </nav>
         <div class="bar-right">
           <span class="live-tag"><i class="dot"></i>LIVE</span>
@@ -195,6 +198,101 @@
           <button :disabled="usersPage >= usersTotalPages" @click="loadUsers(usersPage + 1)">下一页 ›</button>
         </div>
       </div>
+      <div v-if="activeTab === 'ai'" class="ai-page">
+        <div class="ai-layout">
+          <aside class="ai-sidebar">
+            <div class="ai-sidebar-title">AI 功能</div>
+            <button :class="['ai-fn-btn', { active: aiMode === 'search' }]" @click="aiMode = 'search'">
+              <span class="ai-fn-icon">🔍</span>智能搜索
+            </button>
+            <button :class="['ai-fn-btn', { active: aiMode === 'summary' }]" @click="aiMode = 'summary'">
+              <span class="ai-fn-icon">📋</span>热点总结
+            </button>
+            <button :class="['ai-fn-btn', { active: aiMode === 'translate' }]" @click="aiMode = 'translate'">
+              <span class="ai-fn-icon">🌐</span>智能翻译
+            </button>
+            <button :class="['ai-fn-btn', { active: aiMode === 'terminal' }]" @click="aiMode = 'terminal'">
+              <span class="ai-fn-icon">⌨️</span>命令终端
+            </button>
+            <div class="ai-sidebar-footer">
+              <div class="ai-status-dot" :class="{ online: aiOnline }"></div>
+              <span>{{ aiOnline ? 'AI 在线' : 'AI 离线' }}</span>
+            </div>
+          </aside>
+          <div class="ai-main">
+            <div v-if="aiMode === 'search'" class="ai-panel">
+              <div class="ai-panel-head">
+                <h2>🔍 智能搜索</h2>
+                <span class="ai-badge">NVIDIA Llama 3.1</span>
+              </div>
+              <div class="ai-input-row">
+                <input v-model="aiSearchKeyword" class="ai-input" placeholder="输入关键词搜索新闻..." @keyup.enter="doAiSearch" :disabled="aiLoading" />
+                <button class="ai-go-btn" @click="doAiSearch" :disabled="aiLoading">{{ aiLoading ? '分析中...' : '搜索' }}</button>
+              </div>
+              <div class="ai-output" ref="aiSearchOutput">
+                <div v-if="aiSearchResult" class="ai-markdown" v-html="renderMarkdown(aiSearchResult)"></div>
+                <div v-else class="ai-placeholder">
+                  <div class="ai-placeholder-icon">🔍</div>
+                  <p>输入关键词，AI 将基于平台新闻数据进行深度分析</p>
+                </div>
+              </div>
+            </div>
+            <div v-if="aiMode === 'summary'" class="ai-panel">
+              <div class="ai-panel-head">
+                <h2>📋 热点总结</h2>
+                <span class="ai-badge">实时生成</span>
+              </div>
+              <div class="ai-input-row">
+                <input v-model="aiSummaryInstruction" class="ai-input" placeholder="可选：输入额外指令（如：重点关注AI领域）" @keyup.enter="doAiSummary" :disabled="aiLoading" />
+                <button class="ai-go-btn" @click="doAiSummary" :disabled="aiLoading">{{ aiLoading ? '生成中...' : '生成' }}</button>
+              </div>
+              <div class="ai-output" ref="aiSummaryOutput">
+                <div v-if="aiSummaryResult" class="ai-markdown" v-html="renderMarkdown(aiSummaryResult)"></div>
+                <div v-else class="ai-placeholder">
+                  <div class="ai-placeholder-icon">📋</div>
+                  <p>AI 将基于最新新闻数据生成热点总结报告</p>
+                </div>
+              </div>
+            </div>
+            <div v-if="aiMode === 'translate'" class="ai-panel">
+              <div class="ai-panel-head">
+                <h2>🌐 智能翻译</h2>
+                <span class="ai-badge">英 → 中</span>
+              </div>
+              <div class="ai-input-row">
+                <input v-model="aiTranslateText" class="ai-input" placeholder="输入英文文本进行翻译..." @keyup.enter="doAiTranslate" :disabled="aiLoading" />
+                <button class="ai-go-btn" @click="doAiTranslate" :disabled="aiLoading">{{ aiLoading ? '翻译中...' : '翻译' }}</button>
+              </div>
+              <div class="ai-output" ref="aiTranslateOutput">
+                <div v-if="aiTranslateResult" class="ai-markdown" v-html="renderMarkdown(aiTranslateResult)"></div>
+                <div v-else class="ai-placeholder">
+                  <div class="ai-placeholder-icon">🌐</div>
+                  <p>输入英文文本，AI 将自动翻译为中文</p>
+                </div>
+              </div>
+            </div>
+            <div v-if="aiMode === 'terminal'" class="ai-panel ai-terminal-panel">
+              <div class="ai-panel-head">
+                <h2>⌨️ AI 命令终端</h2>
+                <button class="ai-clear-btn" @click="aiTerminalLines = []">清屏</button>
+              </div>
+              <div class="ai-terminal" ref="aiTerminalRef" @click="focusTerminalInput">
+                <div v-for="(line, i) in aiTerminalLines" :key="i" :class="['term-line', line.type]">
+                  <span v-if="line.type === 'cmd'" class="term-prompt">$&nbsp;</span>
+                  <span v-html="line.html || line.text"></span>
+                </div>
+                <div v-if="aiLoading" class="term-line system">
+                  <span class="term-cursor">▌</span> AI 处理中...
+                </div>
+                <div class="term-input-line">
+                  <span class="term-prompt">$&nbsp;</span>
+                  <input ref="aiTerminalInput" v-model="aiTerminalCmd" class="term-input" @keyup.enter="execTerminalCmd" :disabled="aiLoading" placeholder="输入命令... (help 查看帮助)" />
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
     </main>
 
     <div v-if="toast.show" :class="['toast', toast.type]">
@@ -252,6 +350,236 @@ const switchTab = (tab) => {
   activeTab.value = tab
   if (tab === 'news') loadNews(1)
   if (tab === 'users') loadUsers(1)
+  if (tab === 'ai') checkAiStatus()
+}
+
+const aiMode = ref('search')
+const aiLoading = ref(false)
+const aiOnline = ref(false)
+const aiSearchKeyword = ref('')
+const aiSearchResult = ref('')
+const aiSummaryInstruction = ref('')
+const aiSummaryResult = ref('')
+const aiTranslateText = ref('')
+const aiTranslateResult = ref('')
+const aiTerminalLines = ref([])
+const aiTerminalCmd = ref('')
+const aiTerminalInput = ref(null)
+const aiTerminalRef = ref(null)
+const aiSearchOutput = ref(null)
+const aiSummaryOutput = ref(null)
+const aiTranslateOutput = ref(null)
+let aiAbortController = null
+
+const checkAiStatus = async () => {
+  try {
+    const res = await fetch('/api/ai/search?keyword=test')
+    aiOnline.value = !!(res.ok || res.status === 200)
+  } catch { aiOnline.value = false }
+}
+
+const renderMarkdown = (text) => {
+  if (!text) return ''
+  return text
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\*(.*?)\*/g, '<em>$1</em>')
+    .replace(/^### (.*$)/gm, '<h4>$1</h4>')
+    .replace(/^## (.*$)/gm, '<h3>$1</h3>')
+    .replace(/^# (.*$)/gm, '<h2>$1</h2>')
+    .replace(/^\* (.*$)/gm, '<li>$1</li>')
+    .replace(/^- (.*$)/gm, '<li>$1</li>')
+    .replace(/^\d+\. (.*$)/gm, '<li>$1</li>')
+    .replace(/\n{2,}/g, '<br/><br/>')
+    .replace(/\n/g, '<br/>')
+}
+
+const doAiSearch = async () => {
+  if (!aiSearchKeyword.value.trim() || aiLoading.value) return
+  aiLoading.value = true
+  aiSearchResult.value = ''
+  try {
+    const res = await fetch(`/api/ai/search/stream?keyword=${encodeURIComponent(aiSearchKeyword.value)}`)
+    const reader = res.body.getReader()
+    const decoder = new TextDecoder()
+    let buffer = ''
+    while (true) {
+      const { done, value } = await reader.read()
+      if (done) break
+      buffer += decoder.decode(value, { stream: true })
+      const lines = buffer.split('\n')
+      buffer = lines.pop() || ''
+      for (const line of lines) {
+        if (line.startsWith('data:')) {
+          const token = line.slice(5).trim()
+          if (token === '[DONE]') break
+          aiSearchResult.value += token
+        }
+      }
+      if (aiSearchOutput.value) aiSearchOutput.value.scrollTop = aiSearchOutput.value.scrollHeight
+    }
+    if (!aiSearchResult.value) {
+      const fallback = await fetch(`/api/ai/search?keyword=${encodeURIComponent(aiSearchKeyword.value)}`)
+      const data = await fallback.json()
+      if (data.success) aiSearchResult.value = data.data
+    }
+  } catch (e) {
+    try {
+      const fallback = await fetch(`/api/ai/search?keyword=${encodeURIComponent(aiSearchKeyword.value)}`)
+      const data = await fallback.json()
+      if (data.success) aiSearchResult.value = data.data
+      else aiSearchResult.value = '搜索失败: ' + (data.message || e.message)
+    } catch { aiSearchResult.value = 'AI 搜索服务暂不可用' }
+  } finally { aiLoading.value = false }
+}
+
+const doAiSummary = async () => {
+  aiLoading.value = true
+  aiSummaryResult.value = ''
+  try {
+    const url = `/api/ai/hot-summary/stream` + (aiSummaryInstruction.value ? `?instruction=${encodeURIComponent(aiSummaryInstruction.value)}` : '')
+    const res = await fetch(url)
+    const reader = res.body.getReader()
+    const decoder = new TextDecoder()
+    let buffer = ''
+    while (true) {
+      const { done, value } = await reader.read()
+      if (done) break
+      buffer += decoder.decode(value, { stream: true })
+      const lines = buffer.split('\n')
+      buffer = lines.pop() || ''
+      for (const line of lines) {
+        if (line.startsWith('data:')) {
+          const token = line.slice(5).trim()
+          if (token === '[DONE]') break
+          aiSummaryResult.value += token
+        }
+      }
+      if (aiSummaryOutput.value) aiSummaryOutput.value.scrollTop = aiSummaryOutput.value.scrollHeight
+    }
+    if (!aiSummaryResult.value) {
+      const fallback = await fetch(`/api/ai/hot-summary` + (aiSummaryInstruction.value ? `?instruction=${encodeURIComponent(aiSummaryInstruction.value)}` : ''))
+      const data = await fallback.json()
+      if (data.success) aiSummaryResult.value = data.data
+    }
+  } catch (e) {
+    try {
+      const fallback = await fetch(`/api/ai/hot-summary` + (aiSummaryInstruction.value ? `?instruction=${encodeURIComponent(aiSummaryInstruction.value)}` : ''))
+      const data = await fallback.json()
+      if (data.success) aiSummaryResult.value = data.data
+      else aiSummaryResult.value = '生成失败: ' + (data.message || e.message)
+    } catch { aiSummaryResult.value = 'AI 热点总结服务暂不可用' }
+  } finally { aiLoading.value = false }
+}
+
+const doAiTranslate = async () => {
+  if (!aiTranslateText.value.trim() || aiLoading.value) return
+  aiLoading.value = true
+  aiTranslateResult.value = ''
+  try {
+    const res = await fetch(`/api/ai/translate?text=${encodeURIComponent(aiTranslateText.value)}`)
+    const data = await res.json()
+    if (data.success) aiTranslateResult.value = data.data
+    else aiTranslateResult.value = '翻译失败: ' + (data.message || '未知错误')
+  } catch { aiTranslateResult.value = 'AI 翻译服务暂不可用' }
+  finally { aiLoading.value = false }
+}
+
+const focusTerminalInput = () => { aiTerminalInput.value?.focus() }
+
+const termLog = (text, type = 'output', html = '') => {
+  aiTerminalLines.value.push({ text, type, html })
+  nextTick(() => { if (aiTerminalRef.value) aiTerminalRef.value.scrollTop = aiTerminalRef.value.scrollHeight })
+}
+
+const execTerminalCmd = async () => {
+  const cmd = aiTerminalCmd.value.trim()
+  if (!cmd) return
+  aiTerminalCmd.value = ''
+  termLog(cmd, 'cmd')
+  const parts = cmd.split(/\s+/)
+  const action = parts[0].toLowerCase()
+  const arg = parts.slice(1).join(' ')
+
+  const cmdMap = {
+    help: 'help', 帮助: 'help',
+    clear: 'clear', 清屏: 'clear', 清除: 'clear',
+    status: 'status', 状态: 'status',
+    stats: 'stats', 统计: 'stats', 数据: 'stats',
+    search: 'search', 搜索: 'search', 查找: 'search', 找: 'search',
+    summary: 'summary', 总结: 'summary', 热点: 'summary', 概要: 'summary',
+    translate: 'translate', 翻译: 'translate', 译: 'translate',
+  }
+  const resolved = cmdMap[action]
+  const finalAction = resolved || 'search'
+  const finalArg = resolved ? arg : cmd
+
+  if (finalAction === 'help') {
+    termLog(`可用命令:
+  search/搜索 &lt;关键词&gt;   - AI 智能搜索新闻
+  summary/总结 [指令]     - 生成热点总结
+  translate/翻译 &lt;文本&gt;  - 智能翻译
+  status/状态              - 查看 AI 服务状态
+  stats/统计               - 查看平台数据统计
+  clear/清屏               - 清屏
+  help/帮助                - 显示帮助
+  
+  💡 直接输入任意文字也可触发 AI 搜索`, 'system')
+  } else if (finalAction === 'clear') {
+    aiTerminalLines.value = []
+  } else if (finalAction === 'status') {
+    termLog('正在检测 AI 服务状态...', 'system')
+    try {
+      const res = await fetch('/api/ai/search?keyword=ping')
+      const data = await res.json()
+      aiOnline.value = data.success
+      termLog(data.success ? '✅ AI 服务在线 | 模型: NVIDIA Llama 3.1 8B Instruct' : '❌ AI 服务异常', data.success ? 'success' : 'error')
+    } catch { aiOnline.value = false; termLog('❌ AI 服务离线', 'error') }
+  } else if (finalAction === 'stats') {
+    try {
+      const res = await fetch('/api/analytics/overview')
+      const data = await res.json()
+      const d = data.data
+      termLog(`📊 平台数据统计:
+  总用户: ${d.totalUsers} | 总新闻: ${d.totalNews} | 今日新增: ${d.todayNews}
+  总浏览: ${d.totalViews} | 总行为: ${d.totalBehaviors} | 阅读记录: ${d.totalReadHistory}`, 'success')
+    } catch { termLog('❌ 获取统计失败', 'error') }
+  } else if (finalAction === 'search') {
+    if (!finalArg) { termLog('用法: search/搜索 <关键词>', 'error'); return }
+    aiLoading.value = true
+    termLog(`🔍 搜索: "${finalArg}" ...`, 'system')
+    try {
+      const res = await fetch(`/api/ai/search?keyword=${encodeURIComponent(finalArg)}`)
+      const data = await res.json()
+      if (data.success) termLog(data.data, 'output')
+      else termLog('❌ ' + (data.message || '搜索失败'), 'error')
+    } catch { termLog('❌ AI 搜索服务不可用', 'error') }
+    finally { aiLoading.value = false }
+  } else if (finalAction === 'summary') {
+    aiLoading.value = true
+    termLog('📋 生成热点总结...', 'system')
+    try {
+      const url = `/api/ai/hot-summary` + (finalArg ? `?instruction=${encodeURIComponent(finalArg)}` : '')
+      const res = await fetch(url)
+      const data = await res.json()
+      if (data.success) termLog(data.data, 'output')
+      else termLog('❌ ' + (data.message || '生成失败'), 'error')
+    } catch { termLog('❌ AI 服务不可用', 'error') }
+    finally { aiLoading.value = false }
+  } else if (finalAction === 'translate') {
+    if (!finalArg) { termLog('用法: translate/翻译 <文本>', 'error'); return }
+    aiLoading.value = true
+    termLog('🌐 翻译中...', 'system')
+    try {
+      const res = await fetch(`/api/ai/translate?text=${encodeURIComponent(finalArg)}`)
+      const data = await res.json()
+      if (data.success) termLog(data.data, 'output')
+      else termLog('❌ ' + (data.message || '翻译失败'), 'error')
+    } catch { termLog('❌ AI 翻译服务不可用', 'error') }
+    finally { aiLoading.value = false }
+  } else {
+    termLog(`未知命令: ${action}，输入 help 查看帮助`, 'error')
+  }
 }
 
 const toast = ref({ show: false, message: '', type: 'success' })
@@ -1064,5 +1392,118 @@ onUnmounted(() => { if (statsInterval) clearInterval(statsInterval); if (timeInt
   .col-title { max-width: 150px; }
   .col-src, .col-time { display: none; }
   .field-row { flex-direction: column; gap: 0; }
+}
+
+.ai-page { height: 100%; }
+.ai-layout { display: flex; height: 100%; max-width: 1440px; margin: 0 auto; }
+
+.ai-sidebar {
+  width: 200px; flex-shrink: 0; background: #0F172A; color: #E2E8F0;
+  display: flex; flex-direction: column; padding: 16px 0;
+}
+.ai-sidebar-title {
+  font-size: 11px; font-weight: 700; color: #64748B; text-transform: uppercase;
+  letter-spacing: 1px; padding: 0 16px; margin-bottom: 12px;
+}
+.ai-fn-btn {
+  display: flex; align-items: center; gap: 10px; width: 100%;
+  padding: 11px 16px; border: none; background: transparent;
+  color: #94A3B8; font-size: 13px; font-weight: 500; cursor: pointer;
+  transition: all 0.15s; text-align: left;
+}
+.ai-fn-btn:hover { background: rgba(47,107,255,0.08); color: #E2E8F0; }
+.ai-fn-btn.active { background: rgba(47,107,255,0.15); color: #2F6BFF; font-weight: 600; }
+.ai-fn-icon { font-size: 15px; }
+.ai-sidebar-footer {
+  margin-top: auto; padding: 12px 16px; display: flex; align-items: center;
+  gap: 8px; font-size: 12px; color: #64748B;
+}
+.ai-status-dot {
+  width: 8px; height: 8px; border-radius: 50%; background: #EF4444; flex-shrink: 0;
+}
+.ai-status-dot.online { background: #10B981; box-shadow: 0 0 8px rgba(16,185,129,0.5); }
+
+.ai-main { flex: 1; display: flex; flex-direction: column; min-width: 0; background: #F8FAFC; }
+
+.ai-panel {
+  flex: 1; display: flex; flex-direction: column; padding: 24px; min-height: 0;
+}
+.ai-panel-head {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 16px; flex-shrink: 0;
+}
+.ai-panel-head h2 { font-size: 16px; font-weight: 700; color: #0F172A; margin: 0; }
+.ai-badge {
+  font-size: 10px; font-weight: 700; color: #7C3AED; background: #F5F3FF;
+  padding: 4px 12px; border-radius: 12px; letter-spacing: 0.3px;
+}
+.ai-clear-btn {
+  padding: 5px 14px; border: 1px solid #E2E8F0; border-radius: 6px;
+  background: #fff; color: #64748B; font-size: 12px; font-weight: 600; cursor: pointer;
+}
+.ai-clear-btn:hover { border-color: #EF4444; color: #EF4444; }
+
+.ai-input-row { display: flex; gap: 10px; margin-bottom: 16px; flex-shrink: 0; }
+.ai-input {
+  flex: 1; padding: 10px 16px; border: 1px solid #E2E8F0; border-radius: 8px;
+  font-size: 13px; outline: none; background: #fff; color: #1E293B;
+}
+.ai-input:focus { border-color: #2F6BFF; box-shadow: 0 0 0 3px rgba(47,107,255,0.1); }
+.ai-go-btn {
+  padding: 10px 24px; background: linear-gradient(135deg, #2F6BFF, #7C3AED);
+  color: #fff; border: none; border-radius: 8px; font-size: 13px;
+  font-weight: 600; cursor: pointer; white-space: nowrap;
+}
+.ai-go-btn:hover { box-shadow: 0 4px 16px rgba(47,107,255,0.3); }
+.ai-go-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.ai-output {
+  flex: 1; background: #fff; border: 1px solid #E2E8F0; border-radius: 12px;
+  padding: 20px; overflow-y: auto; min-height: 200px;
+}
+.ai-markdown { font-size: 13.5px; line-height: 1.8; color: #334155; }
+.ai-markdown h2 { font-size: 16px; color: #0F172A; margin: 16px 0 8px; }
+.ai-markdown h3 { font-size: 15px; color: #0F172A; margin: 14px 0 6px; }
+.ai-markdown h4 { font-size: 14px; color: #1E293B; margin: 12px 0 4px; }
+.ai-markdown strong { color: #0F172A; }
+.ai-markdown li { margin: 4px 0; padding-left: 4px; }
+.ai-placeholder {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  height: 100%; color: #94A3B8;
+}
+.ai-placeholder-icon { font-size: 48px; margin-bottom: 12px; opacity: 0.4; }
+.ai-placeholder p { font-size: 14px; }
+
+.ai-terminal-panel { padding: 16px; }
+.ai-terminal {
+  flex: 1; background: #0D1117; border-radius: 12px; padding: 16px;
+  font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
+  font-size: 13px; line-height: 1.7; overflow-y: auto; min-height: 400px;
+  color: #C9D1D9;
+}
+.term-line { white-space: pre-wrap; word-break: break-word; }
+.term-line.cmd { color: #58A6FF; }
+.term-line.system { color: #8B949E; }
+.term-line.success { color: #3FB950; }
+.term-line.error { color: #F85149; }
+.term-line.output { color: #C9D1D9; }
+.term-prompt { color: #3FB950; font-weight: 700; }
+.term-cursor { animation: blink 1s step-end infinite; color: #58A6FF; }
+.term-input-line { display: flex; align-items: center; margin-top: 4px; }
+.term-input {
+  flex: 1; background: transparent; border: none; color: #C9D1D9;
+  font-family: inherit; font-size: 13px; outline: none; caret-color: #58A6FF;
+}
+.term-input::placeholder { color: #484F58; }
+
+@media (max-width: 900px) {
+  .ai-layout { flex-direction: column; }
+  .ai-sidebar {
+    width: 100%; flex-direction: row; padding: 8px 12px;
+    overflow-x: auto; gap: 4px;
+  }
+  .ai-sidebar-title, .ai-sidebar-footer { display: none; }
+  .ai-fn-btn { padding: 8px 14px; white-space: nowrap; font-size: 12px; }
+  .ai-panel { padding: 16px; }
 }
 </style>

@@ -19,7 +19,6 @@ request.interceptors.response.use(
     if (error.response && error.response.status === 401) {
       localStorage.removeItem('dashboard_token')
       localStorage.removeItem('dashboard_user')
-      window.location.reload()
     }
     return Promise.reject(error)
   }

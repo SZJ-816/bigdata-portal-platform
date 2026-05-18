@@ -33,8 +33,8 @@
         <p class="result-count">找到 {{ processedResults.length }} 条相关新闻</p>
         <div class="result-list">
           <div v-for="item in processedResults" :key="item.id" class="result-item" @click="goNews(item.id)">
-            <h3 class="result-title">{{ item.title }}</h3>
-            <p class="result-summary">{{ item.summary }}</p>
+            <h3 class="result-title" v-html="item.title"></h3>
+            <p class="result-summary" v-html="item.summary"></p>
             <div class="result-meta">
               <span class="channel-tag-sm">{{ item.channelLabel }}</span>
               <span>{{ item.source }}</span>
@@ -97,11 +97,23 @@ const channelLabelMap = CHANNEL_LABEL_MAP
 const processedResults = ref([])
 let searchTimer = null
 
+function highlightKeywords(text, searchKeyword) {
+  if (!searchKeyword || !text) return text
+  const keywords = searchKeyword.trim().split(/\s+/).filter(k => k)
+  if (!keywords.length) return text
+  let result = text
+  keywords.forEach(keyword => {
+    const regex = new RegExp(`(${keyword})`, 'gi')
+    result = result.replace(regex, '<span class="highlight-keyword">$1</span>')
+  })
+  return result
+}
+
 function updateProcessedResults() {
   processedResults.value = results.value.map(item => ({
     ...item,
-    title: cleanText(item.title),
-    summary: cleanText(item.summary),
+    title: highlightKeywords(cleanText(item.title), searchedKeyword.value),
+    summary: highlightKeywords(cleanText(item.summary), searchedKeyword.value),
     channelLabel: channelLabelMap[item.channel] || item.channel
   }))
 }
@@ -455,6 +467,22 @@ watch(() => route.query.q, (newQ) => {
   padding: 1px 8px;
   border-radius: 2px;
   font-size: 11px;
+}
+.highlight-keyword {
+  background-color: #ff9;
+  padding: 0 2px;
+  border-radius: 2px;
+  font-weight: 600;
+}
+@media (prefers-color-scheme: dark) {
+  .highlight-keyword {
+    background-color: #555;
+    color: #ff0;
+  }
+}
+[data-theme="dark"] .highlight-keyword {
+  background-color: #4a4a4a;
+  color: #ffdd00;
 }
 .empty-state {
   text-align: center;

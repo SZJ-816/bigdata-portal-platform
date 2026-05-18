@@ -26,13 +26,6 @@ request.interceptors.response.use(
       localStorage.removeItem('token')
       localStorage.removeItem('userId')
       localStorage.removeItem('username')
-      if (window.location.pathname !== '/login') {
-        if (vueRouterInstance) {
-          vueRouterInstance.push('/login')
-        } else {
-          window.location.href = '/login'
-        }
-      }
     }
     return Promise.reject(error)
   }

@@ -74,7 +74,7 @@ import { useTheme, THEMES, toggleTheme } from '../../composables/useTheme'
 
 const router = useRouter()
 const route = useRoute()
-const navChannels = channels.slice(0, 4)
+const navChannels = channels.slice(0, 6)
 const token = ref(localStorage.getItem('token'))
 const username = ref(localStorage.getItem('username'))
 const menuOpen = ref(false)
@@ -213,15 +213,22 @@ onUnmounted(() => {
 }
 .nav-menu {
   display: flex;
-  gap: 20px;
+  gap: 16px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.nav-menu::-webkit-scrollbar {
+  display: none;
 }
 .nav-menu a {
   color: var(--color-header-text);
-  font-size: 14px;
+  font-size: 13px;
   padding: 4px 0;
   border-bottom: 2px solid transparent;
   transition: all 0.2s;
   text-decoration: none;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 .nav-menu a:hover,
 .nav-menu a.active {
@@ -520,8 +527,9 @@ onUnmounted(() => {
     border-radius: 2px;
   }
   .portal-main {
-    padding: calc(var(--header-height-mobile) + 16px) 8px 16px;
+    padding: calc(var(--header-height-mobile) + 16px) 12px 16px;
     max-width: 100%;
+    overflow-x: hidden;
   }
   @supports (padding-top: env(safe-area-inset-top)) {
     .portal-main {

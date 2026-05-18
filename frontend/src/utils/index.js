@@ -38,6 +38,14 @@ const CHANNEL_ICON_MAP = {
   '硬件': '/images/channel-hardware.svg',
   'startup': '/images/channel-startup.svg',
   '创业': '/images/channel-startup.svg',
+  'security': '/images/channel-ai.svg',
+  '安全': '/images/channel-ai.svg',
+  'blockchain': '/images/channel-bigdata.svg',
+  '区块链': '/images/channel-bigdata.svg',
+  'digital': '/images/channel-hardware.svg',
+  '数码': '/images/channel-hardware.svg',
+  'auto': '/images/channel-cloud.svg',
+  '汽车科技': '/images/channel-cloud.svg',
 }
 
 export function getChannelIcon(channel) {
@@ -58,6 +66,10 @@ export const CHANNEL_LABEL_MAP = {
   '互联网': '互联网',
   '硬件': '硬件',
   '创业': '创业',
+  '安全': '安全',
+  '区块链': '区块链',
+  '数码': '数码',
+  '汽车科技': '汽车科技',
   '人工智能': '人工智能'
 }
 
@@ -85,7 +97,11 @@ export const channels = [
   { name: '云计算', label: '云计算' },
   { name: '互联网', label: '互联网' },
   { name: '硬件', label: '硬件' },
-  { name: '创业', label: '创业' }
+  { name: '创业', label: '创业' },
+  { name: '安全', label: '安全' },
+  { name: '区块链', label: '区块链' },
+  { name: '数码', label: '数码' },
+  { name: '汽车科技', label: '汽车科技' }
 ]
 
 export const hotSearchWords = ['GPT-5', '大模型', 'AI Agent', '云计算', '5G-A', '自动驾驶']

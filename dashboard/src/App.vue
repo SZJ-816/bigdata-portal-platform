@@ -1,29 +1,9 @@
 <template>
-  <Login v-if="!isLoggedIn" @login="onLogin" />
-  <Dashboard v-else @logout="onLogout" />
+  <Dashboard />
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
-import Login from './views/Login.vue'
 import Dashboard from './views/Dashboard.vue'
-
-const isLoggedIn = ref(false)
-
-function onLogin() {
-  isLoggedIn.value = true
-}
-
-function onLogout() {
-  isLoggedIn.value = false
-}
-
-onMounted(() => {
-  const token = localStorage.getItem('dashboard_token')
-  if (token) {
-    isLoggedIn.value = true
-  }
-})
 </script>
 
 <style>

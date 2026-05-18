@@ -137,6 +137,10 @@ services:
         condition: service_started
     networks:
       - bigdata-net
+    dns:
+      - 8.8.8.8
+    extra_hosts:
+      - "integrate.api.nvidia.com:99.83.136.103"
 
   frontend:
     build:

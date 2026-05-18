@@ -59,7 +59,8 @@ public class RssService {
             "GPT", "ChatGPT", "Claude", "Gemini", "OpenAI", "DeepSeek",
             "神经网络", "自然语言", "计算机视觉", "智能体", "Agent",
             "AIGC", "生成式", "文生图", "文生视频", "智能驾驶", "自动驾驶",
-            "机器人", "Chatbot", "对话式", "多模态", "推理模型"
+            "机器人", "Chatbot", "对话式", "多模态", "推理模型",
+            "Midjourney", "Stable Diffusion", "Sora", "Copilot"
         ));
         CHANNEL_KEYWORDS.put("大数据", Arrays.asList(
             "大数据", "数据治理", "数据分析", "数据仓库", "数据湖",
@@ -79,10 +80,19 @@ public class RssService {
         CHANNEL_KEYWORDS.put("互联网", Arrays.asList(
             "互联网", "电商", "社交", "短视频", "直播", "外卖",
             "抖音", "微信", "微博", "小红书", "B站",
-            "O2O", "SaaS", "平台经济", "共享经济", "数字营销",
+            "O2O", "平台经济", "共享经济", "数字营销",
             "流量", "用户增长", "产品经理", "用户体验", "UX",
-            "移动互联网", "App", "小程序", "Web3", "元宇宙",
-            "在线教育", "远程办公", "数字化", "转型"
+            "移动互联网", "App", "小程序", "在线教育", "远程办公",
+            "数字化", "转型", "拼多多", "美团", "京东", "淘宝"
+        ));
+        CHANNEL_KEYWORDS.put("硬件", Arrays.asList(
+            "硬件", "芯片", "半导体", "CPU", "GPU", "处理器",
+            "显卡", "内存", "SSD", "硬盘", "主板",
+            "5G", "通信", "射频", "物联网", "IoT",
+            "传感器", "嵌入式", "PCB", "光刻机", "晶圆",
+            "NVIDIA", "AMD", "Intel", "高通", "联发科", "台积电",
+            "散热", "电源", "机箱", "显示器", "外设",
+            "制程", "纳米工艺", "封装", "代工"
         ));
         CHANNEL_KEYWORDS.put("创业", Arrays.asList(
             "创业", "融资", "投资", "IPO", "上市", "独角兽",
@@ -91,14 +101,33 @@ public class RssService {
             "创始人", "CEO", "商业模式", "盈利", "营收",
             "众筹", "孵化器", "加速器"
         ));
-        CHANNEL_KEYWORDS.put("硬件", Arrays.asList(
-            "硬件", "芯片", "半导体", "CPU", "GPU", "处理器",
+        CHANNEL_KEYWORDS.put("安全", Arrays.asList(
+            "安全", "网络安全", "信息安全", "数据泄露", "黑客",
+            "漏洞", "CVE", "攻击", "勒索软件", "钓鱼",
+            "防火墙", "加密", "零信任", "隐私", "GDPR",
+            "渗透测试", "安全审计", "合规", "等保", "安全防护",
+            "恶意软件", "木马", "后门", "社工", "供应链安全"
+        ));
+        CHANNEL_KEYWORDS.put("区块链", Arrays.asList(
+            "区块链", "比特币", "以太坊", "加密货币", "数字货币",
+            "Web3", "DeFi", "NFT", "智能合约", "代币",
+            "挖矿", "去中心化", "DAO", "链上", "跨链",
+            "稳定币", "钱包", "交易所", "共识机制"
+        ));
+        CHANNEL_KEYWORDS.put("数码", Arrays.asList(
             "手机", "电脑", "笔记本", "平板", "智能手表",
-            "显卡", "内存", "SSD", "硬盘", "主板",
-            "5G", "通信", "射频", "物联网", "IoT",
-            "传感器", "嵌入式", "PCB", "光刻机", "晶圆",
-            "NVIDIA", "AMD", "Intel", "高通", "联发科",
-            "散热", "电源", "机箱", "显示器", "外设"
+            "耳机", "相机", "投影仪", "充电器", "电池",
+            "iPhone", "iPad", "MacBook", "华为手机", "小米手机",
+            "OPPO", "vivo", "三星", "Surface", "Kindle",
+            "无人机", "VR", "AR", "智能音箱", "智能家居",
+            "可穿戴", "数码产品", "消费电子"
+        ));
+        CHANNEL_KEYWORDS.put("汽车科技", Arrays.asList(
+            "汽车", "新能源", "电动车", "电动汽车", "智能汽车",
+            "自动驾驶", "智能驾驶", "辅助驾驶", "车联网",
+            "特斯拉", "比亚迪", "蔚来", "小鹏", "理想",
+            "充电桩", "动力电池", "锂电", "续航", "氢能源",
+            "激光雷达", "车载", "智能座舱", "线控"
         ));
     }
 
@@ -129,8 +158,11 @@ public class RssService {
         for (Map.Entry<String, List<String>> entry : CHANNEL_KEYWORDS.entrySet()) {
             int score = 0;
             for (String keyword : entry.getValue()) {
-                if (text.contains(keyword.toLowerCase())) {
+                String lowerKeyword = keyword.toLowerCase();
+                int idx = 0;
+                while ((idx = text.indexOf(lowerKeyword, idx)) != -1) {
                     score++;
+                    idx += lowerKeyword.length();
                 }
             }
             if (score > 0) {
@@ -139,9 +171,7 @@ public class RssService {
         }
 
         if (scores.isEmpty()) {
-            String[] channels = {"AI", "大数据", "云计算", "互联网", "创业", "硬件"};
-            int index = Math.abs(title.hashCode()) % channels.length;
-            return channels[index];
+            return "互联网";
         }
 
         return scores.entrySet().stream()
@@ -461,6 +491,10 @@ public class RssService {
         CHANNEL_DEFAULT_IMAGES.put("互联网", "/images/channel-internet.svg");
         CHANNEL_DEFAULT_IMAGES.put("硬件", "/images/channel-hardware.svg");
         CHANNEL_DEFAULT_IMAGES.put("创业", "/images/channel-startup.svg");
+        CHANNEL_DEFAULT_IMAGES.put("安全", "/images/channel-ai.svg");
+        CHANNEL_DEFAULT_IMAGES.put("区块链", "/images/channel-bigdata.svg");
+        CHANNEL_DEFAULT_IMAGES.put("数码", "/images/channel-hardware.svg");
+        CHANNEL_DEFAULT_IMAGES.put("汽车科技", "/images/channel-cloud.svg");
     }
 
     private String extractImageUrl(SyndEntry entry, String channel) {
