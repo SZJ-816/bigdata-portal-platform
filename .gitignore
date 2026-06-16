@@ -1,0 +1,32 @@
+# Node
+node_modules/
+dist/
+
+# Gradle
+.gradle/
+build/
+*.ap_
+*.aab
+
+# IDE
+.idea/
+*.iml
+.vscode/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Env
+.env
+*.log
+
+# Docker volumes
+docker/volumes/
+
+# Python
+__pycache__/
+*.pyc
+
+# Output
+dogfood-output/

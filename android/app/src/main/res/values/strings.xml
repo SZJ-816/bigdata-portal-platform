@@ -1,0 +1,49 @@
+<resources>
+    <string name="app_name">智讯</string>
+    <string name="app_subtitle">大数据门户平台</string>
+
+    <!-- Main Activity -->
+    <string name="action_refresh">刷新</string>
+    <string name="action_settings">设置</string>
+    <string name="action_about">关于</string>
+    <string name="press_back_again">再按一次退出</string>
+
+    <!-- Settings -->
+    <string name="settings_title">设置</string>
+    <string name="settings_server_url">服务器地址</string>
+    <string name="settings_server_url_hint">例如：https://xxx.cpolar.cn</string>
+    <string name="settings_frontend_url">前端地址</string>
+    <string name="settings_frontend_url_hint">例如：https://xxx.cpolar.cn</string>
+    <string name="settings_api_url">后端 API 地址</string>
+    <string name="settings_api_url_hint">例如：https://xxx.cpolar.cn</string>
+    <string name="settings_test_connection">测试连接</string>
+    <string name="settings_save">保存配置</string>
+    <string name="settings_advanced">高级选项</string>
+    <string name="settings_allow_http">允许 HTTP 明文通信</string>
+    <string name="settings_allow_http_desc">本地开发环境可能需要</string>
+    <string name="settings_debug_mode">启用调试模式</string>
+    <string name="settings_debug_mode_desc">开启 WebView DevTools 调试</string>
+    <string name="settings_version">当前版本</string>
+    <string name="settings_saved">配置已保存</string>
+    <string name="settings_url_empty">请输入地址</string>
+    <string name="settings_url_invalid">地址格式不正确，需以 http:// 或 https:// 开头</string>
+
+    <!-- Connection Test -->
+    <string name="testing_connection">正在测试连接…</string>
+    <string name="connection_success">连接成功</string>
+    <string name="connection_failed">连接失败：%1$s</string>
+    <string name="connection_timeout">连接超时</string>
+
+    <!-- Error -->
+    <string name="error_title">页面加载失败</string>
+    <string name="error_network">网络不可用，请检查网络连接</string>
+    <string name="error_server">无法连接到服务器，请检查地址配置</string>
+    <string name="error_timeout">加载超时，请稍后重试</string>
+    <string name="error_generic">发生错误，请稍后重试</string>
+    <string name="error_retry">重试</string>
+    <string name="error_go_settings">检查设置</string>
+
+    <!-- About -->
+    <string name="about_title">关于</string>
+    <string name="about_desc">智讯 - 大数据实时科技资讯聚合平台\n实时追踪 AI、云计算、大数据等前沿科技动态</string>
+</resources>

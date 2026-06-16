@@ -1,0 +1,95 @@
+# ========================================
+# 智讯科技资讯聚合平台 - 后台管理系统配置
+# ========================================
+
+server:
+  port: 8080
+  servlet:
+    context-path: /
+
+spring:
+  application:
+    name: portal-admin
+
+  # MySQL数据源配置
+  datasource:
+    url: jdbc:mysql://localhost:3306/bigdata_portal?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
+    username: root
+    password: root
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    hikari:
+      minimum-idle: 5
+      maximum-pool-size: 20
+      idle-timeout: 30000
+      max-lifetime: 1800000
+      connection-timeout: 30000
+
+  # ClickHouse数据源配置
+  clickhouse:
+    url: jdbc:clickhouse://localhost:8123/bigdata_analytics
+    username: default
+    password:
+    driver-class-name: com.clickhouse.jdbc.ClickHouseDriver
+
+  # Kafka配置
+  kafka:
+    bootstrap-servers: localhost:9092
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+      acks: all
+    consumer:
+      group-id: portal-admin-group
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      auto-offset-reset: earliest
+
+  # 邮件配置
+  mail:
+    host: smtp.qq.com
+    port: 587
+    username: your-email@qq.com
+    password: your-smtp-authorization-code
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+            required: true
+          timeout: 5000
+          connectiontimeout: 5000
+
+  # Jackson配置
+  jackson:
+    date-format: yyyy-MM-dd HH:mm:ss
+    time-zone: Asia/Shanghai
+    serialization:
+      write-dates-as-timestamps: false
+
+# MyBatis配置
+mybatis:
+  configuration:
+    map-underscore-to-camel-case: true
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+  type-aliases-package: com.bigdata.portal.**.entity
+
+# JWT配置
+jwt:
+  secret: zhixun-bigdata-portal-secret-key-2024
+  expiration: 86400000
+
+# NVIDIA API配置
+nvidia:
+  api:
+    key: your-nvidia-api-key
+    url: https://integrate.api.nvidia.com/v1/chat/completions
+    model: nvidia/llama-3.1-nemotron-70b-instruct
+
+# 日志配置
+logging:
+  level:
+    com.bigdata.portal: debug
+    org.springframework.security: info
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"

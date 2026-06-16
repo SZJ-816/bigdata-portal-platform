@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="Theme.ZhixunPortal" parent="Theme.Material3.Light.NoActionBar">
+        <item name="colorPrimary">@color/navy_900</item>
+        <item name="colorPrimaryVariant">@color/navy_800</item>
+        <item name="colorOnPrimary">@color/white</item>
+        <item name="colorSecondary">@color/accent</item>
+        <item name="colorSecondaryVariant">@color/accent_dark</item>
+        <item name="colorOnSecondary">@color/white</item>
+        <item name="android:statusBarColor">@color/navy_900</item>
+        <item name="android:navigationBarColor">@color/white</item>
+        <item name="android:windowLightNavigationBar">true</item>
+        <item name="android:windowBackground">@color/bg_light</item>
+    </style>
+
+    <style name="Theme.ZhixunPortal.Splash" parent="Theme.SplashScreen">
+        <item name="windowSplashScreenBackground">@color/splash_bg</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_launcher_foreground</item>
+        <item name="windowSplashScreenIconBackgroundColor">@color/splash_bg</item>
+        <item name="postSplashScreenTheme">@style/Theme.ZhixunPortal</item>
+    </style>
+
+    <style name="Theme.ZhixunPortal.Settings" parent="Theme.ZhixunPortal">
+        <item name="android:statusBarColor">@color/navy_900</item>
+    </style>
+
+    <!-- Button styles -->
+    <style name="Widget.ZhixunPortal.Button.Primary" parent="Widget.Material3.Button">
+        <item name="backgroundTint">@color/navy_900</item>
+        <item name="android:textColor">@color/white</item>
+    </style>
+
+    <style name="Widget.ZhixunPortal.Button.Secondary" parent="Widget.Material3.Button.OutlinedButton">
+        <item name="strokeColor">@color/navy_900</item>
+        <item name="android:textColor">@color/navy_900</item>
+    </style>
+
+    <!-- TextInput styles -->
+    <style name="Widget.ZhixunPortal.TextInputLayout" parent="Widget.Material3.TextInputLayout.OutlinedBox">
+        <item name="boxStrokeColor">@color/navy_900</item>
+        <item name="hintTextColor">@color/navy_900</item>
+    </style>
+
+    <!-- Toolbar title - compact -->
+    <style name="TextAppearance.ZhixunPortal.ToolbarTitle" parent="TextAppearance.Material3.TitleMedium">
+        <item name="android:textSize">15sp</item>
+        <item name="android:textStyle">bold</item>
+    </style>
+</resources>
