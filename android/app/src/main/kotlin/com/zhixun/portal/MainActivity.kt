@@ -43,7 +43,8 @@ class MainActivity : AppCompatActivity() {
         prefsManager = PrefsManager(this)
         networkUtil = NetworkUtil(this)
 
-        setupToolbar()
+        // Toolbar hidden — web page has its own header
+        // setupToolbar()
         setupWebView()
         setupSwipeRefresh()
         setupErrorOverlay()
