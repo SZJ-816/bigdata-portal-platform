@@ -4,19 +4,100 @@
     android:height="108dp"
     android:viewportWidth="200"
     android:viewportHeight="200">
-    <!-- Background rounded rect -->
+
+    <!-- A 左腿 -->
     <path
-        android:fillColor="#253A57"
-        android:pathData="M30,30h140v140h-140z"
-        android:strokeWidth="0" />
+        android:fillColor="#00000000"
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="12"
+        android:strokeLineCap="round"
+        android:pathData="M100,50 L48,175" />
+
+    <!-- A 右腿 -->
     <path
-        android:fillColor="#253A57"
-        android:pathData="M30,58 C30,42.536 42.536,30 58,30 L142,30 C157.464,30 170,42.536 170,58 L170,142 C170,157.464 157.464,170 142,170 L58,170 C42.536,170 30,157.464 30,142 Z" />
-    <!-- ZX text -->
+        android:fillColor="#00000000"
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="12"
+        android:strokeLineCap="round"
+        android:pathData="M100,50 L152,175" />
+
+    <!-- 电波1 左 -->
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="7"
+        android:strokeLineCap="round"
+        android:pathData="M100,90 Q84,82 72,90" />
+    <!-- 电波1 右 -->
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="7"
+        android:strokeLineCap="round"
+        android:pathData="M100,90 Q116,82 128,90" />
+
+    <!-- 电波2 左 -->
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="7"
+        android:strokeLineCap="round"
+        android:pathData="M100,103 Q80,93 66,103" />
+    <!-- 电波2 右 -->
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="7"
+        android:strokeLineCap="round"
+        android:pathData="M100,103 Q120,93 134,103" />
+
+    <!-- 电波3 左 -->
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="7"
+        android:strokeLineCap="round"
+        android:pathData="M100,116 Q76,106 60,116" />
+    <!-- 电波3 右 -->
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="7"
+        android:strokeLineCap="round"
+        android:pathData="M100,116 Q124,106 140,116" />
+
+    <!-- 电波4 左 -->
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="7"
+        android:strokeLineCap="round"
+        android:pathData="M100,129 Q72,119 55,129" />
+    <!-- 电波4 右 -->
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="7"
+        android:strokeLineCap="round"
+        android:pathData="M100,129 Q128,119 145,129" />
+
+    <!-- 电波5 左 -->
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="7"
+        android:strokeLineCap="round"
+        android:pathData="M100,142 Q68,132 52,142" />
+    <!-- 电波5 右 -->
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="7"
+        android:strokeLineCap="round"
+        android:pathData="M100,142 Q132,132 148,142" />
+
+    <!-- 中心发射点 -->
     <path
         android:fillColor="#FFFFFF"
-        android:pathData="M62,75 L98,75 L98,83 L74,117 L98,117 L98,125 L62,125 L62,117 L86,83 L62,83 Z" />
-    <path
-        android:fillColor="#FFFFFF"
-        android:pathData="M104,75 L114,75 L128,99 L142,75 L152,75 L133,106 L152,125 L142,125 L128,111 L114,125 L104,125 L123,106 Z" />
+        android:pathData="M100,90 m-5,0 a5,5 0 1,0 10,0 a5,5 0 1,0 -10,0" />
 </vector>

@@ -3,7 +3,7 @@
     <header class="top-bar">
       <div class="bar-inner">
         <div class="brand">
-          <span class="brand-icon"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><polygon points="12,2 22,8.5 22,15.5 12,22 2,15.5 2,8.5"/></svg></span>
+          <span class="brand-icon"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="6" y2="21"/><line x1="12" y1="5" x2="18" y2="21"/><path d="M8,12 C8,10 10,9.5 12,11 C14,12.5 16,12 16,12"/><path d="M8,15 C8,13 10,12.5 12,14 C14,15.5 16,15 16,15"/><path d="M8,18 C8,16 10,15.5 12,17 C14,18.5 16,18 16,18"/></svg></span>
           <span class="brand-name">ZHIXUN 智讯</span>
           <span class="brand-sub">数据管理平台</span>
         </div>

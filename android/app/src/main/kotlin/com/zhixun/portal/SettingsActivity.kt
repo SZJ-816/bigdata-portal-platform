@@ -154,7 +154,26 @@ class SettingsActivity : AppCompatActivity() {
     }
 
     private fun isValidUrl(url: String): Boolean {
-        return url.startsWith("http://") || url.startsWith("https://")
+        if (url.isBlank()) return false
+        if (!url.startsWith("http://") && !url.startsWith("https://")) {
+            return false
+        }
+        // 提取主机名
+        val host = try {
+            java.net.URI(url).host ?: return false
+        } catch (e: Exception) {
+            return false
+        }
+        // 白名单检查
+        val allowedHosts = listOf(
+            "localhost",
+            "127.0.0.1",
+            "10.0.2.2",
+            "1cf76849.r7.cpolar.cn"
+        )
+        return allowedHosts.any { allowed ->
+            host == allowed || host.endsWith(".cpolar.top") || host.endsWith(".cpolar.cn")
+        }
     }
 
     @Deprecated("Deprecated in Java")
