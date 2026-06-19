@@ -19,9 +19,12 @@ from pathlib import Path
 SERVER_IP = "192.168.146.128"
 SERVER_USER = "root"
 SERVER_PORT = 22
-CPOLAR_URL = "https://45c3c69c.r7.cpolar.cn"
+# cpolar URL 默认值（健康的检测脚本会自动从 VM 读取最新值）
+CPOLAR_URL = "https://58b3dc92.r7.cpolar.cn"
+DASHBOARD_CPOLAR_URL = "https://201248e4.r7.cpolar.cn"
 API_PORT = 8090
 FRONTEND_PORT = 80
+DASHBOARD_PORT = 3000
 REPORT_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "reports")
 
 # ============== 工具函数 ==============
@@ -237,6 +240,14 @@ def check_cpolar_tunnels(result):
         result.add("Cpolar API隧道", "WARN", f"HTTP {code}",
                    "检查后端是否正常运行")
 
+    # 检查 Dashboard 隧道
+    code, body = http_get(DASHBOARD_CPOLAR_URL, timeout=10)
+    if code == 200:
+        result.add("Cpolar Dashboard隧道", "PASS", f"{DASHBOARD_CPOLAR_URL} HTTP 200")
+    else:
+        result.add("Cpolar Dashboard隧道", "FAIL", f"HTTP {code}",
+                   "检查cpolar dashboard隧道: 端口3000")
+
 def check_frontend_assets(result):
     """检查前端JS文件（无element-plus残留）"""
     ok, out, err = run_ssh("docker exec bigdata-frontend grep -c 'getThemeColors\\|element-plus' /usr/share/nginx/html/assets/js/*.js 2>/dev/null || echo 'CLEAN'")
@@ -251,7 +262,7 @@ def check_frontend_assets(result):
 # ============== Dogfood 用户模拟测试 ==============
 DOGFOOD_URLS = {
     "frontend": CPOLAR_URL,
-    "dashboard": "https://79a01e6b.r7.cpolar.cn",
+    "dashboard": DASHBOARD_CPOLAR_URL,
 }
 
 # ============== 常见问题专项检测 ==============
@@ -361,24 +372,40 @@ def check_common_issue_channel_chart(result):
 
 def check_common_issue_navigation_link(result):
     """常见问题4: 前端"数据大屏"跳转链接是否正确"""
-    # Use a script on the VM to avoid shell escaping issues
-    check_cmd = 'echo "CHECK_NAV_START"; docker exec bigdata-frontend sh -c "grep -o \\\"window.open([^)]*)\\\" /usr/share/nginx/html/assets/js/PortalLayout-ClD55das.js" 2>/dev/null || echo "NOT_FOUND"; echo "CHECK_NAV_END"'
+    # 检查 config.js 中的 DASHBOARD_URL
+    check_cmd = 'echo "CHECK_NAV_START"; docker exec bigdata-frontend cat /usr/share/nginx/html/config.js 2>/dev/null || echo "NO_CONFIG"; echo "CHECK_NAV_END"'
     ok, out, err = run_ssh(check_cmd)
     if not ok:
         result.add("【常见问题】大屏跳转链接", "FAIL", f"SSH失败: {err}",
                    "检查服务器连接")
         return
-    if "79a01e6b.r7.cpolar.cn" in out:
-        result.add("【常见问题】大屏跳转链接", "PASS",
-                   "使用window.open打开独立Dashboard URL，跳转正确")
-    elif "window.open" in out:
-        result.add("【常见问题】大屏跳转链接", "WARN",
-                   "检测到window.open但非cpolar URL",
-                   "检查PortalLayout.vue中goDashboard实现")
-    elif "NOT_FOUND" in out:
+    if "DASHBOARD_URL" in out and "cpolar" in out:
+        # Extract the URL from config.js
+        import re
+        match = re.search(r"DASHBOARD_URL\s*=\s*['\"]([^'\"]+)", out)
+        if match:
+            url = match.group(1)
+            result.add("【常见问题】大屏跳转链接", "PASS",
+                       f"config.js配置正确: {url}")
+        else:
+            result.add("【常见问题】大屏跳转链接", "WARN",
+                       "config.js存在但无法解析URL",
+                       "检查frontend/public/config.js")
+    elif "DASHBOARD_URL" in out:
         result.add("【常见问题】大屏跳转链接", "FAIL",
-                   "前端JS中未找到window.open跳转",
-                   "检查PortalLayout.vue是否包含数据大屏导航")
+                   "DASHBOARD_URL未配置为cpolar地址",
+                   "更新frontend/public/config.js")
+    elif "NO_CONFIG" in out:
+        # Fallback: check if PortalLayout.js has window.open
+        ok2, out2, err2 = run_ssh("docker exec bigdata-frontend sh -c \"grep -o 'window.open.*cpolar[^\\\"'']*' /usr/share/nginx/html/assets/js/PortalLayout-*.js 2>/dev/null | head -1\"")
+        if ok2 and "cpolar" in out2:
+            result.add("【常见问题】大屏跳转链接", "WARN",
+                       "使用JS硬编码URL(无config.js)，建议升级为config.js方式",
+                       "创建frontend/public/config.js")
+        else:
+            result.add("【常见问题】大屏跳转链接", "WARN",
+                       "config.js和JS中均未找到DASHBOARD_URL",
+                       "检查PortalLayout.vue中goDashboard实现")
     else:
         result.add("【常见问题】大屏跳转链接", "WARN",
                    f"无法解析检测结果: {out[:100]}",

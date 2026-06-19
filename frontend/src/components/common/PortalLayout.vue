@@ -105,7 +105,8 @@ function goLogin() {
 }
 
 function goDashboard() {
-  window.open('https://79a01e6b.r7.cpolar.cn', '_blank')
+  const url = window.DASHBOARD_URL || 'https://201248e4.r7.cpolar.cn'
+  window.open(url, '_blank')
 }
 
 function handleToggleTheme() {

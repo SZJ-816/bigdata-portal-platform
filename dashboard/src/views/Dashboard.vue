@@ -543,7 +543,10 @@ const formatDate = (d) => {
   return new Date(d).toLocaleString('zh-CN', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })
 }
 
+let realtimeLoading = false
 const updateRealtimeStats = async () => {
+  if (realtimeLoading) return
+  realtimeLoading = true
   try {
     const res = await analyticsApi.getRealtimeStats(timeRange.value)
     const d = res.data || res
@@ -559,6 +562,7 @@ const updateRealtimeStats = async () => {
       { label: '总浏览量', value: formatNumber(d.totalViews), color: '#F97316' }
     ]
   } catch (e) { console.error(e) }
+  finally { realtimeLoading = false }
 }
 
 const chartFontFamily = "'Noto Sans SC', 'Microsoft YaHei', 'PingFang SC', 'Hiragino Sans GB', 'WenQuanYi Micro Hei', sans-serif"
@@ -731,7 +735,7 @@ const loadOverviewData = async () => {
 }
 
 let statsInterval = null, timeInterval = null
-const initCharts = async () => { await nextTick(); initTrendChart(); initHotNewsChart(); initChannelChart(); initFunnelChart(); initRegionChart() }
+const initCharts = async () => { await nextTick(); await initTrendChart(); await initHotNewsChart(); await initChannelChart(); await initFunnelChart(); await initRegionChart() }
 watch(activeTab, async (val) => { if (val === 'overview') { await nextTick(); initCharts() } })
 watch(timeRange, () => {
   loadOverviewData()
