@@ -2,13 +2,9 @@
   <div class="dashboard">
     <header class="top-bar">
       <div class="bar-inner">
-        <div class="brand">
-          <svg class="brand-icon" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
-            <rect x="30" y="30" width="140" height="140" rx="28" fill="#253A57"/>
-            <text x="100" y="118" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', Arial, sans-serif" font-size="72" font-weight="800" fill="#FFFFFF">ZX</text>
-          </svg>
-          <span class="brand-name">BigData Portal</span>
-          <span class="brand-sub">数据管理平台</span>
+        <div class="brand" @click="goHome" style="cursor:pointer">
+          <span class="brand-name">智讯</span>
+          <span class="brand-sub">科技新闻数据大屏</span>
         </div>
         <nav class="main-nav">
           <button :class="['nav-link', { active: activeTab === 'overview' }]" @click="switchTab('overview')">
@@ -582,6 +578,12 @@ const initTrendChart = async () => {
   try {
     const res = await analyticsApi.getTrend(timeRange.value)
     const data = res.data || res
+    if (!Array.isArray(data) || data.length === 0) {
+      trendChart.setOption({
+        title: { text: '暂无数据', left: 'center', top: 'center', textStyle: { color: '#94a3b8', fontSize: 14, fontFamily: chartTheme.fontFamily } }
+      })
+      return
+    }
     trendChart.setOption({
       backgroundColor: 'transparent',
       tooltip: { trigger: 'axis', backgroundColor: chartTheme.tipBg, borderColor: '#334155', textStyle: { color: chartTheme.tipText, fontSize: 12, fontFamily: chartTheme.fontFamily } },
@@ -604,6 +606,12 @@ const initHotNewsChart = async () => {
   try {
     const res = await analyticsApi.getHotNews(timeRange.value)
     const data = res.data || res
+    if (!Array.isArray(data) || data.length === 0) {
+      hotNewsChart.setOption({
+        title: { text: '暂无数据', left: 'center', top: 'center', textStyle: { color: '#94a3b8', fontSize: 14, fontFamily: chartTheme.fontFamily } }
+      })
+      return
+    }
     hotNewsChart.setOption({
       backgroundColor: 'transparent',
       tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' }, backgroundColor: chartTheme.tipBg, borderColor: '#334155', textStyle: { color: chartTheme.tipText, fontSize: 12, fontFamily: chartTheme.fontFamily } },
@@ -621,7 +629,28 @@ const initChannelChart = async () => {
   channelChart = echarts.init(channelChartRef.value)
   try {
     const res = await analyticsApi.getChannelDist(timeRange.value)
-    const data = res.data || res
+    let data = res.data || res
+    if (!Array.isArray(data)) data = []
+    // Fallback: fetch news from MySQL and count by channel
+    if (data.length === 0) {
+      try {
+        const newsRes = await fetch('/api/news?page=1&size=500')
+        const newsJson = await newsRes.json()
+        const records = newsJson?.data?.records || newsJson?.data || []
+        const channelMap = {}
+        records.forEach(item => {
+          const ch = item.channel || '其他'
+          channelMap[ch] = (channelMap[ch] || 0) + 1
+        })
+        data = Object.entries(channelMap).map(([name, value]) => ({ name, value }))
+      } catch (e) { /* ignore */ }
+    }
+    if (data.length === 0) {
+      channelChart.setOption({
+        title: { text: '暂无数据', left: 'center', top: 'center', textStyle: { color: '#94a3b8', fontSize: 14, fontFamily: chartTheme.fontFamily } }
+      })
+      return
+    }
     const colors = ['#2F6BFF', '#7C3AED', '#10B981', '#F59E0B', '#EF4444', '#EC4899', '#06B6D4', '#8B5CF6']
     channelChart.setOption({
       backgroundColor: 'transparent',
@@ -639,6 +668,12 @@ const initFunnelChart = async () => {
   try {
     const res = await analyticsApi.getFunnel(timeRange.value)
     const data = res.data || res
+    if (!Array.isArray(data) || data.length === 0) {
+      funnelChart.setOption({
+        title: { text: '暂无数据', left: 'center', top: 'center', textStyle: { color: '#94a3b8', fontSize: 14, fontFamily: chartTheme.fontFamily } }
+      })
+      return
+    }
     const colors = ['#2F6BFF', '#7C3AED', '#10B981', '#F59E0B', '#EF4444', '#EC4899']
     funnelChart.setOption({
       backgroundColor: 'transparent',
@@ -655,6 +690,12 @@ const initRegionChart = async () => {
   try {
     const res = await analyticsApi.getRegionDist(timeRange.value)
     const data = res.data || res
+    if (!Array.isArray(data) || data.length === 0) {
+      regionChart.setOption({
+        title: { text: '暂无数据', left: 'center', top: 'center', textStyle: { color: '#94a3b8', fontSize: 14, fontFamily: chartTheme.fontFamily } }
+      })
+      return
+    }
     regionChart.setOption({
       backgroundColor: 'transparent',
       tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' }, backgroundColor: chartTheme.tipBg, borderColor: '#334155', textStyle: { color: chartTheme.tipText, fontSize: 12, fontFamily: chartTheme.fontFamily } },
@@ -743,7 +784,7 @@ const goHome = () => {
 .brand {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
   flex-shrink: 0;
 }
 
@@ -753,17 +794,17 @@ const goHome = () => {
 }
 
 .brand-name {
-  font-size: 17px;
-  font-weight: 700;
+  font-size: 20px;
+  font-weight: 800;
   color: #0F172A;
-  letter-spacing: -0.3px;
+  letter-spacing: 1px;
 }
 
 .brand-sub {
   font-size: 11px;
-  color: #94A3B8;
+  color: #64748B;
   background: #F1F5F9;
-  padding: 2px 8px;
+  padding: 3px 10px;
   border-radius: 10px;
   font-weight: 500;
 }

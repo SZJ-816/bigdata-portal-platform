@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <title>项目健康检测报告 - 20260618_222704</title>
+    <style>
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body { font-family: 'Microsoft YaHei', sans-serif; background: #f5f5f5; padding: 20px; color: #333; }
+        .container { max-width: 900px; margin: 0 auto; }
+        .header { background: linear-gradient(135deg, #1A2A4A, #2D4A7A); color: white; padding: 30px; border-radius: 8px 8px 0 0; }
+        .header h1 { font-size: 24px; margin-bottom: 8px; }
+        .header .time { opacity: 0.8; font-size: 14px; }
+        .summary { background: white; padding: 20px 30px; border-bottom: 1px solid #eee; display: flex; gap: 30px; }
+        .summary-item { text-align: center; }
+        .summary-item .num { font-size: 36px; font-weight: bold; }
+        .summary-item .label { font-size: 13px; color: #666; }
+        .overall { background: #F44336; color: white; padding: 12px 30px; text-align: center; font-size: 18px; font-weight: bold; }
+        table { width: 100%; background: white; border-collapse: collapse; }
+        th { background: #f0f0f0; padding: 12px; text-align: left; font-size: 13px; color: #666; border-bottom: 2px solid #ddd; }
+        td { padding: 12px; border-bottom: 1px solid #eee; font-size: 14px; }
+        tr:hover { background: #fafafa; }
+        .footer { text-align: center; padding: 20px; color: #999; font-size: 12px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔍 项目健康检测报告</h1>
+            <div class="time">生成时间: 20260618_222704</div>
+        </div>
+        <div class="overall">
+            综合状态: 异常
+        </div>
+        <div class="summary">
+            <div class="summary-item">
+                <div class="num" style="color:#4CAF50">1</div>
+                <div class="label">✅ 通过</div>
+            </div>
+            <div class="summary-item">
+                <div class="num" style="color:#F44336">7</div>
+                <div class="label">❌ 失败</div>
+            </div>
+            <div class="summary-item">
+                <div class="num" style="color:#FF9800">1</div>
+                <div class="label">⚠️ 警告</div>
+            </div>
+        </div>
+        <table>
+            <thead>
+                <tr>
+                    <th style="width:80px">状态</th>
+                    <th style="width:180px">检测项</th>
+                    <th>详情</th>
+                    <th style="width:200px">修复建议</th>
+                </tr>
+            </thead>
+            <tbody>
+                
+        <tr>
+            <td style="color:#F44336; font-weight:bold">❌ FAIL</td>
+            <td>服务器SSH连接</td>
+            <td>服务器 192.168.146.128 完全不可达</td>
+            <td style="color:#666; font-size:13px">请检查VMware虚拟机是否运行，网络是否正常</td>
+        </tr>
+        <tr>
+            <td style="color:#F44336; font-weight:bold">❌ FAIL</td>
+            <td>Docker容器</td>
+            <td>SSH执行失败: Command '['ssh', '-o', 'StrictHostKeyChecking=no', '-o', 'ConnectTimeout=15', 'root@192.168.146.128', "docker ps -a --format '{{.Names}}|{{.Status}}|{{.Ports}}'"]' timed out after 15 seconds</td>
+            <td style="color:#666; font-size:13px">检查服务器Docker服务</td>
+        </tr>
+        <tr>
+            <td style="color:#F44336; font-weight:bold">❌ FAIL</td>
+            <td>后端API</td>
+            <td>无法访问 (cpolar: 404)</td>
+            <td style="color:#666; font-size:13px">检查服务器网络和容器状态</td>
+        </tr>
+        <tr>
+            <td style="color:#F44336; font-weight:bold">❌ FAIL</td>
+            <td>前端服务</td>
+            <td>连接失败: <urlopen error timed out> (http://192.168.146.128:80)</td>
+            <td style="color:#666; font-size:13px">检查服务是否启动</td>
+        </tr>
+        <tr>
+            <td style="color:#F44336; font-weight:bold">❌ FAIL</td>
+            <td>前端Dashboard</td>
+            <td>连接失败: <urlopen error timed out> (http://192.168.146.128:80/dashboard)</td>
+            <td style="color:#666; font-size:13px">检查服务是否启动</td>
+        </tr>
+        <tr>
+            <td style="color:#F44336; font-weight:bold">❌ FAIL</td>
+            <td>Cpolar前端隧道</td>
+            <td>HTTP 404</td>
+            <td style="color:#666; font-size:13px">检查服务器cpolar: systemctl restart cpolar</td>
+        </tr>
+        <tr>
+            <td style="color:#FF9800; font-weight:bold">⚠️ WARN</td>
+            <td>Cpolar API隧道</td>
+            <td>HTTP 404</td>
+            <td style="color:#666; font-size:13px">检查后端是否正常运行</td>
+        </tr>
+        <tr>
+            <td style="color:#4CAF50; font-weight:bold">✅ PASS</td>
+            <td>APK文件</td>
+            <td>存在, 6.1MB, 构建于 2026-06-18 22:23</td>
+            <td style="color:#666; font-size:13px"></td>
+        </tr>
+        <tr>
+            <td style="color:#F44336; font-weight:bold">❌ FAIL</td>
+            <td>前端新闻详情页(SPA)</td>
+            <td>连接失败: <urlopen error timed out> (http://192.168.146.128:80/news/1)</td>
+            <td style="color:#666; font-size:13px">检查服务是否启动</td>
+        </tr>
+            </tbody>
+        </table>
+        <div class="footer">
+            智讯大数据门户平台 · 自动检测报告 · 20260618_222704
+        </div>
+    </div>
+</body>
+</html>

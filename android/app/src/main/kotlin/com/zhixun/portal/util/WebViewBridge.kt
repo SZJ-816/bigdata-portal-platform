@@ -15,8 +15,9 @@ class WebViewBridge(
             "localhost",
             "127.0.0.1",
             "10.0.2.2",  // Android 模拟器访问宿主机
-            "1cf76849.r7.cpolar.cn",  // 默认 cpolar 域名
-            ".cpolar.top"  // 允许所有 cpolar 子域名
+            "45c3c69c.r7.cpolar.cn",  // 默认 cpolar 域名
+            ".cpolar.top",  // 允许所有 cpolar top 子域名
+            ".cpolar.cn"    // 允许所有 cpolar cn 子域名
         )
     }
 
@@ -77,6 +78,9 @@ class WebViewBridge(
         val escapedUrl = serverUrl
             .replace("\\", "\\\\")
             .replace("'", "\\'")
+            .replace("<", "\\x3c")
+            .replace(">", "\\x3e")
+            .replace("/", "\\/")
         val script = """
             (function() {
                 try {

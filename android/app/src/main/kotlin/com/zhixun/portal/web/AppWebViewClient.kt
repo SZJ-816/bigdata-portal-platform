@@ -4,6 +4,7 @@ import android.graphics.Bitmap
 import android.net.http.SslError
 import android.view.View
 import android.webkit.*
+import com.zhixun.portal.BuildConfig
 import com.zhixun.portal.util.WebViewBridge
 
 class AppWebViewClient(
@@ -52,14 +53,23 @@ class AppWebViewClient(
         }
     }
 
+    /**
+     * SSL 证书错误处理：
+     * - Debug 模式：允许自签名证书（开发环境）
+     * - Release 模式：拒绝所有 SSL 错误（生产安全）
+     */
     override fun onReceivedSslError(
         view: WebView?,
         handler: SslErrorHandler?,
         error: SslError?
     ) {
-        // For development: proceed with SSL errors
-        // In production, this should be more restrictive
-        handler?.proceed()
+        if (BuildConfig.DEBUG) {
+            // 开发环境允许自签名证书
+            handler?.proceed()
+        } else {
+            // 生产环境拒绝 SSL 错误
+            super.onReceivedSslError(view, handler, error)
+        }
     }
 
     override fun shouldOverrideUrlLoading(view: WebView?, request: WebResourceRequest?): Boolean {

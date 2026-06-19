@@ -1,4 +1,4 @@
-const SW_VERSION = 'v2'
+const SW_VERSION = 'v3'
 const CACHE_STATIC = `static-${SW_VERSION}`
 const CACHE_API = `api-${SW_VERSION}`
 const CACHE_IMAGE = `image-${SW_VERSION}`

@@ -6,15 +6,13 @@
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
 
     <application
-        android:allowBackup="true"
+        android:allowBackup="false"
         android:icon="@mipmap/ic_launcher"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:label="@string/app_name"
         android:theme="@style/Theme.ZhixunPortal"
         android:networkSecurityConfig="@xml/network_security_config"
-        android:usesCleartextTraffic="true"
         android:dataExtractionRules="@xml/backup_rules"
-        android:fullBackupContent="true"
         tools:targetApi="31">
 
         <!-- Splash Screen (Launcher) -->
@@ -40,7 +38,7 @@
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
                 <data android:scheme="https"
-                    android:host="1cf76849.r7.cpolar.cn" />
+                    android:host="45c3c69c.r7.cpolar.cn" />
             </intent-filter>
         </activity>
 

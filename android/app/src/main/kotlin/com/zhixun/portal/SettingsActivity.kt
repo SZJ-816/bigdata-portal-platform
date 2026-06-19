@@ -4,6 +4,7 @@ import android.content.Intent
 import android.os.Bundle
 import android.view.View
 import android.widget.Toast
+import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import com.zhixun.portal.databinding.ActivitySettingsBinding
@@ -33,10 +34,23 @@ class SettingsActivity : AppCompatActivity() {
 
         setupFields()
         setupButtons()
+        setupBackPressHandler()
 
         if (isFirstLaunch) {
             binding.cardFirstLaunch.visibility = View.VISIBLE
         }
+    }
+
+    private fun setupBackPressHandler() {
+        onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                if (isFirstLaunch) {
+                    Toast.makeText(this@SettingsActivity, R.string.settings_first_launch_block, Toast.LENGTH_SHORT).show()
+                } else {
+                    finish()
+                }
+            }
+        })
     }
 
     private fun setupFields() {
@@ -56,9 +70,9 @@ class SettingsActivity : AppCompatActivity() {
             val isExpanded = binding.layoutAdvanced.visibility == View.VISIBLE
             binding.layoutAdvanced.visibility = if (isExpanded) View.GONE else View.VISIBLE
             binding.tvAdvancedToggle.text = if (isExpanded)
-                "▸ 高级设置（分开配置前后端地址）"
+                getString(R.string.settings_advanced_expand)
             else
-                "▾ 高级设置（分开配置前后端地址）"
+                getString(R.string.settings_advanced_collapse)
         }
     }
 
@@ -169,20 +183,11 @@ class SettingsActivity : AppCompatActivity() {
             "localhost",
             "127.0.0.1",
             "10.0.2.2",
-            "1cf76849.r7.cpolar.cn"
+            "45c3c69c.r7.cpolar.cn"
         )
         return allowedHosts.any { allowed ->
             host == allowed || host.endsWith(".cpolar.top") || host.endsWith(".cpolar.cn")
         }
     }
 
-    @Deprecated("Deprecated in Java")
-    @Suppress("DEPRECATION")
-    override fun onBackPressed() {
-        if (isFirstLaunch) {
-            Toast.makeText(this, "请先配置服务器地址", Toast.LENGTH_SHORT).show()
-        } else {
-            super.onBackPressed()
-        }
     }
-}

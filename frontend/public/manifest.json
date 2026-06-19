@@ -1,6 +1,6 @@
 {
   "name": "大数据科技资讯门户",
-  "short_name": "TechNews",
+  "short_name": "智讯",
   "description": "大数据科技资讯智能平台",
   "start_url": "/",
   "display": "standalone",
@@ -8,9 +8,9 @@
   "theme_color": "#1a2a4a",
   "icons": [
     {
-      "src": "/favicon.svg",
-      "sizes": "any",
-      "type": "image/svg+xml"
+      "src": "/logo.jpg",
+      "sizes": "192x192",
+      "type": "image/jpeg"
     }
   ]
 }

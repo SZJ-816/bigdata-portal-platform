@@ -10,6 +10,8 @@ import android.webkit.CookieManager
 import android.webkit.WebSettings
 import android.webkit.WebView
 import android.widget.Toast
+import androidx.activity.OnBackPressedCallback
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import com.zhixun.portal.databinding.ActivityMainBinding
@@ -22,7 +24,6 @@ import com.zhixun.portal.web.AppWebViewClient
 class MainActivity : AppCompatActivity() {
 
     companion object {
-        private const val SETTINGS_REQUEST_CODE = 100
         private const val DOUBLE_BACK_EXIT_INTERVAL = 2000L
     }
 
@@ -35,6 +36,16 @@ class MainActivity : AppCompatActivity() {
     private var doubleBackToExitPressedOnce = false
     private val handler = Handler(Looper.getMainLooper())
 
+    // Activity Result API 替代已弃用的 startActivityForResult
+    private val settingsLauncher = registerForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == RESULT_OK) {
+            webViewBridge.injectApiServerUrl(prefsManager.getServerUrl())
+            loadFrontend()
+        }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
@@ -43,38 +54,35 @@ class MainActivity : AppCompatActivity() {
         prefsManager = PrefsManager(this)
         networkUtil = NetworkUtil(this)
 
-        // Toolbar hidden — web page has its own header
-        // setupToolbar()
         setupWebView()
         setupSwipeRefresh()
         setupErrorOverlay()
+        setupBackPressHandler()
         handleDeepLink(intent)
 
-        // Always load frontend - show framework even if URL fails
-        // User can change settings via "我的" tab in the web UI
-        loadFrontend()
+        // 首次启动自动引导用户配置服务器地址
+        if (prefsManager.isFirstLaunch()) {
+            prefsManager.setFirstLaunchDone()
+            openSettings(true)
+        } else {
+            loadFrontend()
+        }
     }
 
-    private fun setupToolbar() {
-        setSupportActionBar(binding.toolbar)
-        supportActionBar?.setDisplayShowTitleEnabled(true)
-        binding.toolbar.setOnMenuItemClickListener { menuItem ->
-            when (menuItem.itemId) {
-                R.id.action_refresh -> {
-                    binding.webView.reload()
-                    true
+    private fun setupBackPressHandler() {
+        onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                if (binding.webView.canGoBack()) {
+                    binding.webView.goBack()
+                } else if (doubleBackToExitPressedOnce) {
+                    finish()
+                } else {
+                    doubleBackToExitPressedOnce = true
+                    Toast.makeText(this@MainActivity, R.string.press_back_again, Toast.LENGTH_SHORT).show()
+                    handler.postDelayed({ doubleBackToExitPressedOnce = false }, DOUBLE_BACK_EXIT_INTERVAL)
                 }
-                R.id.action_settings -> {
-                    openSettings()
-                    true
-                }
-                R.id.action_about -> {
-                    showAboutDialog()
-                    true
-                }
-                else -> false
             }
-        }
+        })
     }
 
     @SuppressLint("SetJavaScriptEnabled")
@@ -101,9 +109,6 @@ class MainActivity : AppCompatActivity() {
 
         // Cache - use cache first for faster image loading
         settings.cacheMode = WebSettings.LOAD_CACHE_ELSE_NETWORK
-
-        // Performance
-        settings.setRenderPriority(WebSettings.RenderPriority.HIGH)
 
         val defaultUA = settings.userAgentString
         settings.userAgentString = "$defaultUA ZhixunApp/${BuildConfig.VERSION_NAME}"
@@ -152,6 +157,9 @@ class MainActivity : AppCompatActivity() {
             binding.swipeRefresh.isRefreshing = true
             binding.webView.reload()
         }
+        binding.btnSettings.setOnClickListener {
+            openSettings()
+        }
     }
 
     private fun showErrorOverlay(errorMessage: String) {
@@ -168,24 +176,11 @@ class MainActivity : AppCompatActivity() {
         binding.webView.loadUrl(frontendUrl)
     }
 
-    private fun openSettings() {
+    private fun openSettings(firstLaunch: Boolean = false) {
         val intent = Intent(this, SettingsActivity::class.java).apply {
-            putExtra(SettingsActivity.EXTRA_FIRST_LAUNCH, false)
+            putExtra(SettingsActivity.EXTRA_FIRST_LAUNCH, firstLaunch)
         }
-        @Suppress("DEPRECATION")
-        startActivityForResult(intent, SETTINGS_REQUEST_CODE)
-    }
-
-    @Deprecated("Deprecated in Java")
-    @Suppress("DEPRECATION")
-    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        super.onActivityResult(requestCode, resultCode, data)
-        webChromeClient.handleFileChooserResult(requestCode, resultCode, data)
-
-        if (requestCode == SETTINGS_REQUEST_CODE && resultCode == RESULT_OK) {
-            webViewBridge.injectApiServerUrl(prefsManager.getServerUrl())
-            loadFrontend()
-        }
+        settingsLauncher.launch(intent)
     }
 
     private fun handleDeepLink(intent: Intent?) {
@@ -193,26 +188,11 @@ class MainActivity : AppCompatActivity() {
         binding.webView.loadUrl(uri.toString())
     }
 
-    private fun showAboutDialog() {
-        AlertDialog.Builder(this)
-            .setTitle(R.string.about_title)
-            .setMessage(getString(R.string.about_desc) + "\n\n版本: ${BuildConfig.VERSION_NAME}")
-            .setPositiveButton("确定", null)
-            .show()
-    }
-
-    @Deprecated("Deprecated in Java")
-    @Suppress("DEPRECATION")
-    override fun onBackPressed() {
-        if (binding.webView.canGoBack()) {
-            binding.webView.goBack()
-        } else if (doubleBackToExitPressedOnce) {
-            super.onBackPressed()
-        } else {
-            doubleBackToExitPressedOnce = true
-            Toast.makeText(this, R.string.press_back_again, Toast.LENGTH_SHORT).show()
-            handler.postDelayed({ doubleBackToExitPressedOnce = false }, DOUBLE_BACK_EXIT_INTERVAL)
-        }
+    // 保留 onActivityResult 仅用于 WebView 文件选择器（AppWebChromeClient 内部仍使用 startActivityForResult）
+    @Deprecated("Used for WebView file chooser internally")
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        webChromeClient.handleFileChooserResult(requestCode, resultCode, data)
     }
 
     override fun onNewIntent(intent: Intent?) {
@@ -234,9 +214,9 @@ class MainActivity : AppCompatActivity() {
     override fun onDestroy() {
         binding.webView.apply {
             stopLoading()
-            webChromeClient = null
-            webViewClient = object : android.webkit.WebViewClient() {}
+            setDownloadListener(null)
             removeJavascriptInterface("AndroidBridge")
+            removeAllViews()
             destroy()
         }
         handler.removeCallbacksAndMessages(null)

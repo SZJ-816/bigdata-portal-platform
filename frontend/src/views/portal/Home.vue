@@ -391,9 +391,21 @@ async function fetchNews() {
   newsError.value = false
   try {
     const res = await newsApi.getList()
-    if (res.data.data) {
-      const pageData = res.data.data
-      const items = Array.isArray(pageData) ? pageData : (pageData.records || pageData.data || [])
+    const body = res.data
+    // 兼容多种 API 返回格式: {data:{records:[]}} / {records:[]} / {data:[]}
+    let items = []
+    if (body?.data?.records) {
+      items = body.data.records
+    } else if (body?.data?.data) {
+      items = body.data.data
+    } else if (Array.isArray(body?.data)) {
+      items = body.data
+    } else if (Array.isArray(body)) {
+      items = body
+    } else if (body?.records) {
+      items = body.records
+    }
+    if (items.length > 0) {
       const mapped = items.map(item => ({
         ...item,
         title: cleanText(item.title),

@@ -32,7 +32,7 @@ function bypassHostCheck() {
 }
 
 export default defineConfig({
-  base: './',
+  base: '/',
   plugins: [
     vue(),
     removeCrossoriginPlugin(),
@@ -56,6 +56,10 @@ export default defineConfig({
       '/api': {
         target: 'http://192.168.146.128:8090',
         changeOrigin: true
+      },
+      '/images/news': {
+        target: 'http://192.168.146.128:8090',
+        changeOrigin: true
       }
     }
   },
@@ -76,9 +80,6 @@ export default defineConfig({
           if (id.includes('node_modules')) {
             if (id.includes('echarts') || id.includes('zrender')) {
               return 'echarts-vendor'
-            }
-            if (id.includes('element-plus') || id.includes('@element-plus')) {
-              return 'element-plus-vendor'
             }
             if (id.includes('markdown-it') || id.includes('dompurify')) {
               return 'markdown-vendor'

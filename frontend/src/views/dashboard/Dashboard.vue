@@ -3,8 +3,8 @@
     <header class="top-bar">
       <div class="bar-inner">
         <div class="brand">
-          <span class="brand-icon"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="6" y2="21"/><line x1="12" y1="5" x2="18" y2="21"/><path d="M8,12 C8,10 10,9.5 12,11 C14,12.5 16,12 16,12"/><path d="M8,15 C8,13 10,12.5 12,14 C14,15.5 16,15 16,15"/><path d="M8,18 C8,16 10,15.5 12,17 C14,18.5 16,18 16,18"/></svg></span>
-          <span class="brand-name">ZHIXUN 智讯</span>
+          <img src="/logo.jpg" alt="智讯" class="brand-logo" />
+          <span class="brand-name">智讯</span>
           <span class="brand-sub">数据管理平台</span>
         </div>
         <nav class="main-nav">
@@ -81,6 +81,14 @@
       </div>
 
       <div v-if="activeTab === 'news'" class="manage-page">
+        <div v-if="!isLoggedIn" class="need-login-overlay">
+          <div class="need-login-card">
+            <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#64748B" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+            <h3>新闻管理需要登录</h3>
+            <p>请先登录后再使用管理功能</p>
+            <button class="btn-primary" @click="router.push('/login')">前往登录</button>
+          </div>
+        </div>
         <div class="search-bar">
           <input v-model="newsKeyword" class="search-input" placeholder="搜索新闻标题或摘要..." @keyup.enter="loadNews(1)" />
           <select v-model="newsChannel" class="search-select" @change="loadNews(1)">
@@ -147,6 +155,14 @@
       </div>
 
       <div v-if="activeTab === 'users'" class="manage-page">
+        <div v-if="!isLoggedIn" class="need-login-overlay">
+          <div class="need-login-card">
+            <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#64748B" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+            <h3>用户管理需要登录</h3>
+            <p>请先登录后再使用管理功能</p>
+            <button class="btn-primary" @click="router.push('/login')">前往登录</button>
+          </div>
+        </div>
         <div class="search-bar">
           <span class="result-count">共 {{ usersTotal }} 个注册用户</span>
         </div>
@@ -217,6 +233,7 @@ import { analyticsApi, adminApi } from '../../api/index'
 
 const router = useRouter()
 
+const isLoggedIn = computed(() => !!localStorage.getItem('token'))
 const activeTab = ref('overview')
 const trendChartRef = ref(null)
 const hotNewsChartRef = ref(null)
@@ -479,7 +496,7 @@ watch(activeTab, async (val) => { if (val === 'overview') { await nextTick(); in
 watch(timeRange, () => {
   loadOverviewData()
 })
-onMounted(() => { updateTime(); timeInterval = setInterval(updateTime, 1000); updateRealtimeStats(); statsInterval = setInterval(updateRealtimeStats, 10000); initCharts(); loadChannels(); window.addEventListener('resize', handleResize) })
+onMounted(() => { updateTime(); timeInterval = setInterval(updateTime, 1000); updateRealtimeStats(); statsInterval = setInterval(updateRealtimeStats, 10000); initCharts(); if (isLoggedIn.value) loadChannels(); window.addEventListener('resize', handleResize) })
 onUnmounted(() => { if (statsInterval) clearInterval(statsInterval); if (timeInterval) clearInterval(timeInterval); trendChart?.dispose(); hotNewsChart?.dispose(); channelChart?.dispose(); funnelChart?.dispose(); regionChart?.dispose(); window.removeEventListener('resize', handleResize) })
 </script>
 
@@ -530,17 +547,19 @@ onUnmounted(() => { if (statsInterval) clearInterval(statsInterval); if (timeInt
   flex-shrink: 0;
 }
 
-.brand-icon {
-  color: #2F6BFF;
-  font-size: 20px;
-  font-weight: 700;
+.brand-logo {
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  flex-shrink: 0;
+  object-fit: contain;
 }
 
 .brand-name {
   font-size: 17px;
   font-weight: 700;
   color: #0F172A;
-  letter-spacing: -0.3px;
+  letter-spacing: 0;
 }
 
 .brand-sub {
@@ -750,6 +769,41 @@ onUnmounted(() => { if (statsInterval) clearInterval(statsInterval); if (timeInt
   display: flex;
   flex-direction: column;
   gap: 16px;
+  position: relative;
+}
+
+.need-login-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(255,255,255,0.92);
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+}
+
+.need-login-card {
+  text-align: center;
+  padding: 40px 48px;
+}
+
+.need-login-card h3 {
+  margin: 16px 0 8px;
+  font-size: 18px;
+  color: #1E293B;
+}
+
+.need-login-card p {
+  margin: 0 0 24px;
+  color: #64748B;
+  font-size: 14px;
+}
+
+.need-login-card .btn-primary {
+  padding: 10px 32px;
+  font-size: 14px;
+  border-radius: 8px;
 }
 
 .search-bar {

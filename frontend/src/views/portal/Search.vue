@@ -16,7 +16,7 @@
       </div>
       <div class="hot-words">
         <span class="hot-label">热搜：</span>
-        <span v-for="word in hotSearchWords" :key="word" class="hot-word" @click="searchHotWord(word)">{{ word }}</span>
+        <button v-for="word in hotSearchWords" :key="word" class="hot-word" @click="searchHotWord(word)">{{ word }}</button>
       </div>
     </div>
 
@@ -130,9 +130,18 @@ async function doSearch() {
   searchLoading.value = true
   try {
     const res = await newsApi.search(keyword.value)
-    if (res.data.data) {
-      const pageData = res.data.data
-      results.value = Array.isArray(pageData) ? pageData : (pageData.records || pageData.data || [])
+    const body = res.data
+    // 兼容多种 API 返回格式
+    if (body?.data?.records) {
+      results.value = body.data.records
+    } else if (body?.data?.data) {
+      results.value = body.data.data
+    } else if (Array.isArray(body?.data)) {
+      results.value = body.data
+    } else if (Array.isArray(body)) {
+      results.value = body
+    } else if (body?.records) {
+      results.value = body.records
     } else {
       results.value = []
     }
@@ -366,11 +375,13 @@ watch(() => route.query.q, (newQ) => {
   display: inline-block;
   padding: 4px 14px;
   background: var(--color-bg-tertiary);
+  border: none;
   border-radius: 3px;
   font-size: 13px;
   cursor: pointer;
   transition: all 0.2s;
   color: var(--color-text-secondary);
+  font-family: inherit;
 }
 .hot-word:hover {
   background: var(--color-primary);

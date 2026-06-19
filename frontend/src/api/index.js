@@ -35,11 +35,19 @@ request.interceptors.response.use(
   },
   error => {
     if (error.response && error.response.status === 401) {
-      localStorage.removeItem('token')
-      localStorage.removeItem('userId')
-      localStorage.removeItem('username')
-      if (vueRouterInstance) {
-        vueRouterInstance.push('/login')
+      const currentPath = vueRouterInstance?.currentRoute?.value?.path
+      // 非认证页面静默忽略 401，不弹 Console 错误
+      const silentPages = ['/login', '/register', '/']
+      if (currentPath && silentPages.some(p => currentPath === p || currentPath.startsWith(p + '/'))) {
+        return Promise.resolve({ data: { success: false, error: 'Unauthorized' } })
+      }
+      if (currentPath !== '/dashboard') {
+        localStorage.removeItem('token')
+        localStorage.removeItem('userId')
+        localStorage.removeItem('username')
+        if (vueRouterInstance && currentPath !== '/login') {
+          vueRouterInstance.push('/login')
+        }
       }
     }
     return Promise.reject(error)

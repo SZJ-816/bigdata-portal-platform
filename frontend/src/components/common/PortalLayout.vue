@@ -3,15 +3,15 @@
     <header class="portal-header">
       <div class="header-inner">
         <div class="header-left">
-          <h1 class="logo" @click="$router.push('/')">
-            <span class="logo-mark">ZHIXUN</span>
-            <span class="logo-text">智讯</span>
-          </h1>
+          <h1 class="logo" @click="$router.push('/')" aria-label="智讯">
+          <img src="/logo.jpg" alt="" class="logo-icon" aria-hidden="true" />
+          <span class="logo-text">智讯</span>
+        </h1>
           <nav :class="['nav-menu', { open: menuOpen }]" :aria-expanded="menuOpen" role="navigation" aria-label="主导航">
             <router-link to="/" @click="menuOpen = false">首页</router-link>
             <router-link v-for="ch in navChannels" :key="ch.name" :to="`/channel/${ch.name}`" @click="menuOpen = false">{{ ch.label }}</router-link>
             <router-link to="/search" @click="menuOpen = false">搜索</router-link>
-            <a href="/dashboard" @click="menuOpen = false">数据大屏</a>
+            <a @click="goDashboard(); menuOpen = false">数据大屏</a>
           </nav>
         </div>
         <div class="header-right">
@@ -59,7 +59,7 @@
         <span class="nav-icon"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.35-4.35"/></svg></span>
         <span class="nav-label">搜索</span>
       </a>
-      <a :class="['nav-item']" href="/dashboard">
+      <a :class="['nav-item']" @click="goDashboard">
         <span class="nav-icon"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg></span>
         <span class="nav-label">大屏</span>
       </a>
@@ -102,6 +102,10 @@ const currentPath = computed(() => route.path)
 
 function goLogin() {
   router.push({ path: '/login', query: { redirect: route.path } })
+}
+
+function goDashboard() {
+  window.open('https://79a01e6b.r7.cpolar.cn', '_blank')
 }
 
 function handleToggleTheme() {
@@ -182,15 +186,16 @@ onUnmounted(() => {
   gap: 6px;
   white-space: nowrap;
 }
-.logo-mark {
-  font-size: 20px;
-  font-weight: 800;
-  color: var(--color-accent);
-  letter-spacing: 2px;
+.logo-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  flex-shrink: 0;
+  object-fit: contain;
 }
 .logo-text {
-  font-size: 16px;
-  font-weight: 600;
+  font-size: 18px;
+  font-weight: 700;
   color: var(--color-header-text-hover);
 }
 .nav-menu {
@@ -437,13 +442,13 @@ onUnmounted(() => {
   .logo {
     min-width: auto;
   }
-  .logo-mark {
-    font-size: 16px;
-    font-weight: 800;
+  .logo-icon {
+    width: 28px;
+    height: 28px;
   }
   .logo-text {
-    font-size: 13px;
-    font-weight: 600;
+    font-size: 15px;
+    font-weight: 700;
   }
   .theme-toggle {
     width: 36px;

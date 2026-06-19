@@ -2,6 +2,7 @@
   <div class="login-page">
     <div class="login-card">
       <div class="login-header">
+        <img src="/logo.jpg" alt="智讯" class="login-logo" />
         <h2>{{ isLogin ? '登录' : '注册' }}</h2>
         <p class="login-subtitle">{{ isLogin ? '登录智讯平台' : '创建新账号' }}</p>
       </div>
@@ -173,6 +174,13 @@ onUnmounted(() => {
   padding: 28px 32px;
   color: var(--color-text-white);
   text-align: center;
+}
+.login-logo {
+  width: 48px;
+  height: 48px;
+  border-radius: 10px;
+  margin-bottom: 10px;
+  object-fit: contain;
 }
 .login-header h2 {
   font-size: 22px;

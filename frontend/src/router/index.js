@@ -17,11 +17,6 @@ const routes = [
     ]
   },
   {
-    path: '/dashboard',
-    name: 'Dashboard',
-    component: () => import('../views/dashboard/Dashboard.vue')
-  },
-  {
     path: '/:pathMatch(.*)*',
     name: 'NotFound',
     component: () => import('../views/portal/NotFound.vue')
