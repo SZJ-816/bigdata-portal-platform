@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="200dp"
+    android:height="200dp"
+    android:viewportWidth="200"
+    android:viewportHeight="200">
+
+    <!-- 智讯 Z 字形 -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M55,50 L165,50 L165,70 L100,70 L100,100 L160,100 L160,120 L85,120 L85,140 L165,140 L165,165 L55,165 L55,145 L125,145 L125,115 L65,115 L65,95 L130,95 L130,70 L55,70 Z" />
+
+    <!-- 数据信号圆点 -->
+    <circle
+        android:fillColor="#4A90D9"
+        android:cx="175"
+        android:cy="40"
+        android:radius="14" />
+
+    <!-- 信号弧线 -->
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#4A90D9"
+        android:strokeWidth="6"
+        android:strokeLineCap="round"
+        android:pathData="M175,15 Q195,15 200,30" />
+</vector>
