@@ -10,12 +10,10 @@
         android:fillColor="#FFFFFF"
         android:pathData="M75,55 L155,55 L155,70 L100,70 L100,95 L150,95 L150,110 L90,110 L90,125 L155,125 L155,145 L75,145 L75,130 L125,130 L125,105 L80,105 L80,90 L130,90 L130,75 L75,75 Z" />
 
-    <!-- 数据信号点 -->
-    <circle
+    <!-- 数据信号点（圆形） -->
+    <path
         android:fillColor="#4A90D9"
-        android:cx="160"
-        android:cy="48"
-        android:radius="10" />
+        android:pathData="M150,48 m-10,0 a10,10 0 1,0 20,0 a10,10 0 1,0 -20,0" />
 
     <!-- 小信号弧 -->
     <path

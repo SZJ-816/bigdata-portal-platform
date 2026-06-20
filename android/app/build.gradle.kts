@@ -7,6 +7,15 @@ android {
     namespace = "com.zhixun.portal"
     compileSdk = 34
 
+    signingConfigs {
+        create("release") {
+            storeFile = file("../zhixun.keystore")
+            storePassword = "zhixun123"
+            keyAlias = "zhixun"
+            keyPassword = "zhixun123"
+        }
+    }
+
     defaultConfig {
         applicationId = "com.zhixun.portal"
         minSdk = 24
@@ -19,6 +28,7 @@ android {
         release {
             isMinifyEnabled = true
             isShrinkResources = true
+            signingConfig = signingConfigs.getByName("release")
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
