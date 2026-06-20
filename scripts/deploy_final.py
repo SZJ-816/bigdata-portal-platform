@@ -1,0 +1,135 @@
+#!/usr/bin/env python3
+"""Compile Java files with lombok on both classpath and processorpath"""
+import subprocess, os, sys, shutil, time
+
+def run(cmd, timeout=600):
+    r = subprocess.run(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=timeout)
+    return (r.stdout.decode('utf-8', errors='ignore').strip() + 
+            (r.stderr.decode('utf-8', errors='ignore').strip() if r.stderr else '')), r.returncode
+
+def main():
+    base = "/root/bigdata-portal-platform"
+    backend_dir = os.path.join(base, "backend")
+    src_dir = os.path.join(backend_dir, "src/main/java")
+    work_dir = "/tmp/java_build4"
+
+    print("=== Step 1: Prepare workspace")
+    if os.path.exists(work_dir):
+        shutil.rmtree(work_dir)
+    os.makedirs(work_dir)
+    os.makedirs(os.path.join(work_dir, "classes"))
+
+    lombok_path = "/tmp/lombok.jar"
+    if not os.path.exists(lombok_path) or os.path.getsize(lombok_path) < 100000:
+        print("Downloading lombok...")
+        run("curl -sL -o /tmp/lombok.jar 'https://repo1.maven.org/maven2/org/projectlombok/lombok/1.18.28/lombok-1.18.28.jar'")
+
+    print("\n=== Step 2: Extract dependencies")
+    jar_path = os.path.join(backend_dir, "portal-2.0.0.jar")
+    if not os.path.exists(jar_path):
+        jar_path = os.path.join(backend_dir, "target", "portal-2.0.0.jar")
+
+    lib_dir = os.path.join(work_dir, "libs")
+    class_dir = os.path.join(work_dir, "orig_classes")
+    os.makedirs(lib_dir, exist_ok=True)
+    os.makedirs(class_dir, exist_ok=True)
+
+    run(f"cd {lib_dir} && unzip -q -o {jar_path} 'BOOT-INF/lib/*' 2>/dev/null")
+    run(f"cd {class_dir} && unzip -q -o {jar_path} 'BOOT-INF/classes/*' 2>/dev/null")
+
+    cp_libs = os.path.join(lib_dir, "BOOT-INF", "lib")
+    cp_classes = os.path.join(class_dir, "BOOT-INF", "classes")
+
+    print("\n=== Step 3: Find Java files")
+    java_files = []
+    for root, dirs, files in os.walk(src_dir):
+        for f in files:
+            if f.endswith(".java"):
+                java_files.append(os.path.join(root, f))
+    print(f"Found {len(java_files)} Java source files")
+
+    filelist = os.path.join(work_dir, "sources.txt")
+    with open(filelist, "w") as f:
+        for jf in java_files:
+            f.write(jf + "\n")
+
+    # Also copy lombok to libs dir so it's found in classpath glob
+    if os.path.exists(cp_libs):
+        shutil.copy2(lombok_path, os.path.join(cp_libs, "lombok-1.18.28.jar"))
+
+    print("\n=== Step 4: Compile with lombok in classpath")
+    cmd = (f"javac -encoding UTF-8 -source 1.8 -target 1.8 "
+           f"-cp '{lombok_path}:{cp_libs}/*:{cp_classes}' "
+           f"-processorpath {lombok_path} "
+           f"-d {work_dir}/classes "
+           f"@{filelist} 2>&1 | head -60")
+    out, rc = run(cmd)
+    print(out)
+    print(f"Compile exit code: {rc}")
+
+    class_count = 0
+    for r, d, fs in os.walk(os.path.join(work_dir, "classes")):
+        for f2 in fs:
+            if f2.endswith(".class"):
+                class_count += 1
+    print(f"Generated {class_count} .class files")
+
+    if class_count == 0:
+        print("ERROR: No class files!")
+        sys.exit(1)
+
+    print("\n=== Step 5: Rebuild JAR")
+    jar_root = os.path.join(work_dir, "jar_root")
+    if os.path.exists(jar_root):
+        shutil.rmtree(jar_root)
+    os.makedirs(jar_root)
+    run(f"cd {jar_root} && unzip -q -o {jar_path} 2>&1")
+
+    target_boot_classes = os.path.join(jar_root, "BOOT-INF", "classes")
+    if os.path.exists(target_boot_classes):
+        shutil.rmtree(target_boot_classes)
+    shutil.copytree(os.path.join(work_dir, "classes"), target_boot_classes)
+
+    new_jar = "/tmp/portal-2.0.0.jar"
+    if os.path.exists(new_jar):
+        os.remove(new_jar)
+
+    os.chdir(jar_root)
+    out, rc = run("jar cf /tmp/portal-2.0.0.jar . 2>&1")
+    print(out)
+
+    if os.path.exists(new_jar):
+        size = os.path.getsize(new_jar)
+        print(f"New JAR: {size} bytes")
+
+        shutil.copy2(new_jar, os.path.join(backend_dir, "portal-2.0.0.jar"))
+        os.makedirs(os.path.join(backend_dir, "target"), exist_ok=True)
+        shutil.copy2(new_jar, os.path.join(backend_dir, "target", "portal-2.0.0.jar"))
+        print("JAR copied to backend/")
+
+        print("\n=== Step 6: Rebuild backend Docker image")
+        os.chdir(base)
+        out, rc = run("docker compose build backend 2>&1 | tail -20")
+        print(out)
+
+        print("\n=== Step 7: Restart backend")
+        out, rc = run("docker compose up -d backend 2>&1 | tail -10")
+        print(out)
+
+        print("\n=== Step 8: Wait for health check")
+        for i in range(40):
+            out, rc = run("docker inspect -f '{{.State.Health.Status}}' bigdata-backend 2>&1")
+            if "healthy" in out:
+                print(f"Backend healthy after {i*5}s")
+                break
+            time.sleep(5)
+        else:
+            print(f"Status: {out}")
+
+        print("\n=== DEPLOYMENT COMPLETE!")
+    else:
+        print("ERROR: Failed to create JAR")
+        sys.exit(1)
+
+if __name__ == "__main__":
+    main()

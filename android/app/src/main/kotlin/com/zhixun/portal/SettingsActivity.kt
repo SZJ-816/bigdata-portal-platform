@@ -183,7 +183,7 @@ class SettingsActivity : AppCompatActivity() {
             "localhost",
             "127.0.0.1",
             "10.0.2.2",
-            "45c3c69c.r7.cpolar.cn"
+            "164f43c6.r7.cpolar.cn"
         )
         return allowedHosts.any { allowed ->
             host == allowed || host.endsWith(".cpolar.top") || host.endsWith(".cpolar.cn")

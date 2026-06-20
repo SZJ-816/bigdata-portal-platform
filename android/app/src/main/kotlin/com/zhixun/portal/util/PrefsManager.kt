@@ -13,8 +13,8 @@ class PrefsManager(private val context: Context) {
         private const val KEY_ALLOW_HTTP = "allow_http"
         private const val KEY_DEBUG_MODE = "debug_mode"
 
-        const val DEFAULT_FRONTEND_URL = "https://45c3c69c.r7.cpolar.cn"
-        const val DEFAULT_SERVER_URL = "https://45c3c69c.r7.cpolar.cn"
+        const val DEFAULT_FRONTEND_URL = "https://164f43c6.r7.cpolar.cn"
+        const val DEFAULT_SERVER_URL = "https://164f43c6.r7.cpolar.cn"
     }
 
     private val prefs: SharedPreferences by lazy {

@@ -38,7 +38,7 @@
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
                 <data android:scheme="https"
-                    android:host="45c3c69c.r7.cpolar.cn" />
+                    android:host="164f43c6.r7.cpolar.cn" />
             </intent-filter>
         </activity>
 
