@@ -578,6 +578,59 @@ userFeatures.forEach((f, i) => {
   });
 });
 
+// ========== Slide 11: 前端界面展示（真实截图） ==========
+const slide11a = pptx.addSlide();
+addSideBar(slide11a);
+
+slide11a.addText("04  功能模块设计", {
+  x: 1, y: 0.4, w: 6, h: 0.8,
+  fontSize: 32, fontFace: FONT_TITLE,
+  color: COLORS.primary, bold: true,
+});
+addAccentBar(slide11a, 1.15, 0.04);
+
+slide11a.addText("前端界面展示（真实项目截图）", {
+  x: 1, y: 1.5, w: 8, h: 0.6,
+  fontSize: 22, fontFace: FONT_TITLE,
+  color: COLORS.dark, bold: true,
+});
+
+// 首页截图（大图）
+slide11a.addImage({
+  path: "../docs/screenshots/screenshot-home.png",
+  x: 0.6, y: 2.2, w: 7.2, h: 4.5,
+  sizing: { type: "contain", w: 7.2, h: 4.5 },
+});
+slide11a.addText("首页：聚合推荐 + 资讯流", {
+  x: 0.6, y: 6.75, w: 7.2, h: 0.35,
+  fontSize: 12, fontFace: FONT_BODY,
+  color: COLORS.gray, align: "center",
+});
+
+// 频道页截图
+slide11a.addImage({
+  path: "../docs/screenshots/screenshot-channel.png",
+  x: 8.0, y: 2.2, w: 5.0, h: 2.3,
+  sizing: { type: "contain", w: 5.0, h: 2.3 },
+});
+slide11a.addText("频道页：人工智能分类", {
+  x: 8.0, y: 4.55, w: 5.0, h: 0.3,
+  fontSize: 12, fontFace: FONT_BODY,
+  color: COLORS.gray, align: "center",
+});
+
+// 移动端截图
+slide11a.addImage({
+  path: "../docs/screenshots/screenshot-mobile.png",
+  x: 9.25, y: 4.95, w: 2.5, h: 1.7,
+  sizing: { type: "contain", w: 2.5, h: 1.7 },
+});
+slide11a.addText("移动端适配", {
+  x: 8.0, y: 6.75, w: 5.0, h: 0.35,
+  fontSize: 12, fontFace: FONT_BODY,
+  color: COLORS.gray, align: "center",
+});
+
 // ========== Slide 11: 后台管理功能 ==========
 const slide11 = pptx.addSlide();
 addSideBar(slide11);
@@ -948,6 +1001,6 @@ slide16.addShape(pptx.ShapeType.rect, {
 });
 
 // 保存
-pptx.writeFile({ fileName: "d:\\workspace\\bigdata-portal-platform\\docs\\project-presentation.pptx" })
+pptx.writeFile({ fileName: "/workspace/docs/project-presentation-with-screenshots.pptx" })
   .then(() => console.log("PPT created successfully!"))
   .catch(err => console.error("Error:", err));
