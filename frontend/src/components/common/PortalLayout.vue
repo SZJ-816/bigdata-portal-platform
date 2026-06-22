@@ -105,7 +105,18 @@ function goLogin() {
 }
 
 function goDashboard() {
-  const url = window.DASHBOARD_URL || 'https://3845c8e2.r7.cpolar.cn'
+  // 优先使用 config.js 中注入的 DASHBOARD_URL
+  const hardcoded = window.DASHBOARD_URL
+  if (hardcoded && /^https?:\/\//.test(hardcoded) && !hardcoded.includes('3845c8e2.r7.cpolar.cn')) {
+    window.open(hardcoded, '_blank')
+    return
+  }
+  // 动态基于当前访问地址拼接数据大屏地址（端口 3001）
+  // 用户通过 cpolar 隧道访问门户时，window.location.hostname 即为 cpolar 子域名
+  const hostname = window.location.hostname || 'localhost'
+  const isLocal = hostname === 'localhost' || hostname === '127.0.0.1' || hostname === ''
+  const scheme = isLocal ? 'http:' : 'https:'
+  const url = `${scheme}//${hostname}:3001`
   window.open(url, '_blank')
 }
 

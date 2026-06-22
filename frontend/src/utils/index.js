@@ -120,11 +120,14 @@ export function resolveImageUrl(url) {
   if (!url) return ''
   if (url.startsWith('data:')) return url
   if (url.startsWith('http://') || url.startsWith('https://')) {
+    // 数据库中图片字段存的是完整 URL（如 https://images.unsplash.com/...）
+    // 普通 http(s) 访问时直接返回原始 URL，由浏览器直接请求图片源站
     if (window.location.protocol === 'file:') {
+      // 仅 file:// 协议下（打包后本地打开）兜底走后端代理，避免混合内容拦截
       const base = getServerBase()
       if (base) return base + '/api/image/proxy?url=' + encodeURIComponent(url)
     }
-    return '/api/image/proxy?url=' + encodeURIComponent(url)
+    return url
   }
   if (url.startsWith('/')) {
     if (window.location.protocol === 'file:') {

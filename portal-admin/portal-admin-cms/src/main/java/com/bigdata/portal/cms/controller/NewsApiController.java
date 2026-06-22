@@ -5,6 +5,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.web.bind.annotation.*;
 
+import javax.servlet.http.HttpServletResponse;
+import java.io.*;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.util.*;
 
 /**
@@ -144,5 +148,49 @@ public class NewsApiController {
         List<Map<String, Object>> list = jdbcTemplate.queryForList(sql, channel, id, size);
         result.put("data", list);
         return result;
+    }
+
+    /** 图片代理接口（兜底）：file:// 协议下前端会走这里拉图片 */
+    @GetMapping("/image/proxy")
+    public void proxyImage(@RequestParam("url") String imageUrl, HttpServletResponse response) throws IOException {
+        if (imageUrl == null || imageUrl.isEmpty()) {
+            response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+            return;
+        }
+        // 白名单协议
+        if (!imageUrl.startsWith("http://") && !imageUrl.startsWith("https://")) {
+            response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+            return;
+        }
+        URL url = new URL(imageUrl);
+        HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+        conn.setConnectTimeout(10000);
+        conn.setReadTimeout(30000);
+        conn.setRequestProperty("User-Agent", "Mozilla/5.0 (portal image proxy)");
+        conn.setInstanceFollowRedirects(true);
+        int code = conn.getResponseCode();
+        if (code >= 400) {
+            response.setStatus(code);
+            conn.disconnect();
+            return;
+        }
+        String contentType = conn.getContentType();
+        if (contentType != null) {
+            response.setContentType(contentType);
+        } else {
+            response.setContentType("image/jpeg");
+        }
+        response.setHeader("Cache-Control", "public, max-age=86400");
+        try (InputStream in = new BufferedInputStream(conn.getInputStream());
+             OutputStream out = new BufferedOutputStream(response.getOutputStream())) {
+            byte[] buf = new byte[8192];
+            int n;
+            while ((n = in.read(buf)) > 0) {
+                out.write(buf, 0, n);
+            }
+            out.flush();
+        } finally {
+            conn.disconnect();
+        }
     }
 }
