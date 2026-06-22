@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <script>
+    (function() {
+      if (window.location.protocol === 'file:') {
+        var saved = localStorage.getItem('apiServerUrl');
+        if (saved && saved.trim()) {
+          var url = saved.trim().replace(/\/$/, '');
+          window.__API_BASE_URL__ = url + '/api';
+        } else {
+          window.__API_BASE_URL__ = window.__API_BASE_URL__ || '/api';
+        }
+      }
+    })();
+  </script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, minimum-scale=1.0, viewport-fit=cover" />
+  <meta name="description" content="智讯 - 大数据门户平台，实时追踪AI、云计算、大数据等前沿科技动态" />
+  <meta name="theme-color" content="#1a2a4a" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="智讯" />
+  <meta name="application-name" content="智讯" />
+  <meta name="msapplication-TileColor" content="#1a2a4a" />
+  <meta name="msapplication-navbutton-color" content="#1a2a4a" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="format-detection" content="telephone=no" />
+  <title>智讯 - 大数据门户平台</title>
+
+  <script src="./config.js"></script>
+  <link rel="icon" href="./logo.jpg" />
+  <link rel="apple-touch-icon" href="./logo.jpg" />
+  <link rel="manifest" href="./manifest.json">
+  <meta name="theme-color" content="#1a2a4a" />
+
+  <style>
+    :root {
+      --color-bg: #f5f5f5;
+      --color-bg-white: #ffffff;
+      --color-text: #1a1a1a;
+      --color-header-bg: #1a2a4a;
+      --color-skeleton: #e8e8e8;
+      --color-skeleton-shine: #f0f0f0;
+    }
+    [data-theme="dark"] {
+      --color-bg: #0f172a;
+      --color-bg-white: #1e293b;
+      --color-text: #e2e8f0;
+      --color-header-bg: #0f172a;
+      --color-skeleton: #1e293b;
+      --color-skeleton-shine: #334155;
+    }
+    html {
+      font-size: 16px;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      text-rendering: optimizeLegibility;
+    }
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'Helvetica Neue', Helvetica, sans-serif;
+      line-height: 1.5;
+      color: var(--color-text);
+      background-color: var(--color-bg);
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      text-rendering: optimizeLegibility;
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
+    }
+    #app {
+      min-height: 100vh;
+      background: var(--color-bg);
+    }
+    img {
+      max-width: 100%;
+      height: auto;
+    }
+    @keyframes skeleton-shimmer {
+      0% { background-position: -200% 0; }
+      100% { background-position: 200% 0; }
+    }
+    .app-shell {
+      min-height: 100vh;
+      background: var(--color-bg);
+    }
+    .shell-header {
+      height: 56px;
+      background: var(--color-header-bg);
+    }
+    .shell-body {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 16px;
+    }
+    .shell-hero {
+      display: flex;
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+    .shell-hero-main {
+      flex: 2;
+      height: 280px;
+      border-radius: 8px;
+      background: linear-gradient(90deg, var(--color-skeleton) 25%, var(--color-skeleton-shine) 50%, var(--color-skeleton) 75%);
+      background-size: 200% 100%;
+      animation: skeleton-shimmer 1.5s ease-in-out infinite;
+    }
+    .shell-hero-side {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .shell-hero-item {
+      flex: 1;
+      border-radius: 8px;
+      background: linear-gradient(90deg, var(--color-skeleton) 25%, var(--color-skeleton-shine) 50%, var(--color-skeleton) 75%);
+      background-size: 200% 100%;
+      animation: skeleton-shimmer 1.5s ease-in-out infinite;
+    }
+    .shell-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr 280px;
+      gap: 16px;
+    }
+    .shell-card {
+      height: 80px;
+      border-radius: 8px;
+      background: linear-gradient(90deg, var(--color-skeleton) 25%, var(--color-skeleton-shine) 50%, var(--color-skeleton) 75%);
+      background-size: 200% 100%;
+      animation: skeleton-shimmer 1.5s ease-in-out infinite;
+    }
+    @media (max-width: 768px) {
+      html { font-size: 14px; }
+      body { -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; font-size: 14px; }
+      .shell-hero { flex-direction: column; }
+      .shell-hero-main { height: 180px; }
+      .shell-hero-side { flex-direction: row; }
+      .shell-grid { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 480px) {
+      html { font-size: 13px; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      * { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
+    }
+  </style>
+  <link rel="preconnect" href="https://3845c8e2.r7.cpolar.cn">
+  <link rel="dns-prefetch" href="https://3845c8e2.r7.cpolar.cn">
+  <script type="module" src="./assets/js/index-soTZhOoQ.js"></script>
+  <link rel="stylesheet" href="./assets/css/page-home-DZbGM18K.css">
+  <link rel="stylesheet" href="./assets/css/page-newsdetail-Cd-05sBi.css">
+  <link rel="stylesheet" href="./assets/css/page-profile-C9DkF4lo.css">
+  <link rel="stylesheet" href="./assets/css/index-0x8Riuk0.css">
+</head>
+<body>
+  <div id="app">
+    <div class="app-shell">
+      <div class="shell-header"></div>
+      <div class="shell-body">
+        <div class="shell-hero">
+          <div class="shell-hero-main"></div>
+          <div class="shell-hero-side">
+            <div class="shell-hero-item"></div>
+            <div class="shell-hero-item"></div>
+            <div class="shell-hero-item"></div>
+          </div>
+        </div>
+        <div class="shell-grid">
+          <div class="shell-card"></div>
+          <div class="shell-card"></div>
+          <div class="shell-card"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <noscript>
+    <strong>很抱歉，智讯需要启用 JavaScript 才能正常运行。请在浏览器设置中启用 JavaScript 后刷新页面。</strong>
+  </noscript>
+</body>
+</html>

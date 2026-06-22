@@ -1,0 +1,43 @@
+# Node
+node_modules/
+dist/
+
+# Gradle
+.gradle/
+build/
+*.ap_
+*.aab
+android/zhixun.keystore
+*.keystore
+*.jks
+
+# IDE
+.idea/
+*.iml
+.vscode/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Env
+.env
+*.log
+
+# Docker volumes
+docker/volumes/
+
+# Python
+__pycache__/
+*.pyc
+
+# Output
+dogfood-output/
+reports/
+ppt-workspace/
+*.jpg
+*.jpeg
+*.png
+!android/app/src/main/res/**/ic_launcher*.png
+!android/app/src/main/res/**/splash_icon.png
+!frontend/public/logo.jpg

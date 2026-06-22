@@ -1,0 +1,256 @@
+version: '3.8'
+
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: bigdata-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: bigdata_portal
+      MYSQL_CHARACTER_SET_SERVER: utf8mb4
+      MYSQL_COLLATION_SERVER: utf8mb4_unicode_ci
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+      - ./sql/init_mysql.sql:/docker-entrypoint-initdb.d/init.sql
+    command: --default-authentication-plugin=mysql_native_password
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-p${MYSQL_ROOT_PASSWORD}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks:
+      - bigdata-net
+
+  zookeeper:
+    image: wurstmeister/zookeeper:latest
+    container_name: bigdata-zookeeper
+    ports:
+      - "127.0.0.1:2181:2181"
+    volumes:
+      - zookeeper-data:/opt/zookeeper-3.4.13/data
+    healthcheck:
+      test: ["CMD-SHELL", "echo ruok | nc localhost 2181 | grep imok"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+    networks:
+      - bigdata-net
+
+  kafka:
+    image: wurstmeister/kafka:latest
+    container_name: bigdata-kafka
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+      KAFKA_CREATE_TOPICS: "user-behavior:1:1,analytics-result:1:1"
+    ports:
+      - "127.0.0.1:9092:9092"
+    volumes:
+      - kafka-data:/var/lib/kafka/data
+    depends_on:
+      zookeeper:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "kafka-topics.sh --bootstrap-server localhost:9092 --list"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+      start_period: 20s
+    networks:
+      - bigdata-net
+
+  clickhouse:
+    image: clickhouse/clickhouse-server:latest
+    container_name: bigdata-clickhouse
+    environment:
+      CLICKHOUSE_USER: default
+      CLICKHOUSE_PASSWORD: ${CLICKHOUSE_PASSWORD:-bigdata123}
+      CLICKHOUSE_DB: bigdata_portal
+    ports:
+      - "127.0.0.1:8123:8123"
+      - "127.0.0.1:9000:9000"
+    volumes:
+      - clickhouse-data:/var/lib/clickhouse
+    healthcheck:
+      test: ["CMD", "clickhouse-client", "--user", "default", "--password", "bigdata123", "--query", "SELECT 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+    networks:
+      - bigdata-net
+
+  kudu-master:
+    image: apache/kudu:latest
+    container_name: bigdata-kudu-master
+    command: ["master"]
+    ports:
+      - "7051:7051"
+      - "8051:8051"
+    environment:
+      KUDU_MASTERS: kudu-master:7051
+      MASTER_ARGS: >-
+        --fs_wal_dir=/var/lib/kudu/master
+        --rpc_bind_addresses=0.0.0.0:7051
+        --rpc_advertised_addresses=kudu-master:7051
+        --webserver_port=8051
+        --webserver_doc_root=/opt/kudu/www
+        --stderrthreshold=0
+        --use_hybrid_clock=false
+        --unlock_unsafe_flags=true
+        --rpc_encryption=disabled
+        --rpc_authentication=disabled
+    volumes:
+      - kudu-master-data:/var/lib/kudu
+    healthcheck:
+      test: ["CMD", "bash", "-c", "exec 3<>/dev/tcp/localhost/7051"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    networks:
+      - bigdata-net
+
+  kudu-tserver:
+    image: apache/kudu:latest
+    container_name: bigdata-kudu-tserver
+    command: ["tserver"]
+    depends_on:
+      - kudu-master
+    environment:
+      KUDU_MASTERS: kudu-master:7051
+      TSERVER_ARGS: >-
+        --fs_wal_dir=/var/lib/kudu/tserver
+        --rpc_bind_addresses=0.0.0.0:7050
+        --rpc_advertised_addresses=kudu-tserver:7050
+        --webserver_port=8050
+        --webserver_doc_root=/opt/kudu/www
+        --stderrthreshold=0
+        --use_hybrid_clock=false
+        --unlock_unsafe_flags=true
+        --rpc_encryption=disabled
+        --rpc_authentication=disabled
+    volumes:
+      - kudu-tserver-data:/var/lib/kudu
+    ports:
+      - "8050:8050"
+    networks:
+      - bigdata-net
+
+  flink-jobmanager:
+    image: flink:1.17.1-java8
+    container_name: bigdata-flink-jobmanager
+    environment:
+      FLINK_PROPERTIES: "jobmanager.rpc.address: flink-jobmanager"
+    ports:
+      - "127.0.0.1:8081:8081"
+    command: jobmanager
+    networks:
+      - bigdata-net
+
+  flink-taskmanager:
+    image: flink:1.17.1-java8
+    container_name: bigdata-flink-taskmanager
+    environment:
+      FLINK_PROPERTIES: "jobmanager.rpc.address: flink-jobmanager"
+      taskmanager.numberOfTaskSlots: "4"
+    depends_on:
+      - flink-jobmanager
+    command: taskmanager
+    networks:
+      - bigdata-net
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: bigdata-backend
+    ports:
+      - "8090:8090"
+    environment:
+      SPRING_DATASOURCE_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      APP_DEV_MODE: ${APP_DEV_MODE:-true}
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      CLICKHOUSE_HOST: clickhouse
+      CLICKHOUSE_PORT: 8123
+      CLICKHOUSE_PASSWORD: ${CLICKHOUSE_PASSWORD:-bigdata123}
+      KUDU_MASTER_HOSTS: kudu-master:7051
+      MAIL_HOST: ${MAIL_HOST:-smtp.qq.com}
+      MAIL_PORT: ${MAIL_PORT:-587}
+      MAIL_USERNAME: ${MAIL_USERNAME:-}
+      MAIL_PASSWORD: ${MAIL_PASSWORD:-}
+      AI_NVIDIA_API_KEY: ${AI_NVIDIA_API_KEY:-your-nvidia-api-key}
+      JWT_SECRET: ${JWT_SECRET}
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-http://localhost:5173,http://localhost:3000}
+    volumes:
+      - news-images:/app/news-images
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8090/actuator/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    depends_on:
+      mysql:
+        condition: service_healthy
+      kafka:
+        condition: service_started
+    networks:
+      - bigdata-net
+    extra_hosts:
+      - "integrate.api.nvidia.com:99.83.136.103"
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: bigdata-frontend
+    ports:
+      - "80:80"
+    volumes:
+      - ./frontend/public/images:/usr/share/nginx/html/images
+      - news-images:/usr/share/nginx/html/images/news
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:80"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+    depends_on:
+      - backend
+    networks:
+      - bigdata-net
+
+  dashboard:
+    build:
+      context: ./dashboard
+      dockerfile: Dockerfile
+    container_name: bigdata-dashboard
+    ports:
+      - "3000:80"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:80"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+    depends_on:
+      - backend
+    networks:
+      - bigdata-net
+
+volumes:
+  mysql-data:
+  clickhouse-data:
+  zookeeper-data:
+  kafka-data:
+  kudu-master-data:
+  kudu-tserver-data:
+  news-images:
+
+networks:
+  bigdata-net:
+    driver: bridge

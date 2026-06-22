@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Primary colors matching frontend header -->
+    <color name="navy_900">#FF1A2A4A</color>
+    <color name="navy_800">#FF243A5E</color>
+    <color name="navy_700">#FF2E4A72</color>
+    <color name="navy_600">#FF3A5A8A</color>
+
+    <!-- Accent -->
+    <color name="accent">#FF4A90D9</color>
+    <color name="accent_dark">#FF3A7BC8</color>
+
+    <!-- Background -->
+    <color name="bg_light">#FFF5F5F5</color>
+    <color name="bg_card">#FFFFFFFF</color>
+    <color name="bg_error">#FFF0F0F0</color>
+
+    <!-- Text -->
+    <color name="text_primary">#FF1A1A1A</color>
+    <color name="text_secondary">#FF666666</color>
+    <color name="text_hint">#FF999999</color>
+    <color name="text_on_primary">#FFFFFFFF</color>
+
+    <!-- Status -->
+    <color name="success">#FF4CAF50</color>
+    <color name="error">#FFF44336</color>
+    <color name="warning">#FFFFC107</color>
+
+    <!-- Basic -->
+    <color name="white">#FFFFFFFF</color>
+    <color name="black">#FF000000</color>
+    <color name="transparent">#00000000</color>
+
+    <!-- Splash -->
+    <color name="splash_bg">#FF1A2A4A</color>
+
+    <!-- Nav inactive -->
+    <color name="nav_inactive">#FF999999</color>
+</resources>

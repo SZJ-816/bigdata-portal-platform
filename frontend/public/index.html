@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <script>
+    if (window.location.protocol === 'file:') {
+      window.__API_BASE_URL__ = window.__API_BASE_URL__ || 'https://164f43c6.r7.cpolar.cn/api';
+    }
+  </script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#1a2a4a" />
+  <meta name="description" content="智讯 - 实时追踪AI、云计算、大数据、硬件等前沿科技动态" />
+  <meta name="keywords" content="智讯,AI,人工智能,大数据,云计算,硬件,互联网" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <link rel="apple-touch-icon" href="/favicon.svg" />
+  <link rel="preconnect" href="https://r7.cpolar.cn" />
+  <link rel="dns-prefetch" href="https://r7.cpolar.cn" />
+  <title>智讯 - 大数据门户平台</title>
+  <style>
+    /* Critical CSS - 首屏加载优化 */
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif; }
+    #app-loading {
+      display: flex; justify-content: center; align-items: center;
+      min-height: 100vh; background: #f5f5f5;
+    }
+    .loading-spinner {
+      width: 40px; height: 40px;
+      border: 3px solid #e0e0e0;
+      border-top-color: #1a2a4a;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <div id="app-loading">
+      <div class="loading-spinner"></div>
+    </div>
+  </div>
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>
