@@ -54,11 +54,11 @@ export default defineConfig({
     allowedHosts: true,
     proxy: {
       '/api': {
-        target: 'http://192.168.146.128:8090',
+        target: 'http://localhost:8080',
         changeOrigin: true
       },
       '/images/news': {
-        target: 'http://192.168.146.128:8090',
+        target: 'http://localhost:8080',
         changeOrigin: true
       }
     }

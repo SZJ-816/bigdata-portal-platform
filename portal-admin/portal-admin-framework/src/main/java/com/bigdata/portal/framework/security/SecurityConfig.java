@@ -60,6 +60,8 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                 .antMatchers("/auth/login", "/auth/register").permitAll()
                 // 用户注册相关接口放行
                 .antMatchers("/users/login", "/users/register", "/users/send-code").permitAll()
+                // API接口放行（公开访问）
+                .antMatchers("/api/**").permitAll()
                 // 静态资源放行
                 .antMatchers(HttpMethod.GET, "/static/**", "/*.html", "/*.js", "/*.css").permitAll()
                 // Swagger文档放行
