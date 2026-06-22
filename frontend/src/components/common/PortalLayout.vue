@@ -105,7 +105,7 @@ function goLogin() {
 }
 
 function goDashboard() {
-  const url = window.DASHBOARD_URL || 'https://201248e4.r7.cpolar.cn'
+  const url = window.DASHBOARD_URL || 'https://3845c8e2.r7.cpolar.cn'
   window.open(url, '_blank')
 }
 
