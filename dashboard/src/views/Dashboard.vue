@@ -3,7 +3,7 @@
     <header class="top-bar">
       <div class="bar-inner">
         <div class="brand" @click="goHome" style="cursor:pointer">
-          <img src="https://65796968.r9.vip.cpolar.cn/logo.jpg" alt="智讯" class="brand-icon" />
+          <img src="/logo.jpg" alt="智讯" class="brand-icon" />
           <span class="brand-name">智讯</span>
           <span class="brand-sub">科技新闻数据大屏</span>
         </div>
@@ -25,11 +25,12 @@
               <line x1="10" y1="9" x2="8" y2="9"/>
             </svg>新闻浏览
           </button>
-          <button :class="['nav-link', { active: activeTab === 'ai' }]" @click="switchTab('ai')">
+          <button :class="['nav-link', { active: activeTab === 'behavior' }]" @click="switchTab('behavior')">
             <svg class="nav-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-              <circle cx="12" cy="12" r="3"/>
-              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
-            </svg>AI 控制台
+              <circle cx="12" cy="7" r="4"/>
+              <path d="M5.5 21a6.5 6.5 0 0 1 13 0"/>
+              <polyline points="17 11 19 14 22 12"/>
+            </svg>实时行为
           </button>
         </nav>
         <div class="bar-right">
@@ -48,7 +49,7 @@
     <main class="page-body">
       <div v-if="activeTab === 'overview'" class="overview-page">
         <section class="kpi-banner">
-          <div class="kpi-item" v-for="stat in statsData" :key="stat.label">
+          <div class="kpi-item" v-for="stat in statsData" :key="stat.label" :style="{ '--kpi-color': stat.color }">
             <div class="kpi-num" :style="{ color: stat.color }">{{ stat.value }}</div>
             <div class="kpi-label">{{ stat.label }}</div>
           </div>
@@ -95,6 +96,30 @@
               <h2>行为类型分布</h2>
             </div>
             <div ref="regionChartRef" class="panel-chart"></div>
+          </section>
+
+          <section class="panel panel-source">
+            <div class="panel-head">
+              <h2>新闻来源分布</h2>
+              <span class="panel-tag">来源</span>
+            </div>
+            <div ref="sourceChartRef" class="panel-chart"></div>
+          </section>
+
+          <section class="panel panel-active-hour">
+            <div class="panel-head">
+              <h2>用户活跃时段</h2>
+              <span class="panel-tag">24h</span>
+            </div>
+            <div ref="activeHourChartRef" class="panel-chart"></div>
+          </section>
+
+          <section class="panel panel-publish-trend">
+            <div class="panel-head">
+              <h2>新闻发布趋势</h2>
+              <span class="panel-tag">趋势</span>
+            </div>
+            <div ref="publishTrendChartRef" class="panel-chart"></div>
           </section>
         </div>
       </div>
@@ -143,98 +168,49 @@
         </div>
       </div>
 
-      <div v-if="activeTab === 'ai'" class="ai-page">
-        <div class="ai-layout">
-          <aside class="ai-sidebar">
-            <div class="ai-sidebar-title">AI 功能</div>
-            <button :class="['ai-fn-btn', { active: aiMode === 'search' }]" @click="aiMode = 'search'">
-              <span class="ai-fn-icon">🔍</span>智能搜索
-            </button>
-            <button :class="['ai-fn-btn', { active: aiMode === 'summary' }]" @click="aiMode = 'summary'">
-              <span class="ai-fn-icon">📋</span>热点总结
-            </button>
-            <button :class="['ai-fn-btn', { active: aiMode === 'translate' }]" @click="aiMode = 'translate'">
-              <span class="ai-fn-icon">🌐</span>智能翻译
-            </button>
-            <button :class="['ai-fn-btn', { active: aiMode === 'terminal' }]" @click="aiMode = 'terminal'">
-              <span class="ai-fn-icon">⌨️</span>命令终端
-            </button>
-            <div class="ai-sidebar-footer">
-              <div class="ai-status-dot" :class="{ online: aiOnline }"></div>
-              <span>{{ aiOnline ? 'AI 在线' : 'AI 离线' }}</span>
-            </div>
-          </aside>
-          <div class="ai-main">
-            <div v-if="aiMode === 'search'" class="ai-panel">
-              <div class="ai-panel-head">
-                <h2>🔍 智能搜索</h2>
-                <span class="ai-badge">NVIDIA Llama 3.1</span>
-              </div>
-              <div class="ai-input-row">
-                <input v-model="aiSearchKeyword" class="ai-input" placeholder="输入关键词搜索新闻..." @keyup.enter="doAiSearch" :disabled="aiLoading" />
-                <button class="ai-go-btn" @click="doAiSearch" :disabled="aiLoading">{{ aiLoading ? '分析中...' : '搜索' }}</button>
-              </div>
-              <div class="ai-output" ref="aiSearchOutput">
-                <div v-if="aiSearchResult" class="ai-markdown" v-html="renderMarkdown(aiSearchResult)"></div>
-                <div v-else class="ai-placeholder">
-                  <div class="ai-placeholder-icon">🔍</div>
-                  <p>输入关键词，AI 将基于平台新闻数据进行深度分析</p>
-                </div>
+      <!-- 实时行为页面 -->
+      <div v-if="activeTab === 'behavior'" class="behavior-page">
+        <div class="behavior-layout">
+          <!-- 左侧：实时统计 + 行为事件流 -->
+          <div class="behavior-left">
+            <div class="behavior-stats">
+              <div class="behavior-stat-card" v-for="s in behaviorStats" :key="s.label">
+                <div class="behavior-stat-value" :style="{ color: s.color }">{{ s.value }}</div>
+                <div class="behavior-stat-label">{{ s.label }}</div>
               </div>
             </div>
-            <div v-if="aiMode === 'summary'" class="ai-panel">
-              <div class="ai-panel-head">
-                <h2>📋 热点总结</h2>
-                <span class="ai-badge">实时生成</span>
+            <div class="behavior-event-panel">
+              <div class="behavior-event-head">
+                <h2>实时行为事件流</h2>
+                <span class="panel-tag">自动刷新</span>
               </div>
-              <div class="ai-input-row">
-                <input v-model="aiSummaryInstruction" class="ai-input" placeholder="可选：输入额外指令（如：重点关注AI领域）" @keyup.enter="doAiSummary" :disabled="aiLoading" />
-                <button class="ai-go-btn" @click="doAiSummary" :disabled="aiLoading">{{ aiLoading ? '生成中...' : '生成' }}</button>
-              </div>
-              <div class="ai-output" ref="aiSummaryOutput">
-                <div v-if="aiSummaryResult" class="ai-markdown" v-html="renderMarkdown(aiSummaryResult)"></div>
-                <div v-else class="ai-placeholder">
-                  <div class="ai-placeholder-icon">📋</div>
-                  <p>AI 将基于最新新闻数据生成热点总结报告</p>
+              <div class="behavior-event-list">
+                <div v-for="(evt, i) in behaviorEvents" :key="i" class="behavior-event-item">
+                  <span class="behavior-event-time">{{ evt.time }}</span>
+                  <span class="behavior-event-user">用户{{ evt.userId }}</span>
+                  <span class="behavior-event-action">进行了</span>
+                  <span :class="['behavior-event-type', evt.typeClass]">{{ evt.action }}</span>
                 </div>
+                <div v-if="behaviorEvents.length === 0" class="behavior-event-empty">等待行为数据...</div>
               </div>
             </div>
-            <div v-if="aiMode === 'translate'" class="ai-panel">
-              <div class="ai-panel-head">
-                <h2>🌐 智能翻译</h2>
-                <span class="ai-badge">英 → 中</span>
+          </div>
+          <!-- 右侧：分布图 + 趋势图 -->
+          <div class="behavior-right">
+            <section class="panel panel-behavior-dist">
+              <div class="panel-head">
+                <h2>行为类型分布</h2>
+                <span class="panel-tag">实时</span>
               </div>
-              <div class="ai-input-row">
-                <input v-model="aiTranslateText" class="ai-input" placeholder="输入英文文本进行翻译..." @keyup.enter="doAiTranslate" :disabled="aiLoading" />
-                <button class="ai-go-btn" @click="doAiTranslate" :disabled="aiLoading">{{ aiLoading ? '翻译中...' : '翻译' }}</button>
+              <div ref="behaviorDistChartRef" class="panel-chart"></div>
+            </section>
+            <section class="panel panel-behavior-trend">
+              <div class="panel-head">
+                <h2>行为趋势</h2>
+                <span class="panel-tag">趋势</span>
               </div>
-              <div class="ai-output" ref="aiTranslateOutput">
-                <div v-if="aiTranslateResult" class="ai-markdown" v-html="renderMarkdown(aiTranslateResult)"></div>
-                <div v-else class="ai-placeholder">
-                  <div class="ai-placeholder-icon">🌐</div>
-                  <p>输入英文文本，AI 将自动翻译为中文</p>
-                </div>
-              </div>
-            </div>
-            <div v-if="aiMode === 'terminal'" class="ai-panel ai-terminal-panel">
-              <div class="ai-panel-head">
-                <h2>⌨️ AI 命令终端</h2>
-                <button class="ai-clear-btn" @click="aiTerminalLines = []">清屏</button>
-              </div>
-              <div class="ai-terminal" ref="aiTerminalRef" @click="focusTerminalInput">
-                <div v-for="(line, i) in aiTerminalLines" :key="i" :class="['term-line', line.type]">
-                  <span v-if="line.type === 'cmd'" class="term-prompt">$&nbsp;</span>
-                  <span v-html="line.html || line.text"></span>
-                </div>
-                <div v-if="aiLoading" class="term-line system">
-                  <span class="term-cursor">▌</span> AI 处理中...
-                </div>
-                <div class="term-input-line">
-                  <span class="term-prompt">$&nbsp;</span>
-                  <input ref="aiTerminalInput" v-model="aiTerminalCmd" class="term-input" @keyup.enter="execTerminalCmd" :disabled="aiLoading" placeholder="输入命令... (help 查看帮助)" />
-                </div>
-              </div>
-            </div>
+              <div ref="behaviorTrendChartRef" class="panel-chart"></div>
+            </section>
           </div>
         </div>
       </div>
@@ -259,7 +235,12 @@ const hotNewsChartRef = ref(null)
 const channelChartRef = ref(null)
 const funnelChartRef = ref(null)
 const regionChartRef = ref(null)
-let trendChart = null, hotNewsChart = null, channelChart = null, funnelChart = null, regionChart = null
+const sourceChartRef = ref(null)
+const activeHourChartRef = ref(null)
+const publishTrendChartRef = ref(null)
+const behaviorDistChartRef = ref(null)
+const behaviorTrendChartRef = ref(null)
+let trendChart = null, hotNewsChart = null, channelChart = null, funnelChart = null, regionChart = null, sourceChart = null, activeHourChart = null, publishTrendChart = null, behaviorDistChart = null, behaviorTrendChart = null
 const currentTime = ref('')
 
 const statsData = ref([
@@ -282,238 +263,35 @@ const newsChannel = ref('')
 const channels = ref([])
 const timeRange = ref('today')
 
+// 实时行为相关变量
+const behaviorEvents = ref([])
+const behaviorStats = ref([
+  { label: '今日UV', value: '-', color: '#2F6BFF' },
+  { label: '今日PV', value: '-', color: '#7C3AED' },
+  { label: '在线用户', value: '-', color: '#10B981' },
+  { label: '平均时长', value: '-', color: '#F59E0B' }
+])
+let behaviorInterval = null
+
+// 事件类型映射
+const eventTypeMap = {
+  page_view: { action: '浏览页面', typeClass: 'type-view' },
+  news_click: { action: '点击新闻', typeClass: 'type-click' },
+  news_read: { action: '阅读新闻', typeClass: 'type-read' },
+  search: { action: '搜索', typeClass: 'type-search' },
+  ai_search: { action: 'AI搜索', typeClass: 'type-ai' },
+  click: { action: '点击', typeClass: 'type-click' },
+  comment: { action: '评论', typeClass: 'type-comment' },
+  share: { action: '分享', typeClass: 'type-share' },
+  favorite: { action: '收藏', typeClass: 'type-fav' }
+}
+
 const switchTab = (tab) => {
   activeTab.value = tab
   if (tab === 'news') loadNews(1)
-  if (tab === 'ai') checkAiStatus()
-}
-
-const aiMode = ref('search')
-const aiLoading = ref(false)
-const aiOnline = ref(false)
-const aiSearchKeyword = ref('')
-const aiSearchResult = ref('')
-const aiSummaryInstruction = ref('')
-const aiSummaryResult = ref('')
-const aiTranslateText = ref('')
-const aiTranslateResult = ref('')
-const aiTerminalLines = ref([])
-const aiTerminalCmd = ref('')
-const aiTerminalInput = ref(null)
-const aiTerminalRef = ref(null)
-const aiSearchOutput = ref(null)
-const aiSummaryOutput = ref(null)
-const aiTranslateOutput = ref(null)
-let aiAbortController = null
-
-const checkAiStatus = async () => {
-  try {
-    const res = await fetch('/api/ai/search?keyword=test')
-    aiOnline.value = !!(res.ok || res.status === 200)
-  } catch { aiOnline.value = false }
-}
-
-const renderMarkdown = (text) => {
-  if (!text) return ''
-  return text
-    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-    .replace(/\*(.*?)\*/g, '<em>$1</em>')
-    .replace(/^### (.*$)/gm, '<h4>$1</h4>')
-    .replace(/^## (.*$)/gm, '<h3>$1</h3>')
-    .replace(/^# (.*$)/gm, '<h2>$1</h2>')
-    .replace(/^\* (.*$)/gm, '<li>$1</li>')
-    .replace(/^- (.*$)/gm, '<li>$1</li>')
-    .replace(/^\d+\. (.*$)/gm, '<li>$1</li>')
-    .replace(/\n{2,}/g, '<br/><br/>')
-    .replace(/\n/g, '<br/>')
-}
-
-const doAiSearch = async () => {
-  if (!aiSearchKeyword.value.trim() || aiLoading.value) return
-  aiLoading.value = true
-  aiSearchResult.value = ''
-  try {
-    const res = await fetch(`/api/ai/search/stream?keyword=${encodeURIComponent(aiSearchKeyword.value)}`)
-    const reader = res.body.getReader()
-    const decoder = new TextDecoder()
-    let buffer = ''
-    while (true) {
-      const { done, value } = await reader.read()
-      if (done) break
-      buffer += decoder.decode(value, { stream: true })
-      const lines = buffer.split('\n')
-      buffer = lines.pop() || ''
-      for (const line of lines) {
-        if (line.startsWith('data:')) {
-          const token = line.slice(5).trim()
-          if (token === '[DONE]') break
-          aiSearchResult.value += token
-        }
-      }
-      if (aiSearchOutput.value) aiSearchOutput.value.scrollTop = aiSearchOutput.value.scrollHeight
-    }
-    if (!aiSearchResult.value) {
-      const fallback = await fetch(`/api/ai/search?keyword=${encodeURIComponent(aiSearchKeyword.value)}`)
-      const data = await fallback.json()
-      if (data.success) aiSearchResult.value = data.data
-    }
-  } catch (e) {
-    try {
-      const fallback = await fetch(`/api/ai/search?keyword=${encodeURIComponent(aiSearchKeyword.value)}`)
-      const data = await fallback.json()
-      if (data.success) aiSearchResult.value = data.data
-      else aiSearchResult.value = '搜索失败: ' + (data.message || e.message)
-    } catch { aiSearchResult.value = 'AI 搜索服务暂不可用' }
-  } finally { aiLoading.value = false }
-}
-
-const doAiSummary = async () => {
-  aiLoading.value = true
-  aiSummaryResult.value = ''
-  try {
-    const url = `/api/ai/hot-summary/stream` + (aiSummaryInstruction.value ? `?instruction=${encodeURIComponent(aiSummaryInstruction.value)}` : '')
-    const res = await fetch(url)
-    const reader = res.body.getReader()
-    const decoder = new TextDecoder()
-    let buffer = ''
-    while (true) {
-      const { done, value } = await reader.read()
-      if (done) break
-      buffer += decoder.decode(value, { stream: true })
-      const lines = buffer.split('\n')
-      buffer = lines.pop() || ''
-      for (const line of lines) {
-        if (line.startsWith('data:')) {
-          const token = line.slice(5).trim()
-          if (token === '[DONE]') break
-          aiSummaryResult.value += token
-        }
-      }
-      if (aiSummaryOutput.value) aiSummaryOutput.value.scrollTop = aiSummaryOutput.value.scrollHeight
-    }
-    if (!aiSummaryResult.value) {
-      const fallback = await fetch(`/api/ai/hot-summary` + (aiSummaryInstruction.value ? `?instruction=${encodeURIComponent(aiSummaryInstruction.value)}` : ''))
-      const data = await fallback.json()
-      if (data.success) aiSummaryResult.value = data.data
-    }
-  } catch (e) {
-    try {
-      const fallback = await fetch(`/api/ai/hot-summary` + (aiSummaryInstruction.value ? `?instruction=${encodeURIComponent(aiSummaryInstruction.value)}` : ''))
-      const data = await fallback.json()
-      if (data.success) aiSummaryResult.value = data.data
-      else aiSummaryResult.value = '生成失败: ' + (data.message || e.message)
-    } catch { aiSummaryResult.value = 'AI 热点总结服务暂不可用' }
-  } finally { aiLoading.value = false }
-}
-
-const doAiTranslate = async () => {
-  if (!aiTranslateText.value.trim() || aiLoading.value) return
-  aiLoading.value = true
-  aiTranslateResult.value = ''
-  try {
-    const res = await fetch(`/api/ai/translate?text=${encodeURIComponent(aiTranslateText.value)}`)
-    const data = await res.json()
-    if (data.success) aiTranslateResult.value = data.data
-    else aiTranslateResult.value = '翻译失败: ' + (data.message || '未知错误')
-  } catch { aiTranslateResult.value = 'AI 翻译服务暂不可用' }
-  finally { aiLoading.value = false }
-}
-
-const focusTerminalInput = () => { aiTerminalInput.value?.focus() }
-
-const termLog = (text, type = 'output', html = '') => {
-  aiTerminalLines.value.push({ text, type, html })
-  nextTick(() => { if (aiTerminalRef.value) aiTerminalRef.value.scrollTop = aiTerminalRef.value.scrollHeight })
-}
-
-const execTerminalCmd = async () => {
-  const cmd = aiTerminalCmd.value.trim()
-  if (!cmd) return
-  aiTerminalCmd.value = ''
-  termLog(cmd, 'cmd')
-  const parts = cmd.split(/\s+/)
-  const action = parts[0].toLowerCase()
-  const arg = parts.slice(1).join(' ')
-
-  const cmdMap = {
-    help: 'help', 帮助: 'help',
-    clear: 'clear', 清屏: 'clear', 清除: 'clear',
-    status: 'status', 状态: 'status',
-    stats: 'stats', 统计: 'stats', 数据: 'stats',
-    search: 'search', 搜索: 'search', 查找: 'search', 找: 'search',
-    summary: 'summary', 总结: 'summary', 热点: 'summary', 概要: 'summary',
-    translate: 'translate', 翻译: 'translate', 译: 'translate',
-  }
-  const resolved = cmdMap[action]
-  const finalAction = resolved || 'search'
-  const finalArg = resolved ? arg : cmd
-
-  if (finalAction === 'help') {
-    termLog(`可用命令:
-  search/搜索 &lt;关键词&gt;   - AI 智能搜索新闻
-  summary/总结 [指令]     - 生成热点总结
-  translate/翻译 &lt;文本&gt;  - 智能翻译
-  status/状态              - 查看 AI 服务状态
-  stats/统计               - 查看平台数据统计
-  clear/清屏               - 清屏
-  help/帮助                - 显示帮助
-  
-  💡 直接输入任意文字也可触发 AI 搜索`, 'system')
-  } else if (finalAction === 'clear') {
-    aiTerminalLines.value = []
-  } else if (finalAction === 'status') {
-    termLog('正在检测 AI 服务状态...', 'system')
-    try {
-      const res = await fetch('/api/ai/search?keyword=ping')
-      const data = await res.json()
-      aiOnline.value = data.success
-      termLog(data.success ? '✅ AI 服务在线 | 模型: NVIDIA Llama 3.1 8B Instruct' : '❌ AI 服务异常', data.success ? 'success' : 'error')
-    } catch { aiOnline.value = false; termLog('❌ AI 服务离线', 'error') }
-  } else if (finalAction === 'stats') {
-    try {
-      const res = await fetch('/api/analytics/overview')
-      const data = await res.json()
-      const d = data.data
-      termLog(`📊 平台数据统计:
-  总用户: ${d.totalUsers} | 总新闻: ${d.totalNews} | 今日新增: ${d.todayNews}
-  总浏览: ${d.totalViews} | 总行为: ${d.totalBehaviors} | 阅读记录: ${d.totalReadHistory}`, 'success')
-    } catch { termLog('❌ 获取统计失败', 'error') }
-  } else if (finalAction === 'search') {
-    if (!finalArg) { termLog('用法: search/搜索 <关键词>', 'error'); return }
-    aiLoading.value = true
-    termLog(`🔍 搜索: "${finalArg}" ...`, 'system')
-    try {
-      const res = await fetch(`/api/ai/search?keyword=${encodeURIComponent(finalArg)}`)
-      const data = await res.json()
-      if (data.success) termLog(data.data, 'output')
-      else termLog('❌ ' + (data.message || '搜索失败'), 'error')
-    } catch { termLog('❌ AI 搜索服务不可用', 'error') }
-    finally { aiLoading.value = false }
-  } else if (finalAction === 'summary') {
-    aiLoading.value = true
-    termLog('📋 生成热点总结...', 'system')
-    try {
-      const url = `/api/ai/hot-summary` + (finalArg ? `?instruction=${encodeURIComponent(finalArg)}` : '')
-      const res = await fetch(url)
-      const data = await res.json()
-      if (data.success) termLog(data.data, 'output')
-      else termLog('❌ ' + (data.message || '生成失败'), 'error')
-    } catch { termLog('❌ AI 服务不可用', 'error') }
-    finally { aiLoading.value = false }
-  } else if (finalAction === 'translate') {
-    if (!finalArg) { termLog('用法: translate/翻译 <文本>', 'error'); return }
-    aiLoading.value = true
-    termLog('🌐 翻译中...', 'system')
-    try {
-      const res = await fetch(`/api/ai/translate?text=${encodeURIComponent(finalArg)}`)
-      const data = await res.json()
-      if (data.success) termLog(data.data, 'output')
-      else termLog('❌ ' + (data.message || '翻译失败'), 'error')
-    } catch { termLog('❌ AI 翻译服务不可用', 'error') }
-    finally { aiLoading.value = false }
-  } else {
-    termLog(`未知命令: ${action}，输入 help 查看帮助`, 'error')
+  if (tab === 'behavior') {
+    loadBehaviorEvents()
+    initBehaviorCharts()
   }
 }
 
@@ -550,16 +328,16 @@ const updateRealtimeStats = async () => {
   realtimeLoading = true
   try {
     const res = await analyticsApi.getRealtimeStats(timeRange.value)
-    const d = res.data || res
+    const d = (res.data || res) || {}
     const prefix = timeRange.value === 'today' ? '今日' : timeRange.value === 'week' ? '近7天' : '近30天'
     statsData.value = [
-      { label: prefix + 'UV', value: formatNumber(d.todayUV), color: '#2F6BFF' },
-      { label: prefix + 'PV', value: formatNumber(d.todayPV), color: '#7C3AED' },
-      { label: '实时在线', value: formatNumber(d.onlineUsers), color: '#10B981' },
-      { label: '平均阅读时长', value: formatDuration(d.avgDuration), color: '#F59E0B' },
-      { label: '总用户数', value: formatNumber(d.totalUsers), color: '#EC4899' },
-      { label: '总新闻数', value: formatNumber(d.totalNews), color: '#06B6D4' },
-      { label: '今日新增', value: formatNumber(d.todayNews), color: '#8B5CF6' },
+      { label: prefix + 'UV', value: formatNumber(d.todayUsers || d.totalUsers), color: '#2F6BFF' },
+      { label: prefix + 'PV', value: formatNumber(d.totalViews), color: '#7C3AED' },
+      { label: '总行为数', value: formatNumber(d.totalBehaviors), color: '#10B981' },
+      { label: '总用户数', value: formatNumber(d.totalUsers), color: '#F59E0B' },
+      { label: '总新闻数', value: formatNumber(d.totalNews), color: '#EC4899' },
+      { label: '今日新增', value: formatNumber(d.todayNews), color: '#06B6D4' },
+      { label: '阅读记录', value: formatNumber(d.totalReadHistory), color: '#8B5CF6' },
       { label: '总浏览量', value: formatNumber(d.totalViews), color: '#F97316' }
     ]
   } catch (e) { console.error(e) }
@@ -606,12 +384,37 @@ const initTrendChart = async () => {
 
 const initHotNewsChart = async () => {
   if (!hotNewsChartRef.value) return
-  if (hotNewsChart) hotNewsChart.dispose()
-  hotNewsChart = echarts.init(hotNewsChartRef.value)
+  if (!hotNewsChart) hotNewsChart = echarts.init(hotNewsChartRef.value)
   try {
-    const res = await analyticsApi.getHotNews(timeRange.value)
-    const data = res.data || res
-    if (!Array.isArray(data) || data.length === 0) {
+    // 从新闻列表API获取真实数据，按view_count排序
+    const res = await fetch('/api/news?page=1&size=10').then(r => r.json())
+    const pageData = res.data || res
+    const records = pageData?.data || pageData?.records || []
+    let data = []
+    if (Array.isArray(records) && records.length > 0) {
+      // 检查view_count是否都为0
+      const hasViews = records.some(r => (r.viewCount || r.view_count || 0) > 0)
+      if (hasViews) {
+        // 按view_count排序
+        const sorted = [...records].sort((a, b) => (b.viewCount || b.view_count || 0) - (a.viewCount || a.view_count || 0))
+        data = sorted.slice(0, 10).map(d => ({
+          name: d.title || '',
+          value: d.viewCount || d.view_count || 0
+        }))
+      } else {
+        // view_count都是0时，按publishTime排序（最新发布）
+        const sorted = [...records].sort((a, b) => {
+          const ta = new Date(a.publishTime || a.publish_time || 0).getTime()
+          const tb = new Date(b.publishTime || b.publish_time || 0).getTime()
+          return tb - ta
+        })
+        data = sorted.slice(0, 10).map(d => ({
+          name: d.title || '',
+          value: d.viewCount || d.view_count || 0
+        }))
+      }
+    }
+    if (data.length === 0) {
       hotNewsChart.setOption({
         title: { text: '暂无数据', left: 'center', top: 'center', textStyle: { color: '#94a3b8', fontSize: 14, fontFamily: chartTheme.fontFamily } }
       })
@@ -633,22 +436,14 @@ const initChannelChart = async () => {
   if (channelChart) channelChart.dispose()
   channelChart = echarts.init(channelChartRef.value)
   try {
-    const res = await analyticsApi.getChannelDist(timeRange.value)
-    let data = res.data || res
-    if (!Array.isArray(data)) data = []
-    // Fallback: fetch news from MySQL and count by channel
-    if (data.length === 0) {
-      try {
-        const newsRes = await fetch('/api/news?page=1&size=500')
-        const newsJson = await newsRes.json()
-        const records = newsJson?.data?.records || newsJson?.data || []
-        const channelMap = {}
-        records.forEach(item => {
-          const ch = item.channel || '其他'
-          channelMap[ch] = (channelMap[ch] || 0) + 1
-        })
-        data = Object.entries(channelMap).map(([name, value]) => ({ name, value }))
-      } catch (e) { /* ignore */ }
+    const res = await analyticsApi.getNewsChannels()
+    const channelData = res.data || res
+    let data = []
+    if (channelData && typeof channelData === 'object') {
+      data = Object.entries(channelData).map(([name, items]) => ({
+        name,
+        value: Array.isArray(items) ? items.length : (typeof items === 'number' ? items : 0)
+      }))
     }
     if (data.length === 0) {
       channelChart.setOption({
@@ -659,7 +454,7 @@ const initChannelChart = async () => {
     const colors = ['#2F6BFF', '#7C3AED', '#10B981', '#F59E0B', '#EF4444', '#EC4899', '#06B6D4', '#8B5CF6']
     channelChart.setOption({
       backgroundColor: 'transparent',
-      tooltip: { trigger: 'item', backgroundColor: chartTheme.tipBg, borderColor: '#334155', textStyle: { color: chartTheme.tipText, fontSize: 12, fontFamily: chartTheme.fontFamily }, formatter: '{b}: {c} ({d}%)' },
+      tooltip: { trigger: 'item', backgroundColor: chartTheme.tipBg, borderColor: '#334155', textStyle: { color: chartTheme.tipText, fontSize: 12, fontFamily: chartTheme.fontFamily }, formatter: '{b}: {c}条 ({d}%)' },
       legend: { orient: 'vertical', right: 8, top: 'center', textStyle: { color: '#475569', fontSize: 11, fontFamily: chartTheme.fontFamily }, itemWidth: 10, itemHeight: 10, itemGap: 8 },
       series: [{ type: 'pie', radius: ['38%', '68%'], center: ['35%', '50%'], avoidLabelOverlap: false, label: { show: false }, emphasis: { label: { show: true, fontSize: 12, fontWeight: 'bold' } }, labelLine: { show: false }, data: data.map((item, i) => ({ ...item, itemStyle: { color: colors[i % colors.length] } })), itemStyle: { borderColor: '#fff', borderWidth: 2 } }]
     })
@@ -671,9 +466,32 @@ const initFunnelChart = async () => {
   if (funnelChart) funnelChart.dispose()
   funnelChart = echarts.init(funnelChartRef.value)
   try {
-    const res = await analyticsApi.getFunnel(timeRange.value)
-    const data = res.data || res
-    if (!Array.isArray(data) || data.length === 0) {
+    const [overviewRes, eventRes] = await Promise.all([
+      analyticsApi.getOverview(timeRange.value),
+      analyticsApi.getEventDist(timeRange.value)
+    ])
+    const overview = (overviewRes.data || overviewRes) || {}
+    const eventData = eventRes.data || eventRes
+
+    const typeMap = { 'page_view': '页面浏览', 'news_click': '新闻点击', 'news_read': '新闻阅读', 'search': '搜索', 'ai_search': 'AI搜索', 'news_comment': '评论', 'share': '分享', 'favorite': '收藏', 'like': '点赞' }
+    let data = []
+    if (Array.isArray(eventData) && eventData.length > 0) {
+      data = eventData.map(d => ({
+        name: typeMap[d.event_type] || d.event_type || '其他',
+        value: d.cnt || d.value || 0
+      })).filter(d => d.value > 0).sort((a, b) => b.value - a.value)
+    }
+
+    if (data.length < 3) {
+      data = [
+        { name: '浏览', value: overview.totalViews || 0 },
+        { name: '行为', value: overview.totalBehaviors || 0 },
+        { name: '阅读记录', value: overview.totalReadHistory || 0 },
+        { name: '用户', value: overview.totalUsers || 0 }
+      ].filter(d => d.value > 0)
+    }
+
+    if (data.length === 0) {
       funnelChart.setOption({
         title: { text: '暂无数据', left: 'center', top: 'center', textStyle: { color: '#94a3b8', fontSize: 14, fontFamily: chartTheme.fontFamily } }
       })
@@ -682,8 +500,8 @@ const initFunnelChart = async () => {
     const colors = ['#2F6BFF', '#7C3AED', '#10B981', '#F59E0B', '#EF4444', '#EC4899']
     funnelChart.setOption({
       backgroundColor: 'transparent',
-      tooltip: { trigger: 'item', backgroundColor: chartTheme.tipBg, borderColor: '#334155', textStyle: { color: chartTheme.tipText, fontSize: 12, fontFamily: chartTheme.fontFamily } },
-      series: [{ type: 'funnel', left: '10%', top: 10, bottom: 10, width: '65%', min: 0, max: 100, minSize: '10%', maxSize: '100%', sort: 'descending', gap: 4, label: { show: true, position: 'inside', color: '#fff', fontSize: 11, fontWeight: 500, fontFamily: chartTheme.fontFamily }, labelLine: { show: false }, itemStyle: { borderColor: '#fff', borderWidth: 1 }, data: data.map((item, i) => ({ name: item.name, value: item.value, itemStyle: { color: new echarts.graphic.LinearGradient(0, 0, 1, 0, [{ offset: 0, color: colors[i] || colors[0] }, { offset: 1, color: (colors[i] || colors[0]) + '88' }]) } })) }]
+      tooltip: { trigger: 'item', backgroundColor: chartTheme.tipBg, borderColor: '#334155', textStyle: { color: chartTheme.tipText, fontSize: 12, fontFamily: chartTheme.fontFamily }, formatter: (p) => `${p.name}: ${formatNumber(p.value)}` },
+      series: [{ type: 'funnel', left: '10%', top: 10, bottom: 10, width: '65%', min: 0, max: 100, minSize: '10%', maxSize: '100%', sort: 'descending', gap: 4, label: { show: true, position: 'inside', color: '#fff', fontSize: 11, fontWeight: 500, fontFamily: chartTheme.fontFamily, formatter: (p) => `${p.name}\n${formatNumber(p.value)}` }, labelLine: { show: false }, itemStyle: { borderColor: '#fff', borderWidth: 1 }, data: data.map((item, i) => ({ name: item.name, value: item.value, itemStyle: { color: new echarts.graphic.LinearGradient(0, 0, 1, 0, [{ offset: 0, color: colors[i % colors.length] || colors[0] }, { offset: 1, color: (colors[i % colors.length] || colors[0]) + '88' }]) } })) }]
     })
   } catch (e) { console.error(e) }
 }
@@ -693,26 +511,252 @@ const initRegionChart = async () => {
   if (regionChart) regionChart.dispose()
   regionChart = echarts.init(regionChartRef.value)
   try {
-    const res = await analyticsApi.getRegionDist(timeRange.value)
-    const data = res.data || res
-    if (!Array.isArray(data) || data.length === 0) {
+    const res = await analyticsApi.getEventDist(timeRange.value)
+    let data = res.data || res
+    if (!Array.isArray(data)) data = []
+    const typeMap = { 'page_view': '页面浏览', 'news_click': '新闻点击', 'news_read': '新闻阅读', 'news_comment': '新闻评论', 'search': '搜索', 'ai_search': 'AI搜索', 'share': '分享', 'favorite': '收藏', 'like': '点赞' }
+    const mappedData = data.map(d => ({ name: typeMap[d.event_type] || d.event_type || d.name || '其他', value: d.cnt || d.value || 0 })).filter(d => d.value > 0)
+    if (mappedData.length === 0) {
       regionChart.setOption({
         title: { text: '暂无数据', left: 'center', top: 'center', textStyle: { color: '#94a3b8', fontSize: 14, fontFamily: chartTheme.fontFamily } }
       })
       return
     }
+    const colors = ['#2F6BFF', '#7C3AED', '#10B981', '#F59E0B', '#EF4444', '#EC4899', '#06B6D4', '#8B5CF6']
     regionChart.setOption({
       backgroundColor: 'transparent',
-      tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' }, backgroundColor: chartTheme.tipBg, borderColor: '#334155', textStyle: { color: chartTheme.tipText, fontSize: 12, fontFamily: chartTheme.fontFamily } },
-      grid: { left: 8, right: 30, bottom: 4, top: 4, containLabel: true },
-      xAxis: { type: 'value', axisLine: { show: false }, axisLabel: { color: chartTheme.textColor, fontSize: 10, fontFamily: chartTheme.fontFamily }, splitLine: { lineStyle: { color: chartTheme.splitColor } } },
-      yAxis: { type: 'category', data: data.map(d => d.event_type || d.name || '').reverse(), axisLine: { show: false }, axisTick: { show: false }, axisLabel: { color: '#475569', fontSize: 11, fontFamily: chartTheme.fontFamily } },
-      series: [{ type: 'bar', data: data.map(d => d.cnt || d.value || 0).reverse(), itemStyle: { color: new echarts.graphic.LinearGradient(0, 0, 1, 0, [{ offset: 0, color: '#10B981' }, { offset: 1, color: '#34D399' }]), borderRadius: [0, 4, 4, 0] }, barWidth: 16 }]
+      tooltip: { trigger: 'item', backgroundColor: chartTheme.tipBg, borderColor: '#334155', textStyle: { color: chartTheme.tipText, fontSize: 12, fontFamily: chartTheme.fontFamily }, formatter: '{b}: {c}次 ({d}%)' },
+      legend: { orient: 'vertical', right: 8, top: 'center', textStyle: { color: '#475569', fontSize: 11, fontFamily: chartTheme.fontFamily }, itemWidth: 10, itemHeight: 10, itemGap: 8 },
+      series: [{ type: 'pie', radius: ['35%', '65%'], center: ['35%', '50%'], avoidLabelOverlap: false, label: { show: false }, emphasis: { label: { show: true, fontSize: 12, fontWeight: 'bold' } }, labelLine: { show: false }, data: mappedData.map((item, i) => ({ ...item, itemStyle: { color: colors[i % colors.length] } })), itemStyle: { borderColor: '#fff', borderWidth: 2 } }]
     })
   } catch (e) { console.error(e) }
 }
 
-const handleResize = () => { trendChart?.resize(); hotNewsChart?.resize(); channelChart?.resize(); funnelChart?.resize(); regionChart?.resize() }
+const initSourceChart = async () => {
+  if (!sourceChartRef.value) return
+  if (sourceChart) sourceChart.dispose()
+  sourceChart = echarts.init(sourceChartRef.value)
+  try {
+    const res = await analyticsApi.getNewsList(1, 500)
+    const json = res.data || res
+    const records = json?.data || json?.records || json?.data?.records || []
+    const sourceMap = {}
+    records.forEach(item => {
+      const src = item.source || '未知来源'
+      sourceMap[src] = (sourceMap[src] || 0) + 1
+    })
+    let data = Object.entries(sourceMap).map(([name, value]) => ({ name, value }))
+      .sort((a, b) => b.value - a.value).slice(0, 10)
+    if (data.length === 0) {
+      sourceChart.setOption({
+        title: { text: '暂无数据', left: 'center', top: 'center', textStyle: { color: '#94a3b8', fontSize: 14, fontFamily: chartTheme.fontFamily } }
+      })
+      return
+    }
+    const colors = ['#2F6BFF', '#7C3AED', '#10B981', '#F59E0B', '#EF4444', '#EC4899', '#06B6D4', '#8B5CF6', '#F97316', '#14B8A6']
+    sourceChart.setOption({
+      backgroundColor: 'transparent',
+      tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' }, backgroundColor: chartTheme.tipBg, borderColor: '#334155', textStyle: { color: chartTheme.tipText, fontSize: 12, fontFamily: chartTheme.fontFamily } },
+      grid: { left: 8, right: 40, bottom: 4, top: 4, containLabel: true },
+      xAxis: { type: 'value', axisLine: { show: false }, axisLabel: { color: chartTheme.textColor, fontSize: 10, fontFamily: chartTheme.fontFamily }, splitLine: { lineStyle: { color: chartTheme.splitColor } } },
+      yAxis: { type: 'category', data: data.map(d => d.name).reverse(), axisLine: { show: false }, axisTick: { show: false }, axisLabel: { color: '#475569', fontSize: 11, fontFamily: chartTheme.fontFamily } },
+      series: [{ type: 'bar', data: data.map((d, i) => ({ value: d.value, itemStyle: { color: new echarts.graphic.LinearGradient(0, 0, 1, 0, [{ offset: 0, color: colors[i % colors.length] }, { offset: 1, color: (colors[i % colors.length]) + '88' }]), borderRadius: [0, 4, 4, 0] } })).reverse(), barWidth: 14 }]
+    })
+  } catch (e) { console.error(e) }
+}
+
+const initActiveHourChart = async () => {
+  if (!activeHourChartRef.value) return
+  if (activeHourChart) activeHourChart.dispose()
+  activeHourChart = echarts.init(activeHourChartRef.value)
+  try {
+    let hourData = []
+    try {
+      const res = await analyticsApi.getTrend('today')
+      const data = res.data || res
+      if (Array.isArray(data) && data.length > 0) {
+        hourData = data.map(d => ({ hour: d.hour, value: (d.pv || 0) + (d.uv || 0) }))
+      }
+    } catch (e) { /* ignore */ }
+    if (hourData.length === 0) {
+      activeHourChart.setOption({
+        title: { text: '暂无数据', left: 'center', top: 'center', textStyle: { color: '#94a3b8', fontSize: 14, fontFamily: chartTheme.fontFamily } }
+      })
+      return
+    }
+    const maxVal = Math.max(...hourData.map(d => d.value))
+    activeHourChart.setOption({
+      backgroundColor: 'transparent',
+      tooltip: { trigger: 'axis', backgroundColor: chartTheme.tipBg, borderColor: '#334155', textStyle: { color: chartTheme.tipText, fontSize: 12, fontFamily: chartTheme.fontFamily }, formatter: (p) => `${p[0].name}<br/>活跃度: ${p[0].value}` },
+      grid: { left: 40, right: 16, bottom: 24, top: 16 },
+      xAxis: { type: 'category', data: hourData.map(d => d.hour), axisLine: { lineStyle: { color: '#E2E8F0' } }, axisLabel: { color: chartTheme.textColor, fontSize: 9, fontFamily: chartTheme.fontFamily, interval: 2 }, axisTick: { show: false } },
+      yAxis: { type: 'value', axisLine: { show: false }, axisLabel: { show: false }, splitLine: { show: false } },
+      series: [{
+        type: 'bar',
+        data: hourData.map(d => ({
+          value: d.value,
+          itemStyle: {
+            color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+              { offset: 0, color: d.value > maxVal * 0.7 ? '#2F6BFF' : d.value > maxVal * 0.4 ? '#60A5FA' : '#BFDBFE' },
+              { offset: 1, color: d.value > maxVal * 0.7 ? 'rgba(47,107,255,0.3)' : d.value > maxVal * 0.4 ? 'rgba(96,165,250,0.2)' : 'rgba(191,219,254,0.1)' }
+            ]),
+            borderRadius: [3, 3, 0, 0]
+          }
+        })),
+        barWidth: '60%'
+      }]
+    })
+  } catch (e) { console.error(e) }
+}
+
+const initPublishTrendChart = async () => {
+  if (!publishTrendChartRef.value) return
+  if (publishTrendChart) publishTrendChart.dispose()
+  publishTrendChart = echarts.init(publishTrendChartRef.value)
+  try {
+    const res = await analyticsApi.getNewsList(1, 500)
+    const json = res.data || res
+    const records = json?.data || json?.records || json?.data?.records || []
+    const dayMap = {}
+    const now = new Date()
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date(now)
+      d.setDate(d.getDate() - i)
+      const key = `${d.getMonth() + 1}/${d.getDate()}`
+      dayMap[key] = 0
+    }
+    records.forEach(item => {
+      if (item.publishTime) {
+        const d = new Date(item.publishTime)
+        const key = `${d.getMonth() + 1}/${d.getDate()}`
+        if (key in dayMap) dayMap[key] = (dayMap[key] || 0) + 1
+      }
+    })
+    const dates = Object.keys(dayMap)
+    const values = Object.values(dayMap)
+    publishTrendChart.setOption({
+      backgroundColor: 'transparent',
+      tooltip: { trigger: 'axis', backgroundColor: chartTheme.tipBg, borderColor: '#334155', textStyle: { color: chartTheme.tipText, fontSize: 12, fontFamily: chartTheme.fontFamily } },
+      grid: { left: 40, right: 16, bottom: 24, top: 16 },
+      xAxis: { type: 'category', data: dates, axisLine: { lineStyle: { color: '#E2E8F0' } }, axisLabel: { color: chartTheme.textColor, fontSize: 10, fontFamily: chartTheme.fontFamily }, axisTick: { show: false } },
+      yAxis: { type: 'value', axisLine: { show: false }, axisLabel: { color: chartTheme.textColor, fontSize: 10, fontFamily: chartTheme.fontFamily }, splitLine: { lineStyle: { color: chartTheme.splitColor } } },
+      series: [{
+        type: 'line', smooth: true, data: values, symbol: 'circle', symbolSize: 6,
+        lineStyle: { color: '#10B981', width: 2.5 },
+        itemStyle: { color: '#10B981', borderColor: '#fff', borderWidth: 2 },
+        areaStyle: { color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [{ offset: 0, color: 'rgba(16,185,129,0.2)' }, { offset: 1, color: 'rgba(16,185,129,0)' }]) }
+      }]
+    })
+  } catch (e) { console.error(e) }
+}
+
+// 实时行为：加载行为事件
+const loadBehaviorEvents = async () => {
+  try {
+    const [realtimeRes, trendRes] = await Promise.all([
+      analyticsApi.getRealtimeStats('today'),
+      analyticsApi.getTrend('today')
+    ])
+    const d = (realtimeRes.data || realtimeRes) || {}
+    // 更新统计卡片
+    behaviorStats.value = [
+      { label: '今日UV', value: formatNumber(d.todayUsers || d.totalUsers), color: '#2F6BFF' },
+      { label: '今日PV', value: formatNumber(d.totalViews), color: '#7C3AED' },
+      { label: '在线用户', value: formatNumber(d.totalUsers), color: '#10B981' },
+      { label: '平均时长', value: formatDuration(d.avgDuration || d.avgReadTime), color: '#F59E0B' }
+    ]
+    // 从 ClickHouse 查询真实行为事件
+    try {
+      const sql = encodeURIComponent('SELECT event_time, user_id, event_type, target_id, target_type FROM bigdata_portal.behavior_events ORDER BY event_time DESC LIMIT 30 FORMAT JSON')
+      const chRes = await fetch(`/ch-query/?query=${sql}`)
+      if (chRes.ok) {
+        const chData = await chRes.json()
+        const rows = chData.data || []
+        const newEvents = rows.map(row => {
+          const mapped = eventTypeMap[row.event_type] || { action: row.event_type, typeClass: 'type-other' }
+          const time = new Date(row.event_time).toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })
+          return {
+            time,
+            userId: String(row.user_id).slice(-6),
+            action: mapped.action,
+            typeClass: mapped.typeClass,
+            target: row.target_type || ''
+          }
+        })
+        behaviorEvents.value = newEvents
+      }
+    } catch (e) {
+      // ClickHouse不可用时，从MySQL查询
+      try {
+        const mysqlRes = await fetch('/api/analytics/realtime?range=today')
+        const mysqlData = await mysqlRes.json()
+        // 仅显示统计信息，不生成模拟事件
+        if (behaviorEvents.value.length === 0) {
+          behaviorEvents.value = [{ time: '--:--:--', userId: '-', action: '暂无行为数据', typeClass: 'type-other', target: '' }]
+        }
+      } catch (e2) { /* ignore */ }
+    }
+  } catch (e) { console.error(e) }
+}
+
+// 实时行为：初始化图表
+const initBehaviorCharts = async () => {
+  await nextTick()
+  // 行为类型分布饼图
+  if (behaviorDistChartRef.value) {
+    if (behaviorDistChart) behaviorDistChart.dispose()
+    behaviorDistChart = echarts.init(behaviorDistChartRef.value)
+    try {
+      const res = await analyticsApi.getEventDist('today')
+      let data = res.data || res
+      if (!Array.isArray(data)) data = []
+      const typeMap = { 'page_view': '页面浏览', 'news_click': '新闻点击', 'news_read': '新闻阅读', 'news_comment': '新闻评论', 'search': '搜索', 'ai_search': 'AI搜索', 'share': '分享', 'favorite': '收藏', 'like': '点赞' }
+      const mappedData = data.map(d => ({ name: typeMap[d.event_type] || d.event_type || '其他', value: d.cnt || d.value || 0 })).filter(d => d.value > 0)
+      if (mappedData.length === 0) {
+        behaviorDistChart.setOption({
+          title: { text: '暂无数据', left: 'center', top: 'center', textStyle: { color: '#94a3b8', fontSize: 14, fontFamily: chartTheme.fontFamily } }
+        })
+      } else {
+        const colors = ['#2F6BFF', '#7C3AED', '#10B981', '#F59E0B', '#EF4444', '#EC4899', '#06B6D4', '#8B5CF6']
+        behaviorDistChart.setOption({
+          backgroundColor: 'transparent',
+          tooltip: { trigger: 'item', backgroundColor: chartTheme.tipBg, borderColor: '#334155', textStyle: { color: chartTheme.tipText, fontSize: 12, fontFamily: chartTheme.fontFamily }, formatter: '{b}: {c}次 ({d}%)' },
+          legend: { orient: 'vertical', right: 8, top: 'center', textStyle: { color: '#475569', fontSize: 11, fontFamily: chartTheme.fontFamily }, itemWidth: 10, itemHeight: 10, itemGap: 8 },
+          series: [{ type: 'pie', radius: ['35%', '65%'], center: ['35%', '50%'], avoidLabelOverlap: false, label: { show: false }, emphasis: { label: { show: true, fontSize: 12, fontWeight: 'bold' } }, labelLine: { show: false }, data: mappedData.map((item, i) => ({ ...item, itemStyle: { color: colors[i % colors.length] } })), itemStyle: { borderColor: '#fff', borderWidth: 2 } }]
+        })
+      }
+    } catch (e) { console.error(e) }
+  }
+  // 行为趋势折线图
+  if (behaviorTrendChartRef.value) {
+    if (behaviorTrendChart) behaviorTrendChart.dispose()
+    behaviorTrendChart = echarts.init(behaviorTrendChartRef.value)
+    try {
+      const res = await analyticsApi.getTrend('today')
+      const data = res.data || res
+      if (!Array.isArray(data) || data.length === 0) {
+        behaviorTrendChart.setOption({
+          title: { text: '暂无数据', left: 'center', top: 'center', textStyle: { color: '#94a3b8', fontSize: 14, fontFamily: chartTheme.fontFamily } }
+        })
+      } else {
+        behaviorTrendChart.setOption({
+          backgroundColor: 'transparent',
+          tooltip: { trigger: 'axis', backgroundColor: chartTheme.tipBg, borderColor: '#334155', textStyle: { color: chartTheme.tipText, fontSize: 12, fontFamily: chartTheme.fontFamily } },
+          legend: { data: ['UV', 'PV'], textStyle: { color: chartTheme.textColor, fontSize: 11, fontFamily: chartTheme.fontFamily }, top: 0, right: 0 },
+          grid: { left: 40, right: 16, bottom: 24, top: 32 },
+          xAxis: { type: 'category', data: data.map(d => d.hour), axisLine: { lineStyle: { color: '#E2E8F0' } }, axisLabel: { color: chartTheme.textColor, fontSize: 10, fontFamily: chartTheme.fontFamily }, axisTick: { show: false } },
+          yAxis: { type: 'value', axisLine: { show: false }, axisLabel: { color: chartTheme.textColor, fontSize: 10, fontFamily: chartTheme.fontFamily }, splitLine: { lineStyle: { color: chartTheme.splitColor } } },
+          series: [
+            { name: 'UV', type: 'line', smooth: true, data: data.map(d => d.uv), symbol: 'none', lineStyle: { color: '#2F6BFF', width: 2.5 }, areaStyle: { color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [{ offset: 0, color: 'rgba(47,107,255,0.18)' }, { offset: 1, color: 'rgba(47,107,255,0)' }]) } },
+            { name: 'PV', type: 'line', smooth: true, data: data.map(d => d.pv), symbol: 'none', lineStyle: { color: '#7C3AED', width: 2.5 }, areaStyle: { color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [{ offset: 0, color: 'rgba(124,58,237,0.18)' }, { offset: 1, color: 'rgba(124,58,237,0)' }]) } }
+          ]
+        })
+      }
+    } catch (e) { console.error(e) }
+  }
+}
+
+const handleResize = () => { trendChart?.resize(); hotNewsChart?.resize(); channelChart?.resize(); funnelChart?.resize(); regionChart?.resize(); sourceChart?.resize(); activeHourChart?.resize(); publishTrendChart?.resize(); behaviorDistChart?.resize(); behaviorTrendChart?.resize() }
 
 const loadNews = async (page) => {
   if (page) newsPage.value = page
@@ -723,29 +767,46 @@ const loadNews = async (page) => {
     const res = await fetch(`/api/news?${params}`).then(r => r.json())
     if (res.success && res.data) {
       const pageData = res.data
-      newsList.value = pageData.records || pageData.data || []
+      newsList.value = pageData.data || pageData.records || []
       newsTotal.value = pageData.total || 0
     }
   } catch (e) { console.error(e) }
 }
-const loadChannels = async () => { try { const res = await fetch('/api/news/channels').then(r => r.json()); channels.value = (res.data || []).map(d => d.channel) } catch (e) { console.error(e) } }
+const loadChannels = async () => { try { const res = await fetch('/api/news/channels').then(r => r.json()); const d = res.data || {}; channels.value = Array.isArray(d) ? d.map(item => item.channel || item) : Object.keys(d) } catch (e) { console.error(e) } }
 
 const loadOverviewData = async () => {
   await updateRealtimeStats()
   await initCharts()
 }
 
-let statsInterval = null, timeInterval = null
-const initCharts = async () => { await nextTick(); await initTrendChart(); await initHotNewsChart(); await initChannelChart(); await initFunnelChart(); await initRegionChart() }
-watch(activeTab, async (val) => { if (val === 'overview') { await nextTick(); initCharts() } })
+let statsInterval = null, timeInterval = null, hotNewsInterval = null
+const initCharts = async () => { await nextTick(); await initTrendChart(); await initHotNewsChart(); await initChannelChart(); await initFunnelChart(); await initRegionChart(); await initSourceChart(); await initActiveHourChart(); await initPublishTrendChart() }
+watch(activeTab, async (val) => {
+  if (val === 'overview') { await nextTick(); initCharts() }
+  if (val === 'behavior') {
+    loadBehaviorEvents()
+    initBehaviorCharts()
+  }
+})
 watch(timeRange, () => {
   loadOverviewData()
 })
-onMounted(() => { updateTime(); timeInterval = setInterval(updateTime, 1000); updateRealtimeStats(); statsInterval = setInterval(updateRealtimeStats, 10000); initCharts(); loadChannels(); window.addEventListener('resize', handleResize) })
-onUnmounted(() => { if (statsInterval) clearInterval(statsInterval); if (timeInterval) clearInterval(timeInterval); trendChart?.dispose(); hotNewsChart?.dispose(); channelChart?.dispose(); funnelChart?.dispose(); regionChart?.dispose(); window.removeEventListener('resize', handleResize) })
+onMounted(() => {
+  updateTime(); timeInterval = setInterval(updateTime, 1000); updateRealtimeStats(); statsInterval = setInterval(updateRealtimeStats, 10000); initCharts(); loadChannels(); hotNewsInterval = setInterval(() => { initHotNewsChart(); initTrendChart() }, 30000);
+  // 实时行为定时刷新
+  behaviorInterval = setInterval(() => {
+    if (activeTab.value === 'behavior') loadBehaviorEvents()
+  }, 5000)
+  window.addEventListener('resize', handleResize)
+})
+onUnmounted(() => {
+  if (statsInterval) clearInterval(statsInterval); if (timeInterval) clearInterval(timeInterval); if (hotNewsInterval) clearInterval(hotNewsInterval); if (behaviorInterval) clearInterval(behaviorInterval)
+  trendChart?.dispose(); hotNewsChart?.dispose(); channelChart?.dispose(); funnelChart?.dispose(); regionChart?.dispose(); sourceChart?.dispose(); activeHourChart?.dispose(); publishTrendChart?.dispose(); behaviorDistChart?.dispose(); behaviorTrendChart?.dispose()
+  window.removeEventListener('resize', handleResize)
+})
 
 const goHome = () => {
-  const homeUrl = window.HOME_URL || '/'
+  const homeUrl = window.__SERVER_URL__ || window.HOME_URL || '/'
   window.location.href = homeUrl
 }
 </script>
@@ -765,13 +826,13 @@ const goHome = () => {
 }
 
 .top-bar {
-  background: #fff;
-  border-bottom: 1px solid #E2E8F0;
+  background: linear-gradient(135deg, #0F172A 0%, #1E293B 100%);
+  border-bottom: 1px solid rgba(255,255,255,0.08);
   flex-shrink: 0;
   height: 56px;
   display: flex;
   align-items: center;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+  box-shadow: 0 4px 20px rgba(0,0,0,0.15);
   position: relative;
   z-index: 10;
 }
@@ -801,14 +862,14 @@ const goHome = () => {
 .brand-name {
   font-size: 20px;
   font-weight: 800;
-  color: #0F172A;
+  color: #F8FAFC;
   letter-spacing: 1px;
 }
 
 .brand-sub {
   font-size: 11px;
-  color: #64748B;
-  background: #F1F5F9;
+  color: #94A3B8;
+  background: rgba(255,255,255,0.08);
   padding: 3px 10px;
   border-radius: 10px;
   font-weight: 500;
@@ -824,7 +885,7 @@ const goHome = () => {
   padding: 8px 18px;
   border: none;
   background: transparent;
-  color: #64748B;
+  color: #94A3B8;
   font-size: 13.5px;
   font-weight: 500;
   cursor: pointer;
@@ -835,8 +896,8 @@ const goHome = () => {
   gap: 6px;
 }
 
-.nav-link:hover { background: #F1F5F9; color: #334155; }
-.nav-link.active { background: #EFF6FF; color: #2F6BFF; font-weight: 600; }
+.nav-link:hover { background: rgba(255,255,255,0.08); color: #E2E8F0; }
+.nav-link.active { background: rgba(47,107,255,0.2); color: #60A5FA; font-weight: 600; }
 .nav-icon {
   width: 18px;
   height: 18px;
@@ -901,6 +962,9 @@ const goHome = () => {
   color: #94A3B8;
   font-family: 'DM Sans', monospace;
   font-weight: 500;
+  background: rgba(255,255,255,0.06);
+  padding: 4px 12px;
+  border-radius: 6px;
 }
 
 .page-body {
@@ -936,9 +1000,22 @@ const goHome = () => {
   padding: 18px 14px;
   text-align: center;
   transition: all 0.2s;
+  position: relative;
+  overflow: hidden;
 }
 
 .kpi-item:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.06); transform: translateY(-1px); }
+
+.kpi-item::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: var(--kpi-color, #2F6BFF);
+  border-radius: 12px 12px 0 0;
+}
 
 .kpi-num {
   font-size: 24px;
@@ -992,12 +1069,20 @@ const goHome = () => {
   padding: 18px;
   display: flex;
   flex-direction: column;
+  transition: box-shadow 0.2s;
+}
+
+.panel:hover {
+  box-shadow: 0 4px 20px rgba(0,0,0,0.05);
 }
 
 .panel-trend, .panel-hot { height: 280px; }
 .panel-channel { height: 280px; }
 .panel-funnel { height: 280px; }
 .panel-event { height: 280px; }
+.panel-source { height: 280px; }
+.panel-active-hour { height: 280px; }
+.panel-publish-trend { height: 280px; }
 
 .panel-head {
   display: flex;
@@ -1252,10 +1337,189 @@ const goHome = () => {
 .pager button:hover:not(:disabled) { border-color: #2F6BFF; color: #2F6BFF; }
 .pager button:disabled { opacity: 0.4; cursor: not-allowed; }
 
+/* 实时行为页面样式 */
+.behavior-page {
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: 24px 28px;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.behavior-layout {
+  display: flex;
+  gap: 16px;
+  flex: 1;
+  min-height: 0;
+}
+
+.behavior-left {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+}
+
+.behavior-right {
+  width: 420px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.behavior-stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+}
+
+.behavior-stat-card {
+  background: #fff;
+  border: 1px solid #E2E8F0;
+  border-radius: 12px;
+  padding: 16px 14px;
+  text-align: center;
+  transition: all 0.2s;
+  position: relative;
+  overflow: hidden;
+}
+
+.behavior-stat-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.06); transform: translateY(-1px); }
+
+.behavior-stat-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: var(--kpi-color, #2F6BFF);
+  border-radius: 12px 12px 0 0;
+}
+
+.behavior-stat-value {
+  font-size: 22px;
+  font-weight: 700;
+  line-height: 1.1;
+  letter-spacing: -0.5px;
+}
+
+.behavior-stat-label {
+  font-size: 11px;
+  color: #94A3B8;
+  margin-top: 6px;
+  font-weight: 500;
+}
+
+.behavior-event-panel {
+  background: #fff;
+  border: 1px solid #E2E8F0;
+  border-radius: 12px;
+  padding: 18px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.behavior-event-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+  flex-shrink: 0;
+}
+
+.behavior-event-head h2 {
+  font-size: 14px;
+  font-weight: 600;
+  color: #0F172A;
+  margin: 0;
+}
+
+.behavior-event-list {
+  flex: 1;
+  overflow-y: auto;
+  min-height: 0;
+}
+
+.behavior-event-list::-webkit-scrollbar { width: 4px; }
+.behavior-event-list::-webkit-scrollbar-track { background: transparent; }
+.behavior-event-list::-webkit-scrollbar-thumb { background: #CBD5E1; border-radius: 2px; }
+
+.behavior-event-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-bottom: 1px solid #F1F5F9;
+  font-size: 13px;
+  color: #475569;
+  transition: background 0.15s;
+}
+
+.behavior-event-item:hover { background: #FAFBFE; }
+.behavior-event-item:last-child { border-bottom: none; }
+
+.behavior-event-time {
+  font-family: 'DM Sans', monospace;
+  font-size: 11px;
+  color: #94A3B8;
+  flex-shrink: 0;
+  min-width: 70px;
+}
+
+.behavior-event-user {
+  font-weight: 600;
+  color: #334155;
+  flex-shrink: 0;
+}
+
+.behavior-event-action {
+  color: #94A3B8;
+  flex-shrink: 0;
+}
+
+.behavior-event-type {
+  font-weight: 600;
+  font-size: 12px;
+  padding: 2px 8px;
+  border-radius: 10px;
+  flex-shrink: 0;
+}
+
+.type-view { color: #2F6BFF; background: #EFF6FF; }
+.type-click { color: #7C3AED; background: #F5F3FF; }
+.type-read { color: #10B981; background: #ECFDF5; }
+.type-search { color: #F59E0B; background: #FFFBEB; }
+.type-ai { color: #8B5CF6; background: #F5F3FF; }
+.type-comment { color: #EC4899; background: #FDF2F8; }
+.type-share { color: #06B6D4; background: #ECFEFF; }
+.type-fav { color: #EF4444; background: #FEF2F2; }
+
+.behavior-event-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: #94A3B8;
+  font-size: 14px;
+  min-height: 200px;
+}
+
+.panel-behavior-dist { height: 280px; }
+.panel-behavior-trend { height: 280px; }
+
 @media (max-width: 1200px) {
   .kpi-banner { grid-template-columns: repeat(4, 1fr); }
   .bar-inner { padding: 0 16px; }
   .stats-grid { grid-template-columns: repeat(2, 1fr); }
+  .behavior-layout { flex-direction: column; }
+  .behavior-right { width: 100%; flex-direction: row; }
+  .behavior-right .panel { flex: 1; }
 }
 
 @media (max-width: 900px) {
@@ -1264,136 +1528,64 @@ const goHome = () => {
   .bar-inner { padding: 0 12px; gap: 16px; }
   .brand-sub { display: none; }
   .live-tag { display: none; }
+  .behavior-stats { grid-template-columns: repeat(2, 1fr); }
+  .behavior-layout { flex-direction: column; }
+  .behavior-right { width: 100%; flex-direction: column; }
 }
 
 @media (max-width: 600px) {
-  .top-bar { height: auto; min-height: 56px; padding: 8px 0; }
-  .bar-inner { flex-wrap: wrap; }
-  .brand { order: 1; }
-  .bar-right { order: 2; margin-left: auto; }
-  .main-nav { order: 3; width: 100%; justify-content: space-between; }
-  .nav-link { padding: 8px 12px; font-size: 12px; }
-  .overview-page { padding: 16px 12px; }
-  .manage-page { padding: 16px 12px; }
-  .search-bar { flex-direction: column; align-items: stretch; }
-  .search-input { max-width: 100%; }
-  .search-select { width: 100%; }
-  .news-table th, .news-table td { padding: 10px 8px; font-size: 12px; }
-  .col-title { max-width: 150px; }
+  .top-bar { height: auto; min-height: 48px; padding: 6px 0; }
+  .bar-inner { flex-wrap: wrap; padding: 0 10px; gap: 8px; }
+  .brand { order: 1; gap: 6px; }
+  .brand-icon { width: 26px; height: 26px; }
+  .brand-name { font-size: 15px; }
+  .bar-right { order: 2; margin-left: auto; gap: 8px; }
+  .main-nav { order: 3; width: 100%; justify-content: space-between; gap: 2px; }
+  .nav-link { padding: 6px 10px; font-size: 11px; gap: 4px; }
+  .nav-icon { width: 14px; height: 14px; }
+  .home-btn { padding: 4px 8px; font-size: 11px; }
+  .home-icon { width: 14px; height: 14px; }
+  .clock { font-size: 10px; padding: 2px 8px; }
+  .overview-page { padding: 12px 8px; gap: 12px; }
+  .manage-page { padding: 12px 8px; }
+  .behavior-page { padding: 12px 8px; }
+  .kpi-banner { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+  .kpi-item { padding: 10px 8px; }
+  .kpi-num { font-size: 18px; }
+  .kpi-label { font-size: 10px; margin-top: 4px; }
+  .time-range-bar { gap: 6px; margin-bottom: 12px; }
+  .range-btn { padding: 5px 12px; font-size: 12px; }
+  .overview-grid { grid-template-columns: 1fr; gap: 10px; }
+  .panel { padding: 12px; }
+  .panel-trend, .panel-hot { height: 220px; }
+  .panel-channel, .panel-funnel, .panel-event { height: 220px; }
+  .panel-source, .panel-active-hour, .panel-publish-trend { height: 220px; }
+  .panel-head h2 { font-size: 13px; }
+  .search-bar { flex-direction: column; align-items: stretch; gap: 8px; }
+  .search-input { max-width: 100%; padding: 8px 12px; }
+  .search-select { width: 100%; padding: 8px 12px; }
+  .news-table th, .news-table td { padding: 8px 6px; font-size: 11px; }
+  .col-title { max-width: 120px; }
   .col-src, .col-time { display: none; }
+  .pager { gap: 10px; font-size: 12px; }
+  .pager button { padding: 6px 14px; font-size: 12px; }
   .field-row { flex-direction: column; gap: 0; }
+  .behavior-stats { grid-template-columns: repeat(2, 1fr); }
+  .behavior-stat-card { padding: 10px 8px; }
+  .behavior-stat-value { font-size: 16px; }
+  .behavior-stat-label { font-size: 10px; }
+  .panel-behavior-dist, .panel-behavior-trend { height: 220px; }
 }
 
-.ai-page { height: 100%; }
-.ai-layout { display: flex; height: 100%; max-width: 1440px; margin: 0 auto; }
-
-.ai-sidebar {
-  width: 200px; flex-shrink: 0; background: #0F172A; color: #E2E8F0;
-  display: flex; flex-direction: column; padding: 16px 0;
-}
-.ai-sidebar-title {
-  font-size: 11px; font-weight: 700; color: #64748B; text-transform: uppercase;
-  letter-spacing: 1px; padding: 0 16px; margin-bottom: 12px;
-}
-.ai-fn-btn {
-  display: flex; align-items: center; gap: 10px; width: 100%;
-  padding: 11px 16px; border: none; background: transparent;
-  color: #94A3B8; font-size: 13px; font-weight: 500; cursor: pointer;
-  transition: all 0.15s; text-align: left;
-}
-.ai-fn-btn:hover { background: rgba(47,107,255,0.08); color: #E2E8F0; }
-.ai-fn-btn.active { background: rgba(47,107,255,0.15); color: #2F6BFF; font-weight: 600; }
-.ai-fn-icon { font-size: 15px; }
-.ai-sidebar-footer {
-  margin-top: auto; padding: 12px 16px; display: flex; align-items: center;
-  gap: 8px; font-size: 12px; color: #64748B;
-}
-.ai-status-dot {
-  width: 8px; height: 8px; border-radius: 50%; background: #EF4444; flex-shrink: 0;
-}
-.ai-status-dot.online { background: #10B981; box-shadow: 0 0 8px rgba(16,185,129,0.5); }
-
-.ai-main { flex: 1; display: flex; flex-direction: column; min-width: 0; background: #F8FAFC; }
-
-.ai-panel {
-  flex: 1; display: flex; flex-direction: column; padding: 24px; min-height: 0;
-}
-.ai-panel-head {
-  display: flex; align-items: center; justify-content: space-between;
-  margin-bottom: 16px; flex-shrink: 0;
-}
-.ai-panel-head h2 { font-size: 16px; font-weight: 700; color: #0F172A; margin: 0; }
-.ai-badge {
-  font-size: 10px; font-weight: 700; color: #7C3AED; background: #F5F3FF;
-  padding: 4px 12px; border-radius: 12px; letter-spacing: 0.3px;
-}
-.ai-clear-btn {
-  padding: 5px 14px; border: 1px solid #E2E8F0; border-radius: 6px;
-  background: #fff; color: #64748B; font-size: 12px; font-weight: 600; cursor: pointer;
-}
-.ai-clear-btn:hover { border-color: #EF4444; color: #EF4444; }
-
-.ai-input-row { display: flex; gap: 10px; margin-bottom: 16px; flex-shrink: 0; }
-.ai-input {
-  flex: 1; padding: 10px 16px; border: 1px solid #E2E8F0; border-radius: 8px;
-  font-size: 13px; outline: none; background: #fff; color: #1E293B;
-}
-.ai-input:focus { border-color: #2F6BFF; box-shadow: 0 0 0 3px rgba(47,107,255,0.1); }
-.ai-go-btn {
-  padding: 10px 24px; background: linear-gradient(135deg, #2F6BFF, #7C3AED);
-  color: #fff; border: none; border-radius: 8px; font-size: 13px;
-  font-weight: 600; cursor: pointer; white-space: nowrap;
-}
-.ai-go-btn:hover { box-shadow: 0 4px 16px rgba(47,107,255,0.3); }
-.ai-go-btn:disabled { opacity: 0.5; cursor: not-allowed; }
-
-.ai-output {
-  flex: 1; background: #fff; border: 1px solid #E2E8F0; border-radius: 12px;
-  padding: 20px; overflow-y: auto; min-height: 200px;
-}
-.ai-markdown { font-size: 13.5px; line-height: 1.8; color: #334155; }
-.ai-markdown h2 { font-size: 16px; color: #0F172A; margin: 16px 0 8px; }
-.ai-markdown h3 { font-size: 15px; color: #0F172A; margin: 14px 0 6px; }
-.ai-markdown h4 { font-size: 14px; color: #1E293B; margin: 12px 0 4px; }
-.ai-markdown strong { color: #0F172A; }
-.ai-markdown li { margin: 4px 0; padding-left: 4px; }
-.ai-placeholder {
-  display: flex; flex-direction: column; align-items: center; justify-content: center;
-  height: 100%; color: #94A3B8;
-}
-.ai-placeholder-icon { font-size: 48px; margin-bottom: 12px; opacity: 0.4; }
-.ai-placeholder p { font-size: 14px; }
-
-.ai-terminal-panel { padding: 16px; }
-.ai-terminal {
-  flex: 1; background: #0D1117; border-radius: 12px; padding: 16px;
-  font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
-  font-size: 13px; line-height: 1.7; overflow-y: auto; min-height: 400px;
-  color: #C9D1D9;
-}
-.term-line { white-space: pre-wrap; word-break: break-word; }
-.term-line.cmd { color: #58A6FF; }
-.term-line.system { color: #8B949E; }
-.term-line.success { color: #3FB950; }
-.term-line.error { color: #F85149; }
-.term-line.output { color: #C9D1D9; }
-.term-prompt { color: #3FB950; font-weight: 700; }
-.term-cursor { animation: blink 1s step-end infinite; color: #58A6FF; }
-.term-input-line { display: flex; align-items: center; margin-top: 4px; }
-.term-input {
-  flex: 1; background: transparent; border: none; color: #C9D1D9;
-  font-family: inherit; font-size: 13px; outline: none; caret-color: #58A6FF;
-}
-.term-input::placeholder { color: #484F58; }
-
-@media (max-width: 900px) {
-  .ai-layout { flex-direction: column; }
-  .ai-sidebar {
-    width: 100%; flex-direction: row; padding: 8px 12px;
-    overflow-x: auto; gap: 4px;
-  }
-  .ai-sidebar-title, .ai-sidebar-footer { display: none; }
-  .ai-fn-btn { padding: 8px 14px; white-space: nowrap; font-size: 12px; }
-  .ai-panel { padding: 16px; }
+@media (max-width: 400px) {
+  .bar-inner { padding: 0 6px; gap: 4px; }
+  .brand-name { font-size: 13px; }
+  .nav-link { padding: 4px 8px; font-size: 10px; }
+  .kpi-num { font-size: 16px; }
+  .kpi-label { font-size: 9px; }
+  .overview-page { padding: 8px 6px; gap: 8px; }
+  .panel-trend, .panel-hot { height: 180px; }
+  .panel-channel, .panel-funnel, .panel-event { height: 180px; }
+  .panel-source, .panel-active-hour, .panel-publish-trend { height: 180px; }
 }
 </style>

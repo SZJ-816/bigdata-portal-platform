@@ -149,13 +149,14 @@ let pollingTimer = null
 const headline = computed(() => {
   if (!allNews.value[0]) {
     return {
-      title: '加载中...',
-      summary: '',
+      title: newsError.value ? '无法连接服务器' : '加载中...',
+      summary: newsError.value ? '请检查网络或服务器设置' : '',
       channelName: '',
       source: '',
       createdAt: Date.now(),
       viewCount: 0,
-      imageUrl: ''
+      imageUrl: '',
+      id: null
     }
   }
   return {
@@ -310,7 +311,7 @@ async function fetchChannelNews() {
 }
 
 function goNews(id) {
-  router.push(`/news/${id}`)
+  if (id) router.push(`/news/${id}`)
 }
 
 function goChannel(name) {
@@ -391,6 +392,14 @@ async function fetchNews() {
   newsError.value = false
   try {
     const res = await newsApi.getList()
+    // 网络错误兜底：拦截器返回空响应时设置错误状态
+    if (res._isNetworkError || (res.data && res.data.success === false && res.status === 0)) {
+      if (allNews.value.length === 0) {
+        newsError.value = true
+      }
+      newsLoading.value = false
+      return
+    }
     const body = res.data
     // 兼容多种 API 返回格式: {data:{records:[]}} / {records:[]} / {data:[]}
     let items = []

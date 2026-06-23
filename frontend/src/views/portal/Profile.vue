@@ -147,29 +147,24 @@
             </div>
           </div>
 
-          <!-- Server URL -->
-          <div class="settings-item">
+          <!-- Server settings (opens native settings on Android) -->
+          <div class="settings-item settings-clickable" @click="openNativeSettings">
             <div class="settings-label">
               <span class="settings-icon"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg></span>
-              <span>API 服务器地址</span>
+              <span>服务器设置</span>
             </div>
-            <div class="settings-input-group">
-              <input v-model="serverUrl" type="text" class="settings-input" placeholder="例如: https://xxx.cpolar.cn" />
-              <button class="btn btn-primary btn-sm" @click="saveServerUrl">保存</button>
+            <div class="settings-arrow">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
             </div>
-            <p class="settings-hint">修改后页面将自动刷新</p>
           </div>
 
-          <!-- Connection status -->
+          <!-- Current server info -->
           <div class="settings-item">
             <div class="settings-label">
               <span class="settings-icon"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></span>
-              <span>当前状态</span>
+              <span>当前服务器</span>
             </div>
-            <div class="settings-status">
-              <span :class="['status-badge', serverStatus.ok ? 'success' : 'error']">{{ serverStatus.ok ? '连接正常' : '连接失败' }}</span>
-              <button class="btn btn-outline btn-sm" @click="testConnection">测试连接</button>
-            </div>
+            <p class="settings-hint">{{ currentServerUrl || '未配置' }}</p>
           </div>
         </div>
       </div>
@@ -182,7 +177,6 @@
 import { ref, onMounted, watch, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { userApi } from '../../api'
-import { updateApiBaseURL } from '../../api'
 import { useAuthStore } from '../../stores/auth'
 import { useTheme, THEMES, setTheme as applyTheme } from '../../composables/useTheme'
 
@@ -206,58 +200,17 @@ const showToast = (msg, type = 'success') => {
   setTimeout(() => { toast.value.show = false }, 3000)
 }
 
-const serverUrl = ref('')
-const serverStatus = ref({ ok: false })
+const currentServerUrl = ref('')
 
-function loadServerUrl() {
-  const saved = localStorage.getItem('apiServerUrl')
-  serverUrl.value = saved || window.__SERVER_URL__ || window.__API_BASE_URL__?.replace(/\/api$/, '') || ''
+function loadCurrentServerUrl() {
+  currentServerUrl.value = window.__SERVER_URL__ || localStorage.getItem('apiServerUrl') || ''
 }
 
-function getApiBaseUrl() {
-  const url = serverUrl.value.trim().replace(/\/$/, '')
-  if (!url) return '/api'
-  return url.startsWith('http') ? url + '/api' : '/api'
-}
-
-async function saveServerUrl() {
-  const url = serverUrl.value.trim()
-  if (!url) {
-    showToast('请输入服务器地址', 'error')
-    return
-  }
-  localStorage.setItem('apiServerUrl', url)
-  window.__API_BASE_URL__ = getApiBaseUrl()
-  if (window.AndroidBridge && window.AndroidBridge.saveServerUrl) {
-    window.AndroidBridge.saveServerUrl(url)
-  }
-  updateApiBaseURL()
-  showToast('保存成功，页面将刷新')
-  setTimeout(() => { window.location.reload() }, 1000)
-}
-
-async function testConnection() {
-  const url = serverUrl.value.trim()
-  if (!url) {
-    showToast('请先输入服务器地址', 'error')
-    return
-  }
-  try {
-    const baseUrl = url.replace(/\/$/, '') + '/api'
-    const response = await fetch(baseUrl + '/news?page=1&size=1', {
-      method: 'GET',
-      signal: AbortSignal.timeout(5000)
-    })
-    if (response.ok) {
-      serverStatus.value = { ok: true }
-      showToast('连接成功')
-    } else {
-      serverStatus.value = { ok: false }
-      showToast('连接失败: ' + response.status, 'error')
-    }
-  } catch (err) {
-    serverStatus.value = { ok: false }
-    showToast('连接失败: ' + err.message, 'error')
+function openNativeSettings() {
+  if (window.AndroidBridge && window.AndroidBridge.openNativeSettings) {
+    window.AndroidBridge.openNativeSettings()
+  } else {
+    showToast('请在 Android 客户端中使用此功能', 'error')
   }
 }
 
@@ -276,7 +229,7 @@ const visibleTabs = computed(() => {
 })
 
 onMounted(async () => {
-  loadServerUrl()
+  loadCurrentServerUrl()
   if (isLoggedIn.value) {
     await loadData()
   }
@@ -408,12 +361,6 @@ async function loadData() {
   await loadHistory()
   await loadChannelPreference()
 }
-
-onMounted(async () => {
-  if (isLoggedIn.value) {
-    await loadData()
-  }
-})
 
 watch(activeTab, async (val) => {
   if (val === 'favorites' && !favorites.value.length && !favoritesError.value) {
@@ -945,6 +892,31 @@ watch(activeTab, async (val) => {
   font-size: 12px;
   color: var(--color-text-light);
   margin-top: 8px;
+}
+.settings-clickable {
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  transition: background 0.2s;
+}
+.settings-clickable:hover {
+  background: var(--color-bg-secondary);
+}
+.settings-clickable:active {
+  transform: scale(0.99);
+}
+.settings-clickable .settings-label {
+  margin-bottom: 0;
+}
+.settings-arrow {
+  display: flex;
+  align-items: center;
+  color: var(--color-text-light);
+}
+.settings-arrow svg {
+  width: 20px;
+  height: 20px;
 }
 .settings-status {
   display: flex;

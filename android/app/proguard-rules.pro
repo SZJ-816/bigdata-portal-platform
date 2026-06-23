@@ -3,7 +3,7 @@
 # in the SDK tools proguard-defaults.txt file.
 
 # Keep WebView JavaScript interfaces
--keepclassmembers class com.zhixun.portal.util.WebViewBridge {
+-keepclassmembers class com.zhixun.portal.MainActivity$AndroidBridge {
     @android.webkit.JavascriptInterface <methods>;
 }
 

@@ -1,4 +1,4 @@
 // Dashboard 主页 URL 配置
-// 浏览器访问 dashboard 时，"回到主页"按钮将跳转至此地址
-// 可通过 cpolar 前端隧道或内网地址访问门户首页
-window.HOME_URL = 'https://65796968.r9.vip.cpolar.cn/';
+// Android 客户端会自动注入正确的服务器地址
+// 如果独立访问大屏，可手动修改此地址
+window.HOME_URL = '/'

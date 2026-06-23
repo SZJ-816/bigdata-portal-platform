@@ -16,6 +16,15 @@ const request = axios.create({
 
 request.interceptors.request.use(config => {
   request.defaults.baseURL = getApiBaseURL()
+  // 检查 baseURL 是否有效（必须以 http 开头）
+  const base = request.defaults.baseURL
+  if (base && !base.startsWith('http') && !base.startsWith('/')) {
+    return Promise.reject({
+      isNetworkError: true,
+      message: '服务器地址未配置',
+      config
+    })
+  }
   const token = localStorage.getItem('token')
   if (token) {
     config.headers.Authorization = `Bearer ${token}`
@@ -34,6 +43,15 @@ request.interceptors.response.use(
     return response
   },
   error => {
+    // 网络错误、超时或无响应：返回友好空响应，不抛异常
+    if (error.isNetworkError || error.code === 'ECONNABORTED' ||
+        error.code === 'ERR_NETWORK' || !error.response) {
+      return Promise.resolve({
+        data: { success: false, data: [], error: error.message || '网络连接失败' },
+        status: 0,
+        _isNetworkError: true
+      })
+    }
     if (error.response && error.response.status === 401) {
       const currentPath = vueRouterInstance?.currentRoute?.value?.path
       // 非认证页面静默忽略 401，不弹 Console 错误
@@ -119,7 +137,7 @@ export const newsApi = {
     return cachedGet(`/news/${id}`, {}, useCache, signal)
   },
   getByChannel: (channel, page = 1, size = 20, useCache = true) => cachedGet('/news', { channel, page, size }, useCache),
-  getChannelsNews: (size = 4, useCache = true) => cachedGet('/news/by-channel', { size }, useCache),
+  getChannelsNews: (size = 4, useCache = true) => cachedGet('/news/channels', { size }, useCache),
   search: (keyword) => request.get('/news', { params: { keyword, page: 1, size: 20 } }),
   getHot: (useCache = true) => cachedGet('/news/hot', {}, useCache),
   getRelated: (id) => request.get(`/news/${id}/related`),
@@ -225,5 +243,21 @@ export const adminApi = {
   },
   listChannels() {
     return request.get('/admin/channels')
+  }
+}
+
+export const aiApi = {
+  chat(message, context) {
+    const params = { message }
+    if (context) params.context = context
+    return request.post('/ai/chat', null, { params, timeout: 60000 })
+  },
+  generateSummary(content, maxLength) {
+    const params = { content }
+    if (maxLength) params.maxLength = maxLength
+    return request.post('/ai/summary', null, { params, timeout: 60000 })
+  },
+  generateTags(content) {
+    return request.post('/ai/tags', null, { params: { content }, timeout: 60000 })
   }
 }

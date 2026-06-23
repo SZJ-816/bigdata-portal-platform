@@ -82,9 +82,9 @@ jwt:
 # NVIDIA API配置
 nvidia:
   api:
-    key: your-nvidia-api-key
+    key: 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
     url: https://integrate.api.nvidia.com/v1/chat/completions
-    model: nvidia/llama-3.1-nemotron-70b-instruct
+    model: qwen/qwen3.5-122b-a10b
 
 # 日志配置
 logging:

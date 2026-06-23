@@ -15,6 +15,21 @@
     </div>
     <img v-if="news.imageUrl" :src="resolveImageUrl(news.imageUrl)" :alt="news.title" :data-channel="news.channel" class="article-cover" @error="onCoverImgError" />
     <div class="article-content" v-html="resolveContentImages(news.content)"></div>
+
+    <!-- AI 智能分析区域 -->
+    <div v-if="aiSummary || aiTags" class="ai-analysis">
+      <div class="ai-badge">AI 智能分析</div>
+      <div v-if="aiSummary" class="ai-summary">
+        <h4>摘要</h4>
+        <p>{{ aiSummary }}</p>
+      </div>
+      <div v-if="aiTags" class="ai-tags-result">
+        <h4>标签</h4>
+        <div class="tag-list">
+          <span v-for="tag in aiTags.split(/[,，]/)" :key="tag" class="ai-tag">{{ tag.trim() }}</span>
+        </div>
+      </div>
+    </div>
   </article>
 
   <div class="article-footer">
@@ -22,6 +37,10 @@
       <span class="channel-tag" @click="$emit('goChannel', news.channel)">{{ channelLabelMap[news.channel] || news.channel }}</span>
     </div>
     <div class="footer-actions">
+      <button class="action-btn" @click="analyzeWithAI" :disabled="aiLoading">
+        <span class="action-icon"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a4 4 0 014 4v2a4 4 0 01-8 0V6a4 4 0 014-4z"/><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/></svg></span>
+        {{ aiLoading ? '分析中...' : 'AI分析' }}
+      </button>
       <button class="action-btn" @click="$emit('share')">
         <span class="action-icon"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg></span> 分享
       </button>
@@ -33,10 +52,14 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { formatRelativeTime, formatViewCount, getChannelIcon, CHANNEL_LABEL_MAP, resolveImageUrl, resolveAssetUrl } from '../../utils'
+import { aiApi } from '../../api'
 
 const channelLabelMap = CHANNEL_LABEL_MAP
+const aiSummary = ref('')
+const aiTags = ref('')
+const aiLoading = ref(false)
 
 const props = defineProps({
   news: { type: Object, required: true },
@@ -74,6 +97,28 @@ function onCoverImgError(e) {
   const resolvedFallback = resolveAssetUrl(fallback)
   if (!el.src.endsWith(resolvedFallback)) {
     el.src = resolvedFallback
+  }
+}
+
+async function analyzeWithAI() {
+  if (aiLoading.value) return
+  aiLoading.value = true
+  const content = (props.news.title || '') + '\n' + (props.news.summary || '') + '\n' + (props.news.content || '')
+  try {
+    const [summaryRes, tagsRes] = await Promise.all([
+      aiApi.generateSummary(content.replace(/<[^>]*>/g, ''), 200),
+      aiApi.generateTags(content.replace(/<[^>]*>/g, ''))
+    ])
+    if (summaryRes.data.success && summaryRes.data.data) {
+      aiSummary.value = summaryRes.data.data.summary
+    }
+    if (tagsRes.data.success && tagsRes.data.data) {
+      aiTags.value = tagsRes.data.data.tags
+    }
+  } catch (err) {
+    console.error('AI analysis failed:', err)
+  } finally {
+    aiLoading.value = false
   }
 }
 </script>
@@ -431,5 +476,43 @@ function onCoverImgError(e) {
   .article-content :deep(h3) {
     font-size: 14px;
   }
+}
+.ai-analysis {
+  margin-top: 24px;
+  padding: 20px;
+  background: linear-gradient(135deg, #f0f7ff, #f5f0ff);
+  border-radius: 12px;
+  border: 1px solid #e0e7ff;
+}
+.ai-badge {
+  display: inline-block;
+  padding: 4px 12px;
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  color: white;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  margin-bottom: 16px;
+}
+.ai-summary h4, .ai-tags-result h4 {
+  font-size: 14px;
+  font-weight: 600;
+  color: #4338ca;
+  margin-bottom: 8px;
+}
+.ai-summary p {
+  font-size: 14px;
+  color: #374151;
+  line-height: 1.7;
+}
+.ai-tag {
+  display: inline-block;
+  padding: 4px 12px;
+  background: white;
+  color: #6366f1;
+  border-radius: 16px;
+  font-size: 13px;
+  margin: 2px 4px;
+  border: 1px solid #c7d2fe;
 }
 </style>

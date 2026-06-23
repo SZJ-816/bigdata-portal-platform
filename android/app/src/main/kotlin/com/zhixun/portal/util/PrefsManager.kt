@@ -12,11 +12,10 @@ class PrefsManager(private val context: Context) {
         private const val KEY_DASHBOARD_URL = "dashboard_url"
         private const val KEY_FIRST_LAUNCH = "first_launch"
         private const val KEY_ALLOW_HTTP = "allow_http"
-        private const val KEY_DEBUG_MODE = "debug_mode"
 
-        const val DEFAULT_FRONTEND_URL = "https://65796968.r9.vip.cpolar.cn"
-        const val DEFAULT_SERVER_URL = "https://65796968.r9.vip.cpolar.cn"
-        const val DEFAULT_DASHBOARD_URL = "https://65796968.r9.vip.cpolar.cn/dashboard/"
+        const val DEFAULT_FRONTEND_URL = "https://ff5241f.r7.cpolar.cn"
+        const val DEFAULT_SERVER_URL = "https://ff5241f.r7.cpolar.cn"
+        const val DEFAULT_DASHBOARD_URL = "https://ff5241f.r7.cpolar.cn/bigscreen/"
     }
 
     private val prefs: SharedPreferences by lazy {
@@ -56,12 +55,5 @@ class PrefsManager(private val context: Context) {
 
     fun setAllowHttp(allow: Boolean) {
         prefs.edit().putBoolean(KEY_ALLOW_HTTP, allow).apply()
-    }
-
-    fun isDebugMode(): Boolean =
-        prefs.getBoolean(KEY_DEBUG_MODE, false)
-
-    fun setDebugMode(debug: Boolean) {
-        prefs.edit().putBoolean(KEY_DEBUG_MODE, debug).apply()
     }
 }
