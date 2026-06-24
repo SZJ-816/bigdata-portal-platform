@@ -1,0 +1,57 @@
+# ========================================
+# 智讯科技资讯聚合平台 - 后端 Dockerfile
+# 多阶段构建：Maven 构建 + JRE 运行
+# ========================================
+
+# ----- 构建阶段：Maven 编译 -----
+FROM maven:3.8.6-openjdk-8 AS builder
+
+WORKDIR /app
+
+# 配置阿里云 Maven 镜像源加速
+RUN mkdir -p /root/.m2 && \
+    echo '<?xml version="1.0" encoding="UTF-8"?>' > /root/.m2/settings.xml && \
+    echo '<settings>' >> /root/.m2/settings.xml && \
+    echo '  <mirrors>' >> /root/.m2/settings.xml && \
+    echo '    <mirror>' >> /root/.m2/settings.xml && \
+    echo '      <id>aliyun</id>' >> /root/.m2/settings.xml && \
+    echo '      <mirrorOf>central</mirrorOf>' >> /root/.m2/settings.xml && \
+    echo '      <name>Aliyun Maven Mirror</name>' >> /root/.m2/settings.xml && \
+    echo '      <url>https://maven.aliyun.com/repository/central</url>' >> /root/.m2/settings.xml && \
+    echo '    </mirror>' >> /root/.m2/settings.xml && \
+    echo '    <mirror>' >> /root/.m2/settings.xml && \
+    echo '      <id>aliyun-public</id>' >> /root/.m2/settings.xml && \
+    echo '      <mirrorOf>public</mirrorOf>' >> /root/.m2/settings.xml && \
+    echo '      <name>Aliyun Maven Public</name>' >> /root/.m2/settings.xml && \
+    echo '      <url>https://maven.aliyun.com/repository/public</url>' >> /root/.m2/settings.xml && \
+    echo '    </mirror>' >> /root/.m2/settings.xml && \
+    echo '  </mirrors>' >> /root/.m2/settings.xml && \
+    echo '</settings>' >> /root/.m2/settings.xml
+
+# 复制整个 Maven 项目
+COPY portal-admin/ ./
+
+# 预下载依赖（缓存层，加速后续构建）
+RUN mvn dependency:go-offline -q -DskipTests || true
+
+# 构建整个多模块项目（跳过测试，使用国内镜像加速）
+RUN mvn clean package -DskipTests -q \
+    && ls -la portal-admin-application/target/*.jar
+
+# ----- 运行阶段：JRE 运行 -----
+FROM eclipse-temurin:8-jre
+
+WORKDIR /app
+
+# 设置时区
+ENV TZ=Asia/Shanghai
+RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
+
+# 复制构建好的 JAR（按 Maven 默认命名）
+COPY --from=builder /app/portal-admin-application/target/portal-admin-application-1.0.0-SNAPSHOT.jar /app/app.jar
+
+# 暴露端口
+EXPOSE 8080 8090
+
+# 启动命令（通过环境变量覆盖配置）
+ENTRYPOINT ["java", "-jar", "app.jar"]

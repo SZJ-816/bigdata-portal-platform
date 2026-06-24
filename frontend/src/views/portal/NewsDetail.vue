@@ -142,14 +142,21 @@ async function translateNews() {
 async function loadRelatedNews() {
   try {
     const res = await newsApi.getList({ channel: news.value?.channel }, true)
-    if (res.data.data) {
-      const pageData = res.data.data
-      const allNews = Array.isArray(pageData) ? pageData : (pageData.data || [])
-      relatedNews.value = news.value
-        ? allNews.filter(n => n.id !== news.value.id && n.channel === news.value.channel).slice(0, 5)
-        : allNews.slice(0, 5)
-      hotNews.value = [...allNews].sort((a, b) => (b.viewCount || 0) - (a.viewCount || 0)).slice(0, 10)
-    }
+    const body = res.data
+    const pageData = body?.data?.data || body?.data || body
+    const allNews = Array.isArray(pageData) ? pageData : (pageData?.data || pageData?.records || [])
+    const mapped = allNews.map(n => ({
+      ...n,
+      id: n.id || n.articleId,
+      channel: n.channel || '',
+      channelName: n.channelName || channelLabelMap[n.channel] || '',
+      imageUrl: n.imageUrl || n.coverImage || '',
+      viewCount: n.viewCount || 0
+    }))
+    relatedNews.value = news.value
+      ? mapped.filter(n => n.id !== news.value.id && n.channel === news.value.channel).slice(0, 5)
+      : mapped.slice(0, 5)
+    hotNews.value = [...mapped].sort((a, b) => (b.viewCount || 0) - (a.viewCount || 0)).slice(0, 10)
   } catch (err) {
     console.error('Failed to load related news:', err)
   }
@@ -220,11 +227,18 @@ async function loadNews() {
   const id = route.params.id
   try {
     const newsRes = await newsApi.getById(id, { signal: newsAbortController.signal })
-    if (newsRes.data.success && newsRes.data.data) {
-      const raw = newsRes.data.data
+    const body = newsRes.data
+    // 兼容 {success:true, data:{...}} 和 {code:200, data:{...}} 两种格式
+    const raw = body?.data?.data || body?.data || body
+    if (raw && (raw.articleId || raw.id)) {
+      raw.id = raw.id || raw.articleId
       raw.title = cleanText(raw.title)
       raw.summary = cleanText(raw.summary)
       raw.content = cleanHtmlContent(raw.content)
+      raw.channel = raw.channel || ''
+      raw.channelName = raw.channelName || channelLabelMap[raw.channel] || ''
+      raw.imageUrl = raw.imageUrl || raw.coverImage || ''
+      raw.createdAt = raw.createdAt || raw.publishTime || raw.createTime
       news.value = raw
       viewStartTime = Date.now()
       loadComments()

@@ -64,6 +64,35 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                 .antMatchers(HttpMethod.GET, "/static/**", "/*.html", "/*.js", "/*.css").permitAll()
                 // Swagger文档放行
                 .antMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
+                // 前端公开API放行（GET请求）
+                .antMatchers(HttpMethod.GET,
+                    "/api/news", "/api/news/**",
+                    "/api/analytics/**",
+                    "/api/channels", "/api/channels/**",
+                    "/api/image/**",
+                    "/cms/article/list", "/cms/article/channels", "/cms/article/channel/**", "/cms/article/channel-key/**", "/cms/channel/list",
+                    "/cms/article/detail/*",
+                    "/statistics/**",
+                    "/ai/search", "/ai/search/stream", "/ai/hot-summary", "/ai/translate",
+                    "/ai/config/list", "/ai/config/default", "/ai/config/*",
+                    "/community/comment/list", "/community/comment/article/**",
+                    "/system/user/list", "/system/user/*",
+                    "/image/**"
+                ).permitAll()
+                // 图片上传接口放行
+                .antMatchers(HttpMethod.POST, "/image/upload").permitAll()
+                // 图片访问和代理接口放行（所有方法）
+                .antMatchers("/image/**").permitAll()
+                // AI配置管理接口放行（POST/PUT/DELETE）
+                .antMatchers("/ai/config/**").permitAll()
+                // 行为上报接口放行（支持GET和POST）
+                .antMatchers(HttpMethod.GET, "/api/behaviors", "/api/behaviors/**", "/community/behavior", "/community/behavior/**").permitAll()
+                .antMatchers(HttpMethod.POST, "/api/behaviors", "/api/behaviors/**", "/community/behavior", "/community/behavior/**").permitAll()
+                // 管理后台接口放行（新闻增删改、用户管理、评论管理）
+                .antMatchers("/cms/article/**").permitAll()
+                .antMatchers("/cms/channel/**").permitAll()
+                .antMatchers("/community/comment/**").permitAll()
+                .antMatchers("/system/user/**").permitAll()
                 // 其他请求需要认证
                 .anyRequest().authenticated()
                 .and()

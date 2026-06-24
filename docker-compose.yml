@@ -13,7 +13,7 @@ services:
       - "3306:3306"
     volumes:
       - mysql-data:/var/lib/mysql
-      - ./sql/init_mysql.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./sql/init_mysql.sql:/docker-entrypoint-initdb.d/init.sql:ro
     command: --default-authentication-plugin=mysql_native_password
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-p${MYSQL_ROOT_PASSWORD}"]
@@ -22,6 +22,7 @@ services:
       retries: 10
     networks:
       - bigdata-net
+    restart: unless-stopped
 
   zookeeper:
     image: wurstmeister/zookeeper:latest
@@ -37,6 +38,7 @@ services:
       retries: 5
     networks:
       - bigdata-net
+    restart: unless-stopped
 
   kafka:
     image: wurstmeister/kafka:latest
@@ -63,6 +65,7 @@ services:
       start_period: 20s
     networks:
       - bigdata-net
+    restart: unless-stopped
 
   clickhouse:
     image: clickhouse/clickhouse-server:latest
@@ -77,13 +80,14 @@ services:
     volumes:
       - clickhouse-data:/var/lib/clickhouse
     healthcheck:
-      test: ["CMD", "clickhouse-client", "--user", "default", "--password", "bigdata123", "--query", "SELECT 1"]
+      test: ["CMD", "clickhouse-client", "--user", "default", "--password", "${CLICKHOUSE_PASSWORD:-bigdata123}", "--query", "SELECT 1"]
       interval: 15s
       timeout: 5s
       retries: 5
       start_period: 15s
     networks:
       - bigdata-net
+    restart: unless-stopped
 
   kudu-master:
     image: apache/kudu:latest
@@ -115,6 +119,7 @@ services:
       start_period: 30s
     networks:
       - bigdata-net
+    restart: unless-stopped
 
   kudu-tserver:
     image: apache/kudu:latest
@@ -141,6 +146,7 @@ services:
       - "8050:8050"
     networks:
       - bigdata-net
+    restart: unless-stopped
 
   flink-jobmanager:
     image: flink:1.17.1-java8
@@ -152,6 +158,7 @@ services:
     command: jobmanager
     networks:
       - bigdata-net
+    restart: unless-stopped
 
   flink-taskmanager:
     image: flink:1.17.1-java8
@@ -164,46 +171,53 @@ services:
     command: taskmanager
     networks:
       - bigdata-net
+    restart: unless-stopped
 
   backend:
     build:
-      context: ./backend
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: Dockerfile.backend
     container_name: bigdata-backend
     ports:
-      - "8090:8090"
+      - "8090:8080"
     environment:
+      # MySQL 连接（Docker 容器内）
+      SPRING_DATASOURCE_URL: jdbc:mysql://bigdata-mysql:3306/bigdata_portal?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
+      SPRING_DATASOURCE_USERNAME: root
       SPRING_DATASOURCE_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      # ClickHouse 连接
+      SPRING_CLICKHOUSE_URL: jdbc:clickhouse://bigdata-clickhouse:8123/bigdata_portal
+      SPRING_CLICKHOUSE_USERNAME: default
+      SPRING_CLICKHOUSE_PASSWORD: ${CLICKHOUSE_PASSWORD:-bigdata123}
+      # Kafka 连接
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: bigdata-kafka:9092
+      # Kudu 连接
+      KUDU_MASTER_HOSTS: bigdata-kudu-master:7051
+      # AI
+      AI_NVIDIA_API_KEY: ${AI_NVIDIA_API_KEY:-}
+      # 其他
       APP_DEV_MODE: ${APP_DEV_MODE:-true}
-      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
-      CLICKHOUSE_HOST: clickhouse
-      CLICKHOUSE_PORT: 8123
-      CLICKHOUSE_PASSWORD: ${CLICKHOUSE_PASSWORD:-bigdata123}
-      KUDU_MASTER_HOSTS: kudu-master:7051
-      MAIL_HOST: ${MAIL_HOST:-smtp.qq.com}
-      MAIL_PORT: ${MAIL_PORT:-587}
-      MAIL_USERNAME: ${MAIL_USERNAME:-}
-      MAIL_PASSWORD: ${MAIL_PASSWORD:-}
-      AI_NVIDIA_API_KEY: ${AI_NVIDIA_API_KEY:-your-nvidia-api-key}
-      JWT_SECRET: ${JWT_SECRET}
-      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-http://localhost:5173,http://localhost:3000}
+      JWT_SECRET: ${JWT_SECRET:-zhixun-portal-default-secret}
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-http://localhost:80,http://localhost:3000}
+      TZ: ${TZ:-Asia/Shanghai}
     volumes:
       - news-images:/app/news-images
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8090/actuator/health"]
-      interval: 15s
+      test: ["CMD-SHELL", "curl -sf http://localhost:8080/actuator/health || curl -sf http://localhost:8080/api/news || curl -sf http://localhost:8080/"]
+      interval: 20s
       timeout: 5s
-      retries: 5
-      start_period: 30s
+      retries: 10
+      start_period: 60s
     depends_on:
       mysql:
         condition: service_healthy
       kafka:
         condition: service_started
+      clickhouse:
+        condition: service_healthy
     networks:
       - bigdata-net
-    extra_hosts:
-      - "integrate.api.nvidia.com:99.83.136.103"
+    restart: unless-stopped
 
   frontend:
     build:
@@ -213,7 +227,6 @@ services:
     ports:
       - "80:80"
     volumes:
-      - ./frontend/public/images:/usr/share/nginx/html/images
       - news-images:/usr/share/nginx/html/images/news
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:80"]
@@ -221,9 +234,11 @@ services:
       timeout: 5s
       retries: 3
     depends_on:
-      - backend
+      backend:
+        condition: service_started
     networks:
       - bigdata-net
+    restart: unless-stopped
 
   dashboard:
     build:
@@ -238,9 +253,11 @@ services:
       timeout: 5s
       retries: 3
     depends_on:
-      - backend
+      backend:
+        condition: service_started
     networks:
       - bigdata-net
+    restart: unless-stopped
 
 volumes:
   mysql-data:

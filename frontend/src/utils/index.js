@@ -72,7 +72,18 @@ export const CHANNEL_LABEL_MAP = {
   '区块链': '区块链',
   '数码': '数码',
   '汽车科技': '汽车科技',
-  '人工智能': '人工智能'
+  '人工智能': '人工智能',
+  // 英文channel_key映射（后端cms_channel.channel_key）
+  'ai': '人工智能',
+  'bigdata': '大数据',
+  'cloud': '云计算',
+  'internet': '互联网',
+  'hardware': '硬件',
+  'startup': '创业',
+  'security': '安全',
+  'blockchain': '区块链',
+  'digital': '数码',
+  'auto': '汽车科技'
 }
 
 export function renderMarkdown(text) {
@@ -120,11 +131,7 @@ export function resolveImageUrl(url) {
   if (!url) return ''
   if (url.startsWith('data:')) return url
   if (url.startsWith('http://') || url.startsWith('https://')) {
-    if (window.location.protocol === 'file:') {
-      const base = getServerBase()
-      if (base) return base + '/api/image/proxy?url=' + encodeURIComponent(url)
-    }
-    return '/api/image/proxy?url=' + encodeURIComponent(url)
+    return url
   }
   if (url.startsWith('/')) {
     if (window.location.protocol === 'file:') {

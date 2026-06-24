@@ -15,6 +15,8 @@ public interface CmsArticleService {
 
     List<CmsArticle> listByChannelId(Long channelId);
 
+    List<CmsArticle> listByChannelKey(String channelKey);
+
     boolean save(CmsArticle article);
 
     boolean update(CmsArticle article);

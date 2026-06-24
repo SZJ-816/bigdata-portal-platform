@@ -3,10 +3,16 @@ package com.bigdata.portal.cms.controller;
 import com.bigdata.portal.common.annotation.OperationLog;
 import com.bigdata.portal.common.result.R;
 import com.bigdata.portal.cms.entity.CmsArticle;
+import com.bigdata.portal.cms.entity.CmsChannel;
 import com.bigdata.portal.cms.service.CmsArticleService;
+import com.bigdata.portal.cms.service.CmsChannelService;
+import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
-import java.util.List;
+import java.util.*;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 /**
  * CMS文章Controller
@@ -16,9 +22,27 @@ import java.util.List;
 public class CmsArticleController {
 
     private final CmsArticleService cmsArticleService;
+    private final CmsChannelService cmsChannelService;
+    private final ExecutorService sseExecutor = Executors.newCachedThreadPool();
 
-    public CmsArticleController(CmsArticleService cmsArticleService) {
+    public CmsArticleController(CmsArticleService cmsArticleService, CmsChannelService cmsChannelService) {
         this.cmsArticleService = cmsArticleService;
+        this.cmsChannelService = cmsChannelService;
+    }
+
+    /** SSE流式响应接口 */
+    @GetMapping(value = "/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    public SseEmitter stream() {
+        SseEmitter emitter = new SseEmitter(Long.MAX_VALUE);
+        sseExecutor.execute(() -> {
+            try {
+                emitter.send(SseEmitter.event().name("message").data("{\"type\":\"complete\",\"message\":\"stream ready\"}"));
+                emitter.complete();
+            } catch (Exception e) {
+                emitter.completeWithError(e);
+            }
+        });
+        return emitter;
     }
 
     /** 查询文章列表 */
@@ -28,6 +52,22 @@ public class CmsArticleController {
         return R.ok(cmsArticleService.list());
     }
 
+    /** 按频道分组查询新闻 */
+    @GetMapping("/channels")
+    @OperationLog(module = "文章管理", type = "查询", description = "按频道分组查询新闻")
+    public R<Map<String, List<CmsArticle>>> listByChannels(@RequestParam(defaultValue = "4") int size) {
+        List<CmsChannel> channels = cmsChannelService.list();
+        Map<String, List<CmsArticle>> result = new LinkedHashMap<>();
+        for (CmsChannel channel : channels) {
+            List<CmsArticle> articles = cmsArticleService.listByChannelId(channel.getChannelId());
+            if (articles.size() > size) {
+                articles = articles.subList(0, size);
+            }
+            result.put(channel.getChannelKey(), articles);
+        }
+        return R.ok(result);
+    }
+
     /** 根据频道查询文章 */
     @GetMapping("/channel/{channelId}")
     @OperationLog(module = "文章管理", type = "查询", description = "根据频道查询文章")
@@ -35,8 +75,15 @@ public class CmsArticleController {
         return R.ok(cmsArticleService.listByChannelId(channelId));
     }
 
+    /** 根据频道key查询文章 */
+    @GetMapping("/channel-key/{channelKey}")
+    @OperationLog(module = "文章管理", type = "查询", description = "根据频道key查询文章")
+    public R<List<CmsArticle>> listByChannelKey(@PathVariable String channelKey) {
+        return R.ok(cmsArticleService.listByChannelKey(channelKey));
+    }
+
     /** 根据ID查询文章 */
-    @GetMapping("/{articleId}")
+    @GetMapping("/detail/{articleId}")
     @OperationLog(module = "文章管理", type = "查询", description = "根据ID查询文章")
     public R<CmsArticle> getById(@PathVariable Long articleId) {
         return R.ok(cmsArticleService.getById(articleId));

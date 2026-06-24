@@ -73,7 +73,9 @@ public class AuthController {
             throw new CustomException(401, "用户不存在");
         }
 
-        if (!passwordEncoder.matches(password, user.getPassword())) {
+        boolean matched = passwordEncoder.matches(password, user.getPassword());
+
+        if (!matched) {
             throw new CustomException(401, "密码错误");
         }
 

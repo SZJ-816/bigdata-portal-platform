@@ -20,6 +20,9 @@ public interface UserBehaviorMapper {
     @Select("SELECT * FROM user_behavior WHERE article_id = #{articleId} ORDER BY create_time DESC")
     List<UserBehavior> selectByArticleId(@Param("articleId") Long articleId);
 
+    @Select("SELECT * FROM user_behavior ORDER BY create_time DESC LIMIT #{limit}")
+    List<UserBehavior> selectRecent(@Param("limit") int limit);
+
     @Insert("INSERT INTO user_behavior(user_id, article_id, behavior_type, duration, create_time) " +
             "VALUES(#{userId}, #{articleId}, #{behaviorType}, #{duration}, NOW())")
     @Options(useGeneratedKeys = true, keyProperty = "behaviorId")

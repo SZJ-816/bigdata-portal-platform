@@ -58,12 +58,6 @@
       @load-more="loadMore"
     >
       <template #sidebar>
-        <HotSummary
-          v-model:hot-instruction="hotInstruction"
-          :hot-summary="hotSummary"
-          :hot-summary-loading="hotSummaryLoading"
-          @fetch-hot-summary="fetchHotSummary"
-        />
         <div class="card hot-ranking">
           <h3 class="sidebar-title">热点排行</h3>
           <div class="ranking-list">
@@ -126,21 +120,16 @@ import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import { newsApi, behaviorApi } from '../../api'
 import { channels, formatRelativeTime } from '../../utils'
-import { cleanText, formatViewCount, CHANNEL_LABEL_MAP, renderMarkdown, resolveImageUrl, resolveAssetUrl, getFullApiUrl } from '../../utils'
+import { cleanText, formatViewCount, CHANNEL_LABEL_MAP, resolveImageUrl, resolveAssetUrl } from '../../utils'
 import NewsList from '../../components/portal/NewsList.vue'
-import HotSummary from '../../components/portal/HotSummary.vue'
 
 const channelLabelMap = CHANNEL_LABEL_MAP
 
 const router = useRouter()
 const allNews = ref([])
-const hotSummary = ref('')
-const hotSummaryLoading = ref(false)
-const hotInstruction = ref('')
 const newsLoading = ref(true)
 const newsError = ref(false)
 let abortController = null
-let hotSummaryAbortController = null
 const newNewsCount = ref(0)
 const showNewNewsTip = ref(false)
 let sseSource = null
@@ -159,34 +148,18 @@ const headline = computed(() => {
       id: null
     }
   }
-  return {
-    ...allNews.value[0],
-    channelName: channelLabelMap[allNews.value[0].channel] || allNews.value[0].channel,
-    createdAt: allNews.value[0].publishTime
-  }
+  return allNews.value[0]
 })
 
 const headlineImageUrl = computed(() => {
   return resolveImageUrl(headline.value.imageUrl) || ''
 })
 
-const sideHeadlines = computed(() => allNews.value.slice(1, 4).map(item => ({
-  ...item,
-  channelName: channelLabelMap[item.channel] || item.channel,
-  createdAt: item.publishTime
-})))
+const sideHeadlines = computed(() => allNews.value.slice(1, 4))
 
-const leftNews = computed(() => allNews.value.slice(4, 9).map(item => ({
-  ...item,
-  channelName: channelLabelMap[item.channel] || item.channel,
-  createdAt: item.publishTime
-})))
+const leftNews = computed(() => allNews.value.slice(4, 9))
 
-const centerNews = computed(() => allNews.value.slice(9, 14).map(item => ({
-  ...item,
-  channelName: channelLabelMap[item.channel] || item.channel,
-  createdAt: item.publishTime
-})))
+const centerNews = computed(() => allNews.value.slice(9, 14))
 
 const hotNews = computed(() => allNews.value.slice(0, 10))
 
@@ -196,15 +169,39 @@ const displayChannels = computed(() => channels)
 
 const channelIconMap = {
   'AI': '/images/channel-ai.svg',
+  'ai': '/images/channel-ai.svg',
   '大数据': '/images/channel-bigdata.svg',
+  'bigdata': '/images/channel-bigdata.svg',
   '云计算': '/images/channel-cloud.svg',
+  'cloud': '/images/channel-cloud.svg',
   '互联网': '/images/channel-internet.svg',
+  'internet': '/images/channel-internet.svg',
   '硬件': '/images/channel-hardware.svg',
+  'hardware': '/images/channel-hardware.svg',
   '创业': '/images/channel-startup.svg',
+  'startup': '/images/channel-startup.svg',
   '安全': '/images/channel-security.svg',
+  'security': '/images/channel-security.svg',
   '区块链': '/images/channel-blockchain.svg',
+  'blockchain': '/images/channel-blockchain.svg',
   '数码': '/images/channel-digital.svg',
-  '汽车科技': '/images/channel-auto.svg'
+  'digital': '/images/channel-digital.svg',
+  '汽车科技': '/images/channel-auto.svg',
+  'auto': '/images/channel-auto.svg'
+}
+
+// 英文channel_key → 前端频道name的映射
+const channelKeyToName = {
+  'ai': 'AI',
+  'bigdata': '大数据',
+  'cloud': '云计算',
+  'internet': '互联网',
+  'hardware': '硬件',
+  'startup': '创业',
+  'security': '安全',
+  'blockchain': '区块链',
+  'digital': '数码',
+  'auto': '汽车科技'
 }
 
 const channelNewsMap = ref({})
@@ -230,7 +227,7 @@ function setupChannelObserver() {
 function connectSSE() {
   try {
     const token = localStorage.getItem('token')
-    const url = getFullApiUrl('/news/stream' + (token ? `?token=${encodeURIComponent(token)}` : ''))
+    const url = '/api/news/stream' + (token ? `?token=${encodeURIComponent(token)}` : '')
     sseSource = new EventSource(url)
     sseSource.addEventListener('news', (event) => {
       try {
@@ -289,15 +286,27 @@ function stopPolling() {
 async function fetchChannelNews() {
   try {
     const res = await newsApi.getChannelsNews(4)
-    if (res.data.success && res.data.data) {
+    const body = res.data
+    // 兼容 {data: {...}} 和 {code:200, data: {...}} 两种格式
+    const channelData = body?.data?.data || body?.data || {}
+    if (channelData && typeof channelData === 'object') {
       const map = {}
-      for (const [channel, items] of Object.entries(res.data.data)) {
+      for (const [channelKey, items] of Object.entries(channelData)) {
         const list = Array.isArray(items) ? items : []
-        map[channel] = list.map(item => ({
+        // 将英文channelKey映射为前端频道name（如"ai"→"AI"）
+        const channelName = channelKeyToName[channelKey] || channelKey
+        map[channelName] = list.map(item => ({
           ...item,
+          id: item.id || item.articleId,
           title: cleanText(item.title),
           summary: cleanText(item.summary),
-          channelName: channelLabelMap[item.channel] || item.channel
+          channel: item.channel || channelKey,
+          channelName: item.channelName || channelLabelMap[item.channel] || channelLabelMap[channelKey] || channelName,
+          imageUrl: item.imageUrl || item.coverImage || '',
+          thumbUrl: item.thumbUrl || item.coverImage || '',
+          createdAt: item.createdAt || item.publishTime || item.createTime,
+          viewCount: item.viewCount || 0,
+          source: item.source || ''
         }))
       }
       channelNewsMap.value = map
@@ -322,60 +331,6 @@ function goChannel(name) {
 function loadMore() {
   router.push('/channel/互联网')
   behaviorApi.report({ eventType: 'click', targetId: 'load_more', targetType: 'button' })
-}
-
-async function fetchHotSummary() {
-  hotSummaryLoading.value = true
-  hotSummary.value = ''
-  if (hotSummaryAbortController) hotSummaryAbortController.abort()
-  hotSummaryAbortController = new AbortController()
-  let streamSuccess = false
-  try {
-    const params = hotInstruction.value.trim() ? `?instruction=${encodeURIComponent(hotInstruction.value.trim())}` : ''
-    const headers = {}
-    const token = localStorage.getItem('token')
-    if (token) headers['Authorization'] = `Bearer ${token}`
-    const response = await fetch(getFullApiUrl('/ai/hot-summary/stream' + params), {
-      signal: hotSummaryAbortController.signal,
-      headers
-    })
-    if (!response.ok) throw new Error('Stream failed')
-    const reader = response.body.getReader()
-    const decoder = new TextDecoder()
-    let buffer = ''
-    while (true) {
-      const { done, value } = await reader.read()
-      if (done) break
-      buffer += decoder.decode(value, { stream: true })
-      const lines = buffer.split('\n')
-      buffer = lines.pop() || ''
-      for (const line of lines) {
-        if (line.startsWith('data:')) {
-          const data = line.substring(5).trim()
-          if (data === '[DONE]') continue
-          if (data.startsWith('[ERROR]')) continue
-          hotSummary.value += data
-          streamSuccess = true
-        }
-      }
-    }
-  } catch (err) {
-    console.warn('Hot summary stream failed:', err.message)
-  }
-  if (!streamSuccess) {
-    try {
-      const res = await newsApi.getHot(false)
-      if (res.data && res.data.length > 0) {
-        const top = res.data.slice(0, 5)
-        hotSummary.value = '【今日热点】\n\n' + top.map((n, i) => `${i + 1}. ${n.title}`).join('\n')
-        streamSuccess = true
-      }
-    } catch (err2) {
-      console.error('Hot summary fallback failed:', err2)
-      hotSummary.value = 'AI 热点总结暂时不可用，请稍后再试。'
-    }
-  }
-  hotSummaryLoading.value = false
 }
 
 async function fetchNews() {
@@ -417,8 +372,18 @@ async function fetchNews() {
     if (items.length > 0) {
       const mapped = items.map(item => ({
         ...item,
+        id: item.id || item.articleId,
         title: cleanText(item.title),
-        summary: cleanText(item.summary)
+        summary: cleanText(item.summary),
+        channel: item.channel || '',
+        channelName: item.channelName || channelLabelMap[item.channel] || item.channel || '',
+        imageUrl: item.imageUrl || item.coverImage || '',
+        thumbUrl: item.thumbUrl || item.coverImage || '',
+        createdAt: item.createdAt || item.publishTime || item.createTime,
+        viewCount: item.viewCount || 0,
+        commentCount: item.commentCount || 0,
+        source: item.source || '',
+        isBreaking: item.isBreaking || item.isTop === 1
       }))
       allNews.value = mapped
       try { localStorage.setItem('cached_news', JSON.stringify(mapped)) } catch (e) { /* ignore */ }
@@ -441,7 +406,6 @@ onMounted(async () => {
 
 onUnmounted(() => {
   behaviorApi.flush()
-  if (hotSummaryAbortController) hotSummaryAbortController.abort()
   if (channelObserver) {
     channelObserver.disconnect()
     channelObserver = null
@@ -525,18 +489,23 @@ onUnmounted(() => {
   font-weight: 600;
   margin: 0 0 8px 0;
   line-height: 1.3;
+  color: var(--color-text-white);
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
 }
 .headline-summary {
   font-size: 14px;
-  opacity: 0.8;
+  opacity: 0.9;
   margin: 0 0 12px 0;
   line-height: 1.5;
+  color: var(--color-text-white);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
 }
 .headline-meta {
   display: flex;
   align-items: center;
   gap: 12px;
   font-size: 12px;
+  color: var(--color-text-white);
 }
 .channel-tag {
   background: var(--color-tag-bg);
@@ -873,6 +842,7 @@ onUnmounted(() => {
     font-weight: 700;
     line-height: 1.45;
     letter-spacing: 0.2px;
+    color: var(--color-text-white);
   }
   .headline-summary {
     display: none;
@@ -882,6 +852,7 @@ onUnmounted(() => {
     gap: 8px;
     font-size: 11.5px;
     opacity: 0.9;
+    color: var(--color-text-white);
   }
   .channel-tag {
     padding: 2px 8px;

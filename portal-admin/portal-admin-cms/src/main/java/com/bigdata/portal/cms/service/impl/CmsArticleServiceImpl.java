@@ -35,6 +35,11 @@ public class CmsArticleServiceImpl implements CmsArticleService {
     }
 
     @Override
+    public List<CmsArticle> listByChannelKey(String channelKey) {
+        return cmsArticleMapper.selectByChannelKey(channelKey);
+    }
+
+    @Override
     public boolean save(CmsArticle article) {
         return cmsArticleMapper.insert(article) > 0;
     }

@@ -7,12 +7,15 @@ import android.os.Bundle
 import android.webkit.JavascriptInterface
 import android.webkit.SslErrorHandler
 import android.webkit.WebChromeClient
+import android.webkit.WebResourceError
 import android.webkit.WebResourceRequest
+import android.webkit.WebResourceResponse
 import android.webkit.WebSettings
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import android.net.http.SslError
 import android.webkit.CookieManager
+import android.webkit.WebStorage
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.zhixun.portal.databinding.ActivityMainBinding
@@ -24,6 +27,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var prefsManager: PrefsManager
     private var doubleBackToExitPressedOnce = false
     private var lastServerUrl: String = ""
+    private var isLoadingLocalFallback = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -64,6 +68,11 @@ class MainActivity : AppCompatActivity() {
             settings.allowUniversalAccessFromFileURLs = true
         } catch (_: Exception) { }
 
+        // 清除WebView缓存，确保加载最新版本
+        webView.clearCache(true)
+        webView.clearHistory()
+        WebStorage.getInstance().deleteAllData()
+
         CookieManager.getInstance().apply {
             setAcceptCookie(true)
             setAcceptThirdPartyCookies(webView, true)
@@ -73,6 +82,24 @@ class MainActivity : AppCompatActivity() {
             override fun onReceivedSslError(view: WebView?, handler: SslErrorHandler?, error: SslError?) {
                 // 允许所有SSL证书（cpolar等内网穿透需要）
                 handler?.proceed()
+            }
+
+            override fun onReceivedError(view: WebView?, request: WebResourceRequest?, error: WebResourceError?) {
+                super.onReceivedError(view, request, error)
+                // 只对主页面请求进行回退处理，子资源404不触发
+                if (request?.isForMainFrame == true && !isLoadingLocalFallback) {
+                    isLoadingLocalFallback = true
+                    view?.loadUrl("file:///android_asset/www/index.html")
+                }
+            }
+
+            override fun onReceivedHttpError(view: WebView?, request: WebResourceRequest?, errorResponse: WebResourceResponse?) {
+                super.onReceivedHttpError(view, request, errorResponse)
+                // 主页面返回HTTP错误（如404）时回退到本地
+                if (request?.isForMainFrame == true && errorResponse?.statusCode == 404 && !isLoadingLocalFallback) {
+                    isLoadingLocalFallback = true
+                    view?.loadUrl("file:///android_asset/www/index.html")
+                }
             }
 
             override fun shouldOverrideUrlLoading(view: WebView?, request: WebResourceRequest?): Boolean {
@@ -103,6 +130,10 @@ class MainActivity : AppCompatActivity() {
                 view?.evaluateJavascript("window.DASHBOARD_URL='${prefsManager.getDashboardUrl()}'", null)
                 view?.evaluateJavascript("window.__SERVER_URL__='$serverUrl'", null)
                 view?.evaluateJavascript("window.HOME_URL='$serverUrl'", null)
+                // 本地回退加载成功后，重置标记以便后续可重新尝试远程
+                if (url?.startsWith("file://") == true) {
+                    isLoadingLocalFallback = false
+                }
             }
         }
 
@@ -135,7 +166,14 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun loadUrl(url: String) {
-        binding.webView.loadUrl(url)
+        // 远程URL添加时间戳参数绕过WebView缓存
+        val finalUrl = if (url.startsWith("http")) {
+            val separator = if (url.contains("?")) "&" else "?"
+            "$url${separator}_t=${System.currentTimeMillis()}"
+        } else {
+            url
+        }
+        binding.webView.loadUrl(finalUrl)
     }
 
     override fun onResume() {

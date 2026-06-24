@@ -67,6 +67,12 @@ public class CmsArticle implements Serializable {
     /** 创建时间 */
     private Date createTime;
 
+    /** 频道标识（来自cms_channel.channel_key） */
+    private String channel;
+
+    /** 频道名称（来自cms_channel.channel_name） */
+    private String channelName;
+
     /** 更新时间 */
     private Date updateTime;
 }

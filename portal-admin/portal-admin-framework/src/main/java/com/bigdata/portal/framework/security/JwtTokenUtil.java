@@ -39,12 +39,19 @@ public class JwtTokenUtil {
         Date now = new Date();
         Date expireDate = new Date(now.getTime() + expiration);
 
-        return Jwts.builder()
-                .setClaims(claims)
+        io.jsonwebtoken.JwtBuilder builder = Jwts.builder()
                 .setSubject(username)
                 .setId(String.valueOf(userId))
                 .setIssuedAt(now)
-                .setExpiration(expireDate)
+                .setExpiration(expireDate);
+
+        if (claims != null) {
+            builder.setClaims(claims);
+            builder.setSubject(username);
+            builder.setId(String.valueOf(userId));
+        }
+
+        return builder
                 .signWith(SignatureAlgorithm.HS512, secret)
                 .compact();
     }

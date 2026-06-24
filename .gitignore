@@ -35,6 +35,24 @@ __pycache__/
 dogfood-output/
 reports/
 ppt-workspace/
+
+# Build output
+*.jar
+*.class
+target/
+
+# Archives
+*.zip
+*.tar.gz
+*.apk
+
+# Temp/test files
+*_test.json
+fix_password.sql
+check_password.sql
+gen_bcrypt.py
+
+# Images (keep source SVGs and specific assets)
 *.jpg
 *.jpeg
 *.png

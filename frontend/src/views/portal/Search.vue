@@ -10,10 +10,6 @@
           <span v-else><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M12 2L9.19 8.63 2 9.24l5.46 4.73L5.82 21 12 17.27 18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2z"/></svg></span> AI 搜索
         </button>
       </div>
-      <div class="search-tabs">
-        <button :class="['tab-btn', { active: activeTab === 'news' }]" @click="activeTab = 'news'">新闻搜索</button>
-        <button :class="['tab-btn', { active: activeTab === 'ai' }]" @click="activeTab = 'ai'">AI 智能搜索</button>
-      </div>
       <div class="hot-words">
         <span class="hot-label">热搜：</span>
         <button v-for="word in hotSearchWords" :key="word" class="hot-word" @click="searchHotWord(word)">{{ word }}</button>
@@ -112,9 +108,16 @@ function highlightKeywords(text, searchKeyword) {
 function updateProcessedResults() {
   processedResults.value = results.value.map(item => ({
     ...item,
+    id: item.id || item.articleId,
     title: highlightKeywords(cleanText(item.title), searchedKeyword.value),
     summary: highlightKeywords(cleanText(item.summary), searchedKeyword.value),
-    channelLabel: channelLabelMap[item.channel] || item.channel
+    channel: item.channel || '',
+    channelLabel: item.channelName || channelLabelMap[item.channel] || item.channel || '',
+    imageUrl: item.imageUrl || item.coverImage || '',
+    thumbUrl: item.thumbUrl || item.coverImage || '',
+    createdAt: item.createdAt || item.publishTime || item.createTime,
+    viewCount: item.viewCount || 0,
+    source: item.source || ''
   }))
 }
 
@@ -335,29 +338,6 @@ watch(() => route.query.q, (newQ) => {
 }
 @keyframes spin {
   to { transform: rotate(360deg); }
-}
-.search-tabs {
-  display: flex;
-  justify-content: center;
-  gap: 4px;
-  margin-top: 16px;
-}
-.tab-btn {
-  padding: 8px 24px;
-  border: none;
-  background: transparent;
-  color: var(--color-text-secondary);
-  font-size: 14px;
-  cursor: pointer;
-  border-radius: 4px;
-  transition: all 0.2s;
-}
-.tab-btn:hover {
-  background: var(--color-bg-tertiary);
-}
-.tab-btn.active {
-  background: var(--color-primary);
-  color: var(--color-text-white);
 }
 .hot-words {
   margin-top: 16px;
@@ -668,16 +648,7 @@ watch(() => route.query.q, (newQ) => {
     flex: 1;
     gap: 8px;
   }
-  .search-tabs {
-    margin-top: 14px;
-    gap: 6px;
-  }
-  .tab-btn {
-    padding: 8px 20px;
-    font-size: 13px;
-    border-radius: 8px;
-  }
-  .hot-words {
+.hot-words {
     gap: 8px;
     justify-content: flex-start;
     margin-top: 14px;

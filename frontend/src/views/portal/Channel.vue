@@ -75,10 +75,12 @@ import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { channels, formatRelativeTime } from '../../utils'
 import { behaviorApi, newsApi } from '../../api'
-import { cleanText, formatViewCount } from '../../utils'
+import { cleanText, formatViewCount, CHANNEL_LABEL_MAP } from '../../utils'
 
 const route = useRoute()
 const router = useRouter()
+
+const channelLabelMap = CHANNEL_LABEL_MAP
 
 const channelName = computed(() => route.params.name)
 const channelInfo = computed(() => {
@@ -103,34 +105,44 @@ const channelHotNews = computed(() => {
 })
 
 const channelNameMap = {
-  '人工智能': 'AI',
-  'AI': 'AI',
-  '大数据': '大数据',
-  '云计算': '云计算',
-  '互联网': '互联网',
-  '硬件': '硬件',
-  '创业': '创业',
-  '安全': '安全',
-  '区块链': '区块链',
-  '数码': '数码',
-  '汽车科技': '汽车科技',
+  '人工智能': 'ai',
+  'AI': 'ai',
+  '大数据': 'bigdata',
+  '云计算': 'cloud',
+  '互联网': 'internet',
+  '硬件': 'hardware',
+  '创业': 'startup',
+  '安全': 'security',
+  '区块链': 'blockchain',
+  '数码': 'digital',
+  '汽车科技': 'auto',
 }
 
 async function loadChannelNews() {
   loading.value = true
   error.value = ''
   try {
-    const actualChannelName = channelNameMap[channelName.value] || channelName.value
-    const res = await newsApi.getByChannel(actualChannelName)
-    if (res.data.data) {
-      const pageData = res.data.data
-      const items = Array.isArray(pageData) ? pageData : (pageData.records || pageData.data || [])
-      channelNews.value = items.map(item => ({
-        ...item,
-        title: cleanText(item.title),
-        summary: cleanText(item.summary)
-      }))
-    }
+    const channelKey = channelNameMap[channelName.value] || channelName.value
+    const res = await newsApi.getByChannel(channelKey)
+    const body = res.data
+    // 兼容 {code:200, data:[...]} 和 {success:true, data:{...}} 两种格式
+    const pageData = body?.data?.data || body?.data || body
+    const items = Array.isArray(pageData) ? pageData : (pageData?.records || pageData?.data || [])
+    channelNews.value = items.map(item => ({
+      ...item,
+      id: item.id || item.articleId,
+      title: cleanText(item.title),
+      summary: cleanText(item.summary),
+      channel: item.channel || '',
+      channelName: item.channelName || channelLabelMap[item.channel] || '',
+      imageUrl: item.imageUrl || item.coverImage || '',
+      thumbUrl: item.thumbUrl || item.coverImage || '',
+      createdAt: item.createdAt || item.publishTime || item.createTime,
+      viewCount: item.viewCount || 0,
+      commentCount: item.commentCount || 0,
+      source: item.source || '',
+      isBreaking: item.isBreaking || item.isTop === 1
+    }))
   } catch (err) {
     console.error('Failed to load channel news:', err)
     error.value = '加载失败，请检查网络连接'
@@ -144,20 +156,29 @@ async function loadMoreNews() {
   loadMoreError.value = ''
   currentPage.value++
   try {
-    const actualChannelName = channelNameMap[channelName.value] || channelName.value
-    const res = await newsApi.getByChannel(actualChannelName, currentPage.value)
-    if (res.data.data) {
-      const pageData = res.data.data
-      const items = Array.isArray(pageData) ? pageData : (pageData.records || pageData.data || [])
-      if (items.length > 0) {
-        channelNews.value = [...channelNews.value, ...items.map(item => ({
-          ...item,
-          title: cleanText(item.title),
-          summary: cleanText(item.summary)
-        }))]
-      } else {
-        hasMore.value = false
-      }
+    const channelKey = channelNameMap[channelName.value] || channelName.value
+    const res = await newsApi.getByChannel(channelKey, currentPage.value)
+    const body = res.data
+    const pageData = body?.data?.data || body?.data || body
+    const items = Array.isArray(pageData) ? pageData : (pageData?.records || pageData?.data || [])
+    if (items.length > 0) {
+      channelNews.value = [...channelNews.value, ...items.map(item => ({
+        ...item,
+        id: item.id || item.articleId,
+        title: cleanText(item.title),
+        summary: cleanText(item.summary),
+        channel: item.channel || '',
+        channelName: item.channelName || channelLabelMap[item.channel] || '',
+        imageUrl: item.imageUrl || item.coverImage || '',
+        thumbUrl: item.thumbUrl || item.coverImage || '',
+        createdAt: item.createdAt || item.publishTime || item.createTime,
+        viewCount: item.viewCount || 0,
+        commentCount: item.commentCount || 0,
+        source: item.source || '',
+        isBreaking: item.isBreaking || item.isTop === 1
+      }))]
+    } else {
+      hasMore.value = false
     }
   } catch (err) {
     currentPage.value--

@@ -136,7 +136,7 @@ export const newsApi = {
     }
     return cachedGet(`/news/${id}`, {}, useCache, signal)
   },
-  getByChannel: (channel, page = 1, size = 20, useCache = true) => cachedGet('/news', { channel, page, size }, useCache),
+  getByChannel: (channel, page = 1, size = 20, useCache = true) => cachedGet(`/news/channel/${channel}`, { page, size }, useCache),
   getChannelsNews: (size = 4, useCache = true) => cachedGet('/news/channels', { size }, useCache),
   search: (keyword) => request.get('/news', { params: { keyword, page: 1, size: 20 } }),
   getHot: (useCache = true) => cachedGet('/news/hot', {}, useCache),
@@ -247,16 +247,6 @@ export const adminApi = {
 }
 
 export const aiApi = {
-  chat(message, context) {
-    const params = { message }
-    if (context) params.context = context
-    return request.post('/ai/chat', null, { params, timeout: 60000 })
-  },
-  generateSummary(content, maxLength) {
-    const params = { content }
-    if (maxLength) params.maxLength = maxLength
-    return request.post('/ai/summary', null, { params, timeout: 60000 })
-  },
   generateTags(content) {
     return request.post('/ai/tags', null, { params: { content }, timeout: 60000 })
   }

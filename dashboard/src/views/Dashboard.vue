@@ -32,6 +32,33 @@
               <polyline points="17 11 19 14 22 12"/>
             </svg>实时行为
           </button>
+          <span class="nav-separator"></span>
+          <button :class="['nav-link', 'nav-link-admin', { active: activeTab === 'newsManage' }]" @click="switchTab('newsManage')">
+            <svg class="nav-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+            </svg>新闻管理
+          </button>
+          <button :class="['nav-link', 'nav-link-admin', { active: activeTab === 'userManage' }]" @click="switchTab('userManage')">
+            <svg class="nav-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+              <circle cx="9" cy="7" r="4"/>
+              <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+              <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+            </svg>用户管理
+          </button>
+          <button :class="['nav-link', 'nav-link-admin', { active: activeTab === 'commentManage' }]" @click="switchTab('commentManage')">
+            <svg class="nav-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+            </svg>评论管理
+          </button>
+          <button :class="['nav-link', 'nav-link-admin', { active: activeTab === 'aiConfig' }]" @click="switchTab('aiConfig')">
+            <svg class="nav-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 2a4 4 0 0 0-4 4v2H6a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V10a2 2 0 0 0-2-2h-2V6a4 4 0 0 0-4-4z"/>
+              <circle cx="12" cy="14" r="2"/>
+              <path d="M12 16v2"/>
+            </svg>AI配置
+          </button>
         </nav>
         <div class="bar-right">
           <a href="javascript:void(0)" @click.prevent="goHome" class="home-btn">
@@ -214,7 +241,369 @@
           </div>
         </div>
       </div>
+
+      <!-- 新闻管理页面 -->
+      <div v-if="activeTab === 'newsManage'" class="manage-page">
+        <div class="admin-page-header">
+          <h2 class="admin-page-title">新闻管理</h2>
+          <div class="admin-user-info" v-if="authApi.isLoggedIn()">
+            <span class="admin-user-name">{{ (authApi.getAdminUser() || {}).nickname || (authApi.getAdminUser() || {}).username || '管理员' }}</span>
+            <button class="btn-logout" @click="handleLogout">退出登录</button>
+          </div>
+        </div>
+        <div class="search-bar">
+          <input v-model="adminNewsKeyword" class="search-input" placeholder="搜索新闻标题..." @keyup.enter="loadAdminNews(1)" />
+          <select v-model="adminNewsChannel" class="search-select" @change="loadAdminNews(1)">
+            <option value="">全部频道</option>
+            <option v-for="ch in adminNewsChannels" :key="ch" :value="ch">{{ ch }}</option>
+          </select>
+          <button class="btn-primary" @click="loadAdminNews(1)">搜索</button>
+          <span class="result-count">共 {{ adminNewsTotal }} 条新闻</span>
+        </div>
+        <div class="table-card">
+          <table class="news-table">
+            <thead>
+              <tr>
+                <th class="col-id">ID</th>
+                <th class="col-title">标题</th>
+                <th class="col-ch">频道</th>
+                <th class="col-src">来源</th>
+                <th class="col-num">浏览</th>
+                <th class="col-num">评论</th>
+                <th class="col-status">状态</th>
+                <th class="col-time">发布时间</th>
+                <th class="col-action">操作</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="item in adminNewsList" :key="item.id">
+                <td class="col-id">{{ item.id }}</td>
+                <td class="col-title">{{ item.title }}</td>
+                <td class="col-ch"><span class="ch-tag">{{ item.channel }}</span></td>
+                <td class="col-src">{{ item.source }}</td>
+                <td class="col-num">{{ item.viewCount || 0 }}</td>
+                <td class="col-num">{{ item.commentCount || 0 }}</td>
+                <td class="col-status"><span :class="['status-tag', 'status-' + (item.status ?? 1)]">{{ statusText(item.status) }}</span></td>
+                <td class="col-time">{{ formatDate(item.publishTime) }}</td>
+                <td class="col-action">
+                  <button class="btn-table btn-edit" @click="openNewsEdit(item)">编辑</button>
+                  <button class="btn-table btn-delete" @click="deleteNews(item.id)">删除</button>
+                </td>
+              </tr>
+              <tr v-if="adminNewsList.length === 0"><td colspan="9" class="empty-row">暂无数据</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="pager">
+          <button :disabled="adminNewsPage <= 1" @click="loadAdminNews(adminNewsPage - 1)">‹ 上一页</button>
+          <span>{{ adminNewsPage }} / {{ adminNewsTotalPages || 1 }} 页 · 共 {{ adminNewsTotal }} 条</span>
+          <button :disabled="adminNewsPage >= adminNewsTotalPages" @click="loadAdminNews(adminNewsPage + 1)">下一页 ›</button>
+        </div>
+      </div>
+
+      <!-- 用户管理页面 -->
+      <div v-if="activeTab === 'userManage'" class="manage-page">
+        <div class="admin-page-header">
+          <h2 class="admin-page-title">用户管理</h2>
+          <div class="admin-user-info" v-if="authApi.isLoggedIn()">
+            <span class="admin-user-name">{{ (authApi.getAdminUser() || {}).nickname || (authApi.getAdminUser() || {}).username || '管理员' }}</span>
+            <button class="btn-logout" @click="handleLogout">退出登录</button>
+          </div>
+        </div>
+        <div class="table-card">
+          <table class="news-table">
+            <thead>
+              <tr>
+                <th class="col-id">ID</th>
+                <th class="col-username">用户名</th>
+                <th class="col-nickname">昵称</th>
+                <th class="col-email">邮箱</th>
+                <th class="col-phone">手机</th>
+                <th class="col-status">状态</th>
+                <th class="col-time">创建时间</th>
+                <th class="col-action">操作</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="item in userList" :key="item.id">
+                <td class="col-id">{{ item.id }}</td>
+                <td class="col-username">{{ item.username }}</td>
+                <td class="col-nickname">{{ item.nickname || '-' }}</td>
+                <td class="col-email">{{ item.email || '-' }}</td>
+                <td class="col-phone">{{ item.phone || '-' }}</td>
+                <td class="col-status"><span :class="['status-tag', item.status === 1 ? 'status-1' : 'status-0']">{{ item.status === 1 ? '启用' : '停用' }}</span></td>
+                <td class="col-time">{{ formatDate(item.createTime) }}</td>
+                <td class="col-action">
+                  <button class="btn-table btn-toggle" @click="toggleUserStatus(item)">{{ item.status === 1 ? '停用' : '启用' }}</button>
+                  <button class="btn-table btn-delete" @click="deleteUser(item.id)">删除</button>
+                </td>
+              </tr>
+              <tr v-if="userList.length === 0"><td colspan="8" class="empty-row">暂无数据</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- 评论管理页面 -->
+      <div v-if="activeTab === 'commentManage'" class="manage-page">
+        <div class="admin-page-header">
+          <h2 class="admin-page-title">评论管理</h2>
+          <div class="admin-user-info" v-if="authApi.isLoggedIn()">
+            <span class="admin-user-name">{{ (authApi.getAdminUser() || {}).nickname || (authApi.getAdminUser() || {}).username || '管理员' }}</span>
+            <button class="btn-logout" @click="handleLogout">退出登录</button>
+          </div>
+        </div>
+        <div class="table-card">
+          <table class="news-table">
+            <thead>
+              <tr>
+                <th class="col-id">ID</th>
+                <th class="col-article-id">文章ID</th>
+                <th class="col-user-id">用户ID</th>
+                <th class="col-content">内容</th>
+                <th class="col-num">点赞</th>
+                <th class="col-status">状态</th>
+                <th class="col-time">创建时间</th>
+                <th class="col-action">操作</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="item in commentList" :key="item.id">
+                <td class="col-id">{{ item.id }}</td>
+                <td class="col-article-id">{{ item.articleId || item.newsId || '-' }}</td>
+                <td class="col-user-id">{{ item.userId || '-' }}</td>
+                <td class="col-content">{{ item.content }}</td>
+                <td class="col-num">{{ item.likeCount || 0 }}</td>
+                <td class="col-status"><span :class="['status-tag', item.status === 1 ? 'status-1' : 'status-0']">{{ item.status === 1 ? '显示' : '隐藏' }}</span></td>
+                <td class="col-time">{{ formatDate(item.createTime) }}</td>
+                <td class="col-action">
+                  <button class="btn-table btn-toggle" @click="toggleCommentStatus(item)">{{ item.status === 1 ? '隐藏' : '显示' }}</button>
+                  <button class="btn-table btn-delete" @click="deleteComment(item.id)">删除</button>
+                </td>
+              </tr>
+              <tr v-if="commentList.length === 0"><td colspan="8" class="empty-row">暂无数据</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- AI模型配置页面 -->
+      <div v-if="activeTab === 'aiConfig'" class="manage-page">
+        <div class="admin-page-header">
+          <h2 class="admin-page-title">AI模型配置</h2>
+          <div class="admin-user-info" v-if="authApi.isLoggedIn()">
+            <button class="btn-primary" @click="openAiConfigAdd" style="margin-right:12px">新增配置</button>
+            <span class="admin-user-name">{{ (authApi.getAdminUser() || {}).nickname || (authApi.getAdminUser() || {}).username || '管理员' }}</span>
+            <button class="btn-logout" @click="handleLogout">退出登录</button>
+          </div>
+        </div>
+        <div class="table-card">
+          <table class="news-table">
+            <thead>
+              <tr>
+                <th class="col-id">ID</th>
+                <th class="col-title">名称</th>
+                <th class="col-ch">提供商</th>
+                <th class="col-src">模型</th>
+                <th class="col-num">温度</th>
+                <th class="col-num">MaxTokens</th>
+                <th class="col-status">状态</th>
+                <th class="col-status">默认</th>
+                <th class="col-action">操作</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="item in aiConfigList" :key="item.id">
+                <td class="col-id">{{ item.id }}</td>
+                <td class="col-title">{{ item.name }}</td>
+                <td class="col-ch"><span class="ch-tag">{{ providerText(item.provider) }}</span></td>
+                <td class="col-src" style="font-size:11px">{{ item.modelName }}</td>
+                <td class="col-num">{{ item.temperature }}</td>
+                <td class="col-num">{{ item.maxTokens }}</td>
+                <td class="col-status"><span :class="['status-tag', item.status === 1 ? 'status-1' : 'status-0']">{{ item.status === 1 ? '启用' : '停用' }}</span></td>
+                <td class="col-status"><span :class="['status-tag', item.isDefault === 1 ? 'status-1' : 'status-0']">{{ item.isDefault === 1 ? '默认' : '-' }}</span></td>
+                <td class="col-action">
+                  <button v-if="item.isDefault !== 1" class="btn-table btn-toggle" @click="setDefaultAiConfig(item.id)">设为默认</button>
+                  <button class="btn-table btn-edit" @click="openAiConfigEdit(item)">编辑</button>
+                  <button class="btn-table btn-delete" @click="deleteAiConfig(item.id)">删除</button>
+                </td>
+              </tr>
+              <tr v-if="aiConfigList.length === 0"><td colspan="9" class="empty-row">暂无配置</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
     </main>
+
+    <!-- 登录弹窗 -->
+    <div v-if="loginDialogVisible" class="modal-overlay" @click.self="loginDialogVisible = false">
+      <div class="modal-box">
+        <div class="modal-header">
+          <h3>管理员登录</h3>
+          <button class="modal-close" @click="loginDialogVisible = false">&times;</button>
+        </div>
+        <div class="modal-body">
+          <div class="form-group">
+            <label class="form-label">用户名</label>
+            <input v-model="loginForm.username" class="form-input" type="text" placeholder="请输入用户名" @keyup.enter="handleLogin" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">密码</label>
+            <input v-model="loginForm.password" class="form-input" type="password" placeholder="请输入密码" @keyup.enter="handleLogin" />
+          </div>
+          <p v-if="loginError" class="form-error">{{ loginError }}</p>
+        </div>
+        <div class="modal-footer">
+          <button class="btn-ghost" @click="loginDialogVisible = false">取消</button>
+          <button class="btn-primary" @click="handleLogin" :disabled="loginLoading">{{ loginLoading ? '登录中...' : '登录' }}</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 新闻编辑弹窗 -->
+    <div v-if="newsEditDialogVisible" class="modal-overlay" @click.self="newsEditDialogVisible = false">
+      <div class="modal-box modal-box-lg">
+        <div class="modal-header">
+          <h3>编辑新闻</h3>
+          <button class="modal-close" @click="newsEditDialogVisible = false">&times;</button>
+        </div>
+        <div class="modal-body">
+          <div class="form-group">
+            <label class="form-label">封面图片</label>
+            <div class="image-upload-area">
+              <div v-if="newsEditForm.coverImage" class="image-preview">
+                <img :src="newsEditForm.coverImage" alt="封面" class="preview-img" />
+                <button class="image-remove" @click="newsEditForm.coverImage = ''">&times;</button>
+              </div>
+              <div v-else class="image-upload-placeholder" @click="$refs.imageInput.click()">
+                <svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="#94A3B8" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="3" y="3" width="18" height="18" rx="2"/>
+                  <circle cx="8.5" cy="8.5" r="1.5"/>
+                  <path d="M21 15l-5-5L5 21"/>
+                </svg>
+                <span class="upload-text">{{ imageUploading ? '上传中...' : '点击上传图片' }}</span>
+              </div>
+              <input ref="imageInput" type="file" accept="image/*" style="display:none" @change="handleImageUpload" />
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">标题</label>
+            <input v-model="newsEditForm.title" class="form-input" type="text" placeholder="请输入标题" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">摘要</label>
+            <textarea v-model="newsEditForm.summary" class="form-textarea" placeholder="请输入摘要" rows="3"></textarea>
+          </div>
+          <div class="form-row">
+            <div class="form-group form-group-half">
+              <label class="form-label">来源</label>
+              <input v-model="newsEditForm.source" class="form-input" type="text" placeholder="请输入来源" />
+            </div>
+            <div class="form-group form-group-half">
+              <label class="form-label">频道</label>
+              <select v-model="newsEditForm.channel" class="form-select">
+                <option value="">请选择频道</option>
+                <option v-for="ch in adminNewsChannels" :key="ch" :value="ch">{{ ch }}</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">状态</label>
+            <select v-model="newsEditForm.status" class="form-select">
+              <option :value="0">草稿</option>
+              <option :value="1">已发布</option>
+              <option :value="2">已下架</option>
+            </select>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn-ghost" @click="newsEditDialogVisible = false">取消</button>
+          <button class="btn-primary" @click="saveNewsEdit" :disabled="newsEditLoading">{{ newsEditLoading ? '保存中...' : '保存' }}</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 确认删除弹窗 -->
+    <div v-if="confirmDialogVisible" class="modal-overlay" @click.self="confirmDialogVisible = false">
+      <div class="modal-box modal-box-sm">
+        <div class="modal-header">
+          <h3>确认操作</h3>
+          <button class="modal-close" @click="confirmDialogVisible = false">&times;</button>
+        </div>
+        <div class="modal-body">
+          <p class="confirm-text">{{ confirmMessage }}</p>
+        </div>
+        <div class="modal-footer">
+          <button class="btn-ghost" @click="confirmDialogVisible = false">取消</button>
+          <button class="btn-primary btn-danger" @click="executeConfirm">确认</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- AI配置编辑弹窗 -->
+    <div v-if="aiConfigEditDialogVisible" class="modal-overlay" @click.self="aiConfigEditDialogVisible = false">
+      <div class="modal-box modal-box-lg">
+        <div class="modal-header">
+          <h3>{{ aiConfigEditForm.id ? '编辑AI配置' : '新增AI配置' }}</h3>
+          <button class="modal-close" @click="aiConfigEditDialogVisible = false">&times;</button>
+        </div>
+        <div class="modal-body">
+          <div class="form-group">
+            <label class="form-label">配置名称</label>
+            <input v-model="aiConfigEditForm.name" class="form-input" type="text" placeholder="如：NVIDIA Qwen3.5" />
+          </div>
+          <div class="form-row">
+            <div class="form-group form-group-half">
+              <label class="form-label">提供商</label>
+              <select v-model="aiConfigEditForm.provider" class="form-select">
+                <option value="nvidia">NVIDIA</option>
+                <option value="openai">OpenAI</option>
+                <option value="other">其他</option>
+              </select>
+            </div>
+            <div class="form-group form-group-half">
+              <label class="form-label">模型名称</label>
+              <input v-model="aiConfigEditForm.modelName" class="form-input" type="text" placeholder="如：qwen/qwen3.5-122b-a10b" />
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">API地址</label>
+            <input v-model="aiConfigEditForm.apiUrl" class="form-input" type="text" placeholder="如：https://integrate.api.nvidia.com/v1/chat/completions" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">API密钥</label>
+            <input v-model="aiConfigEditForm.apiKey" class="form-input" type="password" placeholder="请输入API Key" />
+          </div>
+          <div class="form-row">
+            <div class="form-group form-group-half">
+              <label class="form-label">Temperature</label>
+              <input v-model.number="aiConfigEditForm.temperature" class="form-input" type="number" step="0.1" min="0" max="2" />
+            </div>
+            <div class="form-group form-group-half">
+              <label class="form-label">Max Tokens</label>
+              <input v-model.number="aiConfigEditForm.maxTokens" class="form-input" type="number" min="1" max="128000" />
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group form-group-half">
+              <label class="form-label">Top P</label>
+              <input v-model.number="aiConfigEditForm.topP" class="form-input" type="number" step="0.05" min="0" max="1" />
+            </div>
+            <div class="form-group form-group-half">
+              <label class="form-label">状态</label>
+              <select v-model="aiConfigEditForm.status" class="form-select">
+                <option :value="1">启用</option>
+                <option :value="0">停用</option>
+              </select>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn-ghost" @click="aiConfigEditDialogVisible = false">取消</button>
+          <button class="btn-primary" @click="saveAiConfig" :disabled="aiConfigEditLoading">{{ aiConfigEditLoading ? '保存中...' : '保存' }}</button>
+        </div>
+      </div>
+    </div>
 
     <div v-if="toast.show" :class="['toast', toast.type]">
       {{ toast.message }}
@@ -225,7 +614,7 @@
 <script setup>
 import { ref, onMounted, onUnmounted, computed, nextTick, watch } from 'vue'
 import * as echarts from 'echarts'
-import { analyticsApi } from '../api/index.js'
+import { analyticsApi, newsApi, userApi, commentApi, authApi, imageApi, aiConfigApi } from '../api/index.js'
 
 const emit = defineEmits([])
 
@@ -286,12 +675,378 @@ const eventTypeMap = {
   favorite: { action: '收藏', typeClass: 'type-fav' }
 }
 
+// ======================== 管理后台相关变量 ========================
+const adminTabs = ['newsManage', 'userManage', 'commentManage', 'aiConfig']
+
+// 登录相关
+const loginDialogVisible = ref(false)
+const loginForm = ref({ username: '', password: '' })
+const loginError = ref('')
+const loginLoading = ref(false)
+const pendingTab = ref('')
+
+// 新闻管理相关
+const adminNewsList = ref([])
+const adminNewsPage = ref(1)
+const adminNewsTotal = ref(0)
+const adminNewsPageSize = 20
+const adminNewsTotalPages = computed(() => Math.max(1, Math.ceil(adminNewsTotal.value / adminNewsPageSize)))
+const adminNewsKeyword = ref('')
+const adminNewsChannel = ref('')
+const adminNewsChannels = ref([])
+const newsEditDialogVisible = ref(false)
+const newsEditForm = ref({ id: null, title: '', summary: '', source: '', channel: '', status: 1, coverImage: '' })
+const newsEditLoading = ref(false)
+const imageUploading = ref(false)
+
+// 用户管理相关
+const userList = ref([])
+
+// 评论管理相关
+const commentList = ref([])
+
+// AI配置相关
+const aiConfigList = ref([])
+const aiConfigEditDialogVisible = ref(false)
+const aiConfigEditForm = ref({ id: null, name: '', provider: 'nvidia', apiUrl: '', apiKey: '', modelName: '', temperature: 0.6, maxTokens: 16384, topP: 0.95, status: 1, isDefault: 0 })
+const aiConfigEditLoading = ref(false)
+
+// 确认弹窗相关
+const confirmDialogVisible = ref(false)
+const confirmMessage = ref('')
+let confirmCallback = null
+
 const switchTab = (tab) => {
   activeTab.value = tab
   if (tab === 'news') loadNews(1)
   if (tab === 'behavior') {
     loadBehaviorEvents()
     initBehaviorCharts()
+  }
+  if (tab === 'newsManage') {
+    loadAdminNews(1)
+    loadAdminNewsChannels()
+  }
+  if (tab === 'userManage') loadUsers()
+  if (tab === 'commentManage') loadComments()
+  if (tab === 'aiConfig') loadAiConfigs()
+}
+
+// ======================== 登录逻辑 ========================
+const handleLogin = async () => {
+  if (!loginForm.value.username || !loginForm.value.password) {
+    loginError.value = '请输入用户名和密码'
+    return
+  }
+  loginLoading.value = true
+  loginError.value = ''
+  try {
+    const res = await authApi.login(loginForm.value.username, loginForm.value.password)
+    const data = res.data || res
+    if (data && (data.code === 200 || data.token)) {
+      const token = data.token || data.data?.token
+      const userInfo = data.data || data
+      if (token) {
+        localStorage.setItem('admin_token', token)
+        localStorage.setItem('admin_user', JSON.stringify({ userId: userInfo.userId, username: userInfo.username, nickname: userInfo.nickname }))
+        loginDialogVisible.value = false
+        showToast('登录成功', 'success')
+        if (pendingTab.value) {
+          activeTab.value = pendingTab.value
+          pendingTab.value = ''
+          if (activeTab.value === 'newsManage') { loadAdminNews(1); loadAdminNewsChannels() }
+          if (activeTab.value === 'userManage') loadUsers()
+          if (activeTab.value === 'commentManage') loadComments()
+          if (activeTab.value === 'aiConfig') loadAiConfigs()
+        }
+      } else {
+        loginError.value = data.message || '登录失败，请检查用户名和密码'
+      }
+    } else {
+      loginError.value = data.message || '登录失败，请检查用户名和密码'
+    }
+  } catch (e) {
+    loginError.value = e.response?.data?.message || '登录失败，请检查用户名和密码'
+  } finally {
+    loginLoading.value = false
+  }
+}
+
+const handleLogout = () => {
+  authApi.logout()
+  if (adminTabs.includes(activeTab.value)) {
+    activeTab.value = 'overview'
+  }
+  showToast('已退出登录', 'success')
+}
+
+// ======================== 新闻管理逻辑 ========================
+const statusText = (status) => {
+  if (status === 0) return '草稿'
+  if (status === 1) return '已发布'
+  if (status === 2) return '已下架'
+  return '未知'
+}
+
+const loadAdminNews = async (page) => {
+  if (page) adminNewsPage.value = page
+  try {
+    const res = await newsApi.list(adminNewsPage.value, adminNewsPageSize, adminNewsChannel.value || undefined, adminNewsKeyword.value || undefined)
+    const pageData = res?.data?.data || res?.data || res || {}
+    const records = pageData.records || pageData.data || []
+    adminNewsList.value = Array.isArray(records) ? records : []
+    adminNewsTotal.value = pageData.total || 0
+  } catch (e) {
+    console.error('Failed to load admin news:', e)
+    adminNewsList.value = []
+    adminNewsTotal.value = 0
+  }
+}
+
+const loadAdminNewsChannels = async () => {
+  try {
+    const res = await newsApi.channels()
+    const d = res?.data?.data || res?.data || res || []
+    adminNewsChannels.value = Array.isArray(d) ? d.map(item => item.channel || item.name || item) : Object.keys(d)
+  } catch (e) {
+    console.error('Failed to load admin news channels:', e)
+  }
+}
+
+const openNewsEdit = (item) => {
+  newsEditForm.value = {
+    id: item.id,
+    title: item.title || '',
+    summary: item.summary || '',
+    source: item.source || '',
+    channel: item.channel || '',
+    status: item.status ?? 1,
+    coverImage: item.coverImage || ''
+  }
+  newsEditDialogVisible.value = true
+}
+
+const saveNewsEdit = async () => {
+  if (!newsEditForm.value.title) {
+    showToast('请填写标题', 'error')
+    return
+  }
+  newsEditLoading.value = true
+  try {
+    const { id, ...data } = newsEditForm.value
+    await newsApi.update(id, data)
+    newsEditDialogVisible.value = false
+    showToast('保存成功', 'success')
+    loadAdminNews(adminNewsPage.value)
+  } catch (e) {
+    showToast('保存失败: ' + (e.response?.data?.message || e.message), 'error')
+  } finally {
+    newsEditLoading.value = false
+  }
+}
+
+const handleImageUpload = async (event) => {
+  const file = event.target.files[0]
+  if (!file) return
+  if (!file.type.startsWith('image/')) {
+    showToast('请选择图片文件', 'error')
+    return
+  }
+  if (file.size > 10 * 1024 * 1024) {
+    showToast('图片大小不能超过10MB', 'error')
+    return
+  }
+  imageUploading.value = true
+  try {
+    const res = await imageApi.upload(file)
+    const url = res?.data || res
+    if (url) {
+      newsEditForm.value.coverImage = url
+      showToast('图片上传成功', 'success')
+    } else {
+      showToast('上传失败', 'error')
+    }
+  } catch (e) {
+    showToast('上传失败: ' + (e.response?.data?.message || e.message), 'error')
+  } finally {
+    imageUploading.value = false
+    event.target.value = ''
+  }
+}
+
+const deleteNews = (id) => {
+  showConfirm('确定要删除这条新闻吗？删除后不可恢复。', async () => {
+    try {
+      await newsApi.delete(id)
+      showToast('删除成功', 'success')
+      loadAdminNews(adminNewsPage.value)
+    } catch (e) {
+      showToast('删除失败: ' + (e.response?.data?.message || e.message), 'error')
+    }
+  })
+}
+
+// ======================== 用户管理逻辑 ========================
+const loadUsers = async () => {
+  try {
+    const res = await userApi.list()
+    const data = res?.data?.data || res?.data || res || []
+    userList.value = Array.isArray(data) ? data : (data.records || [])
+  } catch (e) {
+    console.error('Failed to load users:', e)
+    userList.value = []
+  }
+}
+
+const toggleUserStatus = async (item) => {
+  const newStatus = item.status === 1 ? 0 : 1
+  const label = newStatus === 1 ? '启用' : '停用'
+  showConfirm(`确定要${label}用户 "${item.username}" 吗？`, async () => {
+    try {
+      await userApi.update(item.id, { status: newStatus })
+      showToast(`${label}成功`, 'success')
+      loadUsers()
+    } catch (e) {
+      showToast(`操作失败: ${e.response?.data?.message || e.message}`, 'error')
+    }
+  })
+}
+
+const deleteUser = (id) => {
+  showConfirm('确定要删除该用户吗？删除后不可恢复。', async () => {
+    try {
+      await userApi.delete(id)
+      showToast('删除成功', 'success')
+      loadUsers()
+    } catch (e) {
+      showToast('删除失败: ' + (e.response?.data?.message || e.message), 'error')
+    }
+  })
+}
+
+// ======================== 评论管理逻辑 ========================
+const loadComments = async () => {
+  try {
+    const res = await commentApi.list()
+    const data = res?.data?.data || res?.data || res || []
+    commentList.value = Array.isArray(data) ? data : (data.records || [])
+  } catch (e) {
+    console.error('Failed to load comments:', e)
+    commentList.value = []
+  }
+}
+
+const toggleCommentStatus = async (item) => {
+  const newStatus = item.status === 1 ? 0 : 1
+  const label = newStatus === 1 ? '显示' : '隐藏'
+  showConfirm(`确定要${label}该评论吗？`, async () => {
+    try {
+      await commentApi.update(item.id, { status: newStatus })
+      showToast(`${label}成功`, 'success')
+      loadComments()
+    } catch (e) {
+      showToast(`操作失败: ${e.response?.data?.message || e.message}`, 'error')
+    }
+  })
+}
+
+const deleteComment = (id) => {
+  showConfirm('确定要删除该评论吗？删除后不可恢复。', async () => {
+    try {
+      await commentApi.delete(id)
+      showToast('删除成功', 'success')
+      loadComments()
+    } catch (e) {
+      showToast('删除失败: ' + (e.response?.data?.message || e.message), 'error')
+    }
+  })
+}
+
+// ======================== AI配置管理逻辑 ========================
+const loadAiConfigs = async () => {
+  try {
+    const res = await aiConfigApi.list()
+    const data = res?.data?.data || res?.data || res || []
+    aiConfigList.value = Array.isArray(data) ? data : []
+  } catch (e) {
+    console.error('Failed to load AI configs:', e)
+    aiConfigList.value = []
+  }
+}
+
+const openAiConfigAdd = () => {
+  aiConfigEditForm.value = { id: null, name: '', provider: 'nvidia', apiUrl: '', apiKey: '', modelName: '', temperature: 0.6, maxTokens: 16384, topP: 0.95, status: 1, isDefault: 0 }
+  aiConfigEditDialogVisible.value = true
+}
+
+const openAiConfigEdit = (item) => {
+  aiConfigEditForm.value = { ...item }
+  aiConfigEditDialogVisible.value = true
+}
+
+const saveAiConfig = async () => {
+  if (!aiConfigEditForm.value.name || !aiConfigEditForm.value.apiUrl || !aiConfigEditForm.value.modelName) {
+    showToast('请填写必要字段', 'error')
+    return
+  }
+  aiConfigEditLoading.value = true
+  try {
+    if (aiConfigEditForm.value.id) {
+      await aiConfigApi.update(aiConfigEditForm.value.id, aiConfigEditForm.value)
+    } else {
+      await aiConfigApi.add(aiConfigEditForm.value)
+    }
+    aiConfigEditDialogVisible.value = false
+    showToast('保存成功', 'success')
+    loadAiConfigs()
+  } catch (e) {
+    showToast('保存失败: ' + (e.response?.data?.message || e.message), 'error')
+  } finally {
+    aiConfigEditLoading.value = false
+  }
+}
+
+const deleteAiConfig = (id) => {
+  showConfirm('确定要删除该模型配置吗？', async () => {
+    try {
+      await aiConfigApi.delete(id)
+      showToast('删除成功', 'success')
+      loadAiConfigs()
+    } catch (e) {
+      showToast('删除失败: ' + (e.response?.data?.message || e.message), 'error')
+    }
+  })
+}
+
+const setDefaultAiConfig = (id) => {
+  showConfirm('确定要设为默认模型吗？', async () => {
+    try {
+      await aiConfigApi.setDefault(id)
+      showToast('设置成功', 'success')
+      loadAiConfigs()
+    } catch (e) {
+      showToast('设置失败: ' + (e.response?.data?.message || e.message), 'error')
+    }
+  })
+}
+
+const providerText = (p) => {
+  const map = { nvidia: 'NVIDIA', openai: 'OpenAI', other: '其他' }
+  return map[p] || p
+}
+
+// ======================== 确认弹窗 ========================
+const showConfirm = (message, callback) => {
+  confirmMessage.value = message
+  confirmCallback = callback
+  confirmDialogVisible.value = true
+}
+
+const executeConfirm = () => {
+  confirmDialogVisible.value = false
+  if (confirmCallback) {
+    confirmCallback()
+    confirmCallback = null
   }
 }
 
@@ -765,14 +1520,25 @@ const loadNews = async (page) => {
     if (newsChannel.value) params.set('channel', newsChannel.value)
     if (newsKeyword.value) params.set('keyword', newsKeyword.value)
     const res = await fetch(`/api/news?${params}`).then(r => r.json())
-    if (res.success && res.data) {
-      const pageData = res.data
-      newsList.value = pageData.data || pageData.records || []
-      newsTotal.value = pageData.total || 0
-    }
-  } catch (e) { console.error(e) }
+    // 兼容多种返回格式: {success:true,data:{records:[]}} / {code:200,data:{records:[]}} / {records:[]}
+    const pageData = res?.data?.data || res?.data || res || {}
+    const records = pageData.records || pageData.data || []
+    newsList.value = Array.isArray(records) ? records : []
+    newsTotal.value = pageData.total || 0
+  } catch (e) {
+    console.error('Failed to load news:', e)
+    newsList.value = []
+    newsTotal.value = 0
+  }
 }
-const loadChannels = async () => { try { const res = await fetch('/api/news/channels').then(r => r.json()); const d = res.data || {}; channels.value = Array.isArray(d) ? d.map(item => item.channel || item) : Object.keys(d) } catch (e) { console.error(e) } }
+const loadChannels = async () => {
+  try {
+    const res = await fetch('/api/news/channels').then(r => r.json())
+    // 兼容 {data:[]} / {code:200,data:[]} / {data:{data:[]}} 等格式
+    const d = res?.data?.data || res?.data || res || []
+    channels.value = Array.isArray(d) ? d.map(item => item.channel || item.name || item) : Object.keys(d)
+  } catch (e) { console.error('Failed to load channels:', e) }
+}
 
 const loadOverviewData = async () => {
   await updateRealtimeStats()
@@ -1587,5 +2353,368 @@ const goHome = () => {
   .panel-trend, .panel-hot { height: 180px; }
   .panel-channel, .panel-funnel, .panel-event { height: 180px; }
   .panel-source, .panel-active-hour, .panel-publish-trend { height: 180px; }
+}
+
+/* ======================== 管理后台新增样式 ======================== */
+
+/* 导航分隔符 */
+.nav-separator {
+  width: 1px;
+  height: 20px;
+  background: rgba(255,255,255,0.15);
+  margin: 0 6px;
+  flex-shrink: 0;
+  align-self: center;
+}
+
+/* 管理标签样式 */
+.nav-link-admin {
+  color: #7C8DB5;
+}
+.nav-link-admin:hover {
+  background: rgba(245,158,11,0.12);
+  color: #FBBF24;
+}
+.nav-link-admin.active {
+  background: rgba(245,158,11,0.2);
+  color: #FBBF24;
+  font-weight: 600;
+}
+
+/* 管理页面头部 */
+.admin-page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.admin-page-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: #0F172A;
+  margin: 0;
+}
+
+.admin-user-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.admin-user-name {
+  font-size: 13px;
+  color: #64748B;
+  font-weight: 500;
+}
+
+.btn-logout {
+  padding: 5px 14px;
+  background: transparent;
+  border: 1px solid #E2E8F0;
+  border-radius: 6px;
+  color: #94A3B8;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.btn-logout:hover {
+  border-color: #EF4444;
+  color: #EF4444;
+  background: #FEF2F2;
+}
+
+/* 状态标签 */
+.col-status { width: 70px; }
+.col-action { width: 130px; }
+.col-username { width: 100px; }
+.col-nickname { width: 100px; }
+.col-email { width: 160px; }
+.col-phone { width: 120px; }
+.col-article-id { width: 70px; }
+.col-user-id { width: 70px; }
+.col-content { max-width: 260px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.status-tag {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 10px;
+  font-size: 11px;
+  font-weight: 600;
+}
+.status-0 { color: #94A3B8; background: #F1F5F9; }
+.status-1 { color: #10B981; background: #ECFDF5; }
+.status-2 { color: #EF4444; background: #FEF2F2; }
+
+/* 表格操作按钮 */
+.btn-table {
+  padding: 4px 10px;
+  border: none;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
+  margin-right: 4px;
+}
+.btn-table:last-child { margin-right: 0; }
+
+.btn-edit {
+  background: #EFF6FF;
+  color: #2F6BFF;
+}
+.btn-edit:hover {
+  background: #DBEAFE;
+}
+
+.btn-delete {
+  background: #FEF2F2;
+  color: #EF4444;
+}
+.btn-delete:hover {
+  background: #FEE2E2;
+}
+
+.btn-toggle {
+  background: #FFFBEB;
+  color: #F59E0B;
+}
+.btn-toggle:hover {
+  background: #FEF3C7;
+}
+
+/* 弹窗样式 */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(15,23,42,0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  animation: fadeIn 0.15s ease;
+}
+
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+.modal-box {
+  background: #fff;
+  border-radius: 16px;
+  width: 400px;
+  max-width: 90vw;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+  animation: slideUp 0.2s ease;
+}
+
+.modal-box-lg {
+  width: 560px;
+}
+
+.modal-box-sm {
+  width: 360px;
+}
+
+@keyframes slideUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 24px 0;
+}
+
+.modal-header h3 {
+  font-size: 16px;
+  font-weight: 700;
+  color: #0F172A;
+  margin: 0;
+}
+
+.modal-close {
+  width: 32px;
+  height: 32px;
+  border: none;
+  background: #F1F5F9;
+  border-radius: 8px;
+  font-size: 18px;
+  color: #64748B;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s;
+}
+.modal-close:hover {
+  background: #E2E8F0;
+  color: #334155;
+}
+
+.modal-body {
+  padding: 20px 24px;
+}
+
+.modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 0 24px 20px;
+}
+
+/* 表单样式 */
+.form-group {
+  margin-bottom: 16px;
+}
+.form-group:last-child {
+  margin-bottom: 0;
+}
+
+.form-label {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  color: #334155;
+  margin-bottom: 6px;
+}
+
+.form-input {
+  width: 100%;
+  padding: 9px 14px;
+  border: 1px solid #E2E8F0;
+  border-radius: 8px;
+  font-size: 13px;
+  outline: none;
+  background: #fff;
+  color: #1E293B;
+  transition: border-color 0.2s;
+  box-sizing: border-box;
+}
+.form-input:focus {
+  border-color: #2F6BFF;
+  box-shadow: 0 0 0 3px rgba(47,107,255,0.1);
+}
+.form-input::placeholder { color: #94A3B8; }
+
+.form-textarea {
+  width: 100%;
+  padding: 9px 14px;
+  border: 1px solid #E2E8F0;
+  border-radius: 8px;
+  font-size: 13px;
+  outline: none;
+  background: #fff;
+  color: #1E293B;
+  transition: border-color 0.2s;
+  resize: vertical;
+  box-sizing: border-box;
+  font-family: inherit;
+}
+.form-textarea:focus {
+  border-color: #2F6BFF;
+  box-shadow: 0 0 0 3px rgba(47,107,255,0.1);
+}
+.form-textarea::placeholder { color: #94A3B8; }
+
+.form-select {
+  width: 100%;
+  padding: 9px 14px;
+  border: 1px solid #E2E8F0;
+  border-radius: 8px;
+  font-size: 13px;
+  background: #fff;
+  color: #1E293B;
+  outline: none;
+  cursor: pointer;
+  box-sizing: border-box;
+}
+
+.form-row {
+  display: flex;
+  gap: 12px;
+}
+.form-group-half {
+  flex: 1;
+}
+
+.form-error {
+  color: #EF4444;
+  font-size: 12px;
+  margin: 0;
+  margin-top: 4px;
+}
+
+.confirm-text {
+  font-size: 14px;
+  color: #334155;
+  margin: 0;
+  line-height: 1.6;
+}
+
+.btn-danger {
+  background: #EF4444;
+}
+.btn-danger:hover {
+  background: #DC2626;
+  box-shadow: 0 2px 8px rgba(239,68,68,0.3);
+}
+
+/* 图片上传样式 */
+.image-upload-area {
+  width: 100%;
+}
+.image-preview {
+  position: relative;
+  width: 200px;
+  height: 120px;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid #E2E8F0;
+}
+.preview-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.image-remove {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: rgba(0,0,0,0.6);
+  color: #fff;
+  border: none;
+  font-size: 14px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+.image-remove:hover {
+  background: rgba(239,68,68,0.8);
+}
+.image-upload-placeholder {
+  width: 200px;
+  height: 120px;
+  border: 2px dashed #E2E8F0;
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.image-upload-placeholder:hover {
+  border-color: #2F6BFF;
+  background: #F8FAFF;
+}
+.upload-text {
+  font-size: 12px;
+  color: #94A3B8;
 }
 </style>
