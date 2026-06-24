@@ -225,30 +225,8 @@ function setupChannelObserver() {
 }
 
 function connectSSE() {
-  try {
-    const token = localStorage.getItem('token')
-    const url = '/api/news/stream' + (token ? `?token=${encodeURIComponent(token)}` : '')
-    sseSource = new EventSource(url)
-    sseSource.addEventListener('news', (event) => {
-      try {
-        const data = JSON.parse(event.data)
-        if (data && data.id) {
-          newNewsCount.value++
-          showNewNewsTip.value = true
-        }
-      } catch (e) {
-        console.warn('SSE parse error:', e)
-      }
-    })
-    sseSource.onerror = () => {
-      sseSource.close()
-      sseSource = null
-      startPolling()
-    }
-  } catch (e) {
-    console.warn('SSE connection failed:', e)
-    startPolling()
-  }
+  // SSE not available, use polling directly
+  startPolling()
 }
 
 function startPolling() {
